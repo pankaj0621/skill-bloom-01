@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { playMessageSound, playFriendRequestSound } from "@/lib/sounds";
+import { playFriendRequestSound } from "@/lib/sounds";
 
 export function useRealtimeNotifications(userId: string | undefined) {
   const queryClient = useQueryClient();
@@ -12,24 +12,6 @@ export function useRealtimeNotifications(userId: string | undefined) {
 
     const channel = supabase
       .channel("global-notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "peer_messages" },
-        (payload) => {
-          const msg = payload.new as any;
-          if (msg.to_user_id === userId) {
-            playMessageSound();
-            toast("New message", {
-              description: msg.body?.slice(0, 60) || "You have a new message",
-              action: {
-                label: "View",
-                onClick: () => { window.location.href = "/peers"; },
-              },
-            });
-            queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
-          }
-        }
-      )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "friendships" },
