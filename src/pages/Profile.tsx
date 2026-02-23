@@ -18,7 +18,7 @@ const Profile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "" });
+  const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "", stream: "", primary_goal: "" });
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -30,6 +30,8 @@ const Profile = () => {
         bio: data.bio || "",
         year: data.year?.toString() || "",
         college: data.college || "",
+        stream: data.stream || "",
+        primary_goal: data.primary_goal || "",
       });
       return data;
     },
@@ -58,6 +60,8 @@ const Profile = () => {
           bio: form.bio,
           year: form.year ? parseInt(form.year) : null,
           college: form.college,
+          stream: form.stream || null,
+          primary_goal: form.primary_goal || null,
         })
         .eq("id", user!.id);
       if (error) throw error;
@@ -144,6 +148,37 @@ const Profile = () => {
                         <Input value={form.college} onChange={(e) => setForm({ ...form, college: e.target.value })} placeholder="Your college" />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Stream</Label>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={form.stream}
+                          onChange={(e) => setForm({ ...form, stream: e.target.value })}
+                        >
+                          <option value="">Select stream</option>
+                          <option value="btech">BTech</option>
+                          <option value="ba">BA</option>
+                          <option value="bcom">BCom</option>
+                          <option value="bsc">BSc</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Primary Goal</Label>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={form.primary_goal}
+                          onChange={(e) => setForm({ ...form, primary_goal: e.target.value })}
+                        >
+                          <option value="">Select goal</option>
+                          <option value="job">Job</option>
+                          <option value="higher_studies">Higher Studies</option>
+                          <option value="competitive_exams">Competitive Exams</option>
+                          <option value="skill_career">Skill-based Career</option>
+                        </select>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <Button onClick={() => updateProfile.mutate()}>Save</Button>
                       <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
@@ -161,6 +196,16 @@ const Profile = () => {
                     {profile?.bio && <p className="text-sm">{profile.bio}</p>}
                     {profile?.college && <p className="text-sm text-muted-foreground">🎓 {profile.college}</p>}
                     {profile?.year && <p className="text-sm text-muted-foreground">Year {profile.year}</p>}
+                    {(profile as any)?.stream && (
+                      <p className="text-sm text-muted-foreground">
+                        📚 {({ btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "Other" } as Record<string, string>)[(profile as any).stream] || (profile as any).stream}
+                      </p>
+                    )}
+                    {(profile as any)?.primary_goal && (
+                      <p className="text-sm text-muted-foreground">
+                        🎯 {({ job: "Job", higher_studies: "Higher Studies", competitive_exams: "Competitive Exams", skill_career: "Skill-based Career" } as Record<string, string>)[(profile as any).primary_goal] || (profile as any).primary_goal}
+                      </p>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit Profile</Button>
                   </motion.div>
                 )}
