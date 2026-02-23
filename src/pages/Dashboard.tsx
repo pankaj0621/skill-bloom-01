@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCounter from "@/components/AnimatedCounter";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
@@ -39,7 +40,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: progress } = useQuery({
+  const { data: progress, isLoading: progressLoading } = useQuery({
     queryKey: ["user_progress", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,7 +53,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: earnedBadges } = useQuery({
+  const { data: earnedBadges, isLoading: badgesLoading } = useQuery({
     queryKey: ["user_badges", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -83,6 +84,48 @@ const Dashboard = () => {
   const totalCompleted = trackStats.reduce((s, t) => s + t.completed, 0);
   const overallPct = totalSkills > 0 ? Math.round((totalCompleted / totalSkills) * 100) : 0;
   const level = getLevel(totalCompleted, totalSkills);
+
+  const isLoading = profileLoading || progressLoading || badgesLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <Skeleton className="h-9 w-72 mb-2" />
+            <Skeleton className="h-5 w-56" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
+                <CardContent><Skeleton className="h-7 w-16 mb-2" /><Skeleton className="h-4 w-full" /></CardContent>
+              </Card>
+            ))}
+          </div>
+          <div>
+            <Skeleton className="h-6 w-32 mb-3" />
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-28 rounded-lg" />
+              ))}
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-6 w-40 mb-3" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-2"><Skeleton className="h-5 w-32" /></CardHeader>
+                  <CardContent className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /></CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
