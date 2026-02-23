@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { getLevel, getLevelColor } from "@/lib/levels";
-import { User, Plus, X, BookOpen, Camera, Loader2 } from "lucide-react";
+import { User, Plus, X, BookOpen, Camera, Loader2, Trash2 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -115,6 +115,26 @@ const Profile = () => {
       setUploadingAvatar(false);
       if (cropImage) URL.revokeObjectURL(cropImage);
       setCropImage(null);
+    }
+  };
+
+  const [removingAvatar, setRemovingAvatar] = useState(false);
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    setRemovingAvatar(true);
+    try {
+      await supabase.storage.from("avatars").remove([`${user.id}/avatar.webp`]);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Profile picture removed.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove avatar.");
+    } finally {
+      setRemovingAvatar(false);
     }
   };
 
@@ -326,7 +346,7 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
+                    disabled={uploadingAvatar || removingAvatar}
                     className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
                     aria-label="Change profile picture"
                   >
@@ -336,6 +356,21 @@ const Profile = () => {
                       <Camera className="h-3.5 w-3.5" />
                     )}
                   </button>
+                  {profile?.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={removingAvatar || uploadingAvatar}
+                      className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md hover:bg-destructive/90 transition-colors"
+                      aria-label="Remove profile picture"
+                    >
+                      {removingAvatar ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
+                    </button>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
