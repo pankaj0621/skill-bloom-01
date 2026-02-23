@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PageTransition from "@/components/PageTransition";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -17,6 +19,25 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+        <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
+        <Route path="/peers" element={<ProtectedRoute><PageTransition><Peers /></PageTransition></ProtectedRoute>} />
+        <Route path="/leaderboard" element={<ProtectedRoute><PageTransition><Leaderboard /></PageTransition></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -25,17 +46,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
-              <Route path="/peers" element={<ProtectedRoute><Peers /></ProtectedRoute>} />
-              <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AnimatedRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
