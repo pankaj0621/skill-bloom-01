@@ -14,11 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      peer_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_user_id: string
+          id: string
+          to_user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          to_user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           college: string | null
+          computed_level: string
           created_at: string
           current_streak: number
           display_name: string | null
@@ -33,6 +58,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           college?: string | null
+          computed_level?: string
           created_at?: string
           current_streak?: number
           display_name?: string | null
@@ -47,6 +73,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           college?: string | null
+          computed_level?: string
           created_at?: string
           current_streak?: number
           display_name?: string | null
