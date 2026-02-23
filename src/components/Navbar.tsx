@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +21,11 @@ const Navbar = () => {
   const { signOut, user } = useAuth();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
 
   const { data: unreadCount } = useQuery({
     queryKey: ["unread_peer_messages", user?.id],
@@ -104,6 +110,9 @@ const Navbar = () => {
               </Link>
             ))}
           </nav>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
+            {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
@@ -111,9 +120,26 @@ const Navbar = () => {
         </div>
       </header>
 
+      {/* Mobile top bar - logo + theme + sign out */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+        <div className="flex h-12 items-center justify-between px-3">
+          <Link to="/dashboard" className="font-bold text-base">
+            🎯 SkillTracker
+          </Link>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+              {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
       {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden safe-area-bottom">
-        <div className="flex items-center justify-around h-14">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+        <div className="flex items-center justify-around h-14 pb-[env(safe-area-inset-bottom)]">
           {navItems.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
