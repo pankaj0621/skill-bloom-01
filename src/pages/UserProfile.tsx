@@ -15,8 +15,9 @@ import { toast } from "sonner";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { getLevel } from "@/lib/levels";
 import { BADGES } from "@/lib/badges";
-import { User, ArrowLeft, MessageCircle, UserPlus, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Loader2, Check, Shield } from "lucide-react";
+import { User, ArrowLeft, MessageCircle, UserPlus, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Loader2, Check, Shield, Ban } from "lucide-react";
 import { useFriendship } from "@/hooks/useFriendship";
+import { useBlockUser } from "@/hooks/useBlockUser";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STREAM_LABELS: Record<string, string> = { btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "Other" };
@@ -95,6 +96,8 @@ const UserProfile = () => {
   } = useFriendship(user?.id, profileId);
 
   const isFriend = friendStatus === "accepted";
+
+  const { isBlocked, blockUser, unblockUser } = useBlockUser(user?.id, profileId);
 
   // Derive track stats
   const trackStats = skillProgress
@@ -219,32 +222,57 @@ const UserProfile = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, delay: 0.2 }}
                 >
-                  <FriendButton
-                    status={friendStatus}
-                    isSender={isSender}
-                    isLoading={friendLoading}
-                    onSend={() => sendRequest.mutate()}
-                    onAccept={() => acceptRequest.mutate()}
-                    onReject={() => rejectRequest.mutate()}
-                    onRemove={() => removeFriend.mutate()}
-                    isMutating={sendRequest.isPending || acceptRequest.isPending || rejectRequest.isPending || removeFriend.isPending}
-                  />
-                  {isFriend && (
+                  {isBlocked ? (
                     <Button
                       variant="outline"
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => setChatOpen(true)}
+                      onClick={() => unblockUser.mutate()}
+                      disabled={unblockUser.isPending}
                     >
-                      <MessageCircle className="h-4 w-4" />
-                      Message
+                      {unblockUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                      Unblock
                     </Button>
-                  )}
-                  {!isFriend && friendStatus !== "pending" && (
-                    <p className="text-xs text-muted-foreground self-center ml-1">
-                      <Shield className="h-3 w-3 inline mr-1" />
-                      Become friends to message
-                    </p>
+                  ) : (
+                    <>
+                      <FriendButton
+                        status={friendStatus}
+                        isSender={isSender}
+                        isLoading={friendLoading}
+                        onSend={() => sendRequest.mutate()}
+                        onAccept={() => acceptRequest.mutate()}
+                        onReject={() => rejectRequest.mutate()}
+                        onRemove={() => removeFriend.mutate()}
+                        isMutating={sendRequest.isPending || acceptRequest.isPending || rejectRequest.isPending || removeFriend.isPending}
+                      />
+                      {isFriend && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => setChatOpen(true)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Message
+                        </Button>
+                      )}
+                      {!isFriend && friendStatus !== "pending" && (
+                        <p className="text-xs text-muted-foreground self-center ml-1">
+                          <Shield className="h-3 w-3 inline mr-1" />
+                          Become friends to message
+                        </p>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => blockUser.mutate()}
+                        disabled={blockUser.isPending}
+                      >
+                        {blockUser.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                        Block
+                      </Button>
+                    </>
                   )}
                 </motion.div>
               )}

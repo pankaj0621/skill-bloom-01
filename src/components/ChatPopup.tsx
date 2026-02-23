@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConversations, useChatMessages, useSendMessage, formatMessageTime } from "@/hooks/useMessages";
-import { useFriendsList } from "@/hooks/useFriendship";
+import { useFriendsList, useFriendship } from "@/hooks/useFriendship";
+import { useBlockUser } from "@/hooks/useBlockUser";
 import { usePresence, useTypingIndicator } from "@/hooks/usePresence";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatPopupProps {
@@ -184,6 +186,8 @@ function ChatView({
   isOnline: boolean;
 }) {
   const { messages } = useChatMessages(userId, peerId);
+  const { removeFriend } = useFriendship(userId, peerId);
+  const { isBlocked, blockUser } = useBlockUser(userId, peerId);
   const { messageText, setMessageText, sendMessage } = useSendMessage(userId, peerId);
   const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -238,6 +242,31 @@ function ChatView({
               )}
             </AnimatePresence>
           </div>
+        </div>
+        <div className="ml-auto flex-shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => { removeFriend.mutate(); onBack(); }}
+                className="text-destructive focus:text-destructive gap-2"
+              >
+                <UserX className="h-4 w-4" />
+                Unfriend
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { blockUser.mutate(); onBack(); }}
+                className="text-destructive focus:text-destructive gap-2"
+              >
+                <Ban className="h-4 w-4" />
+                Block User
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
