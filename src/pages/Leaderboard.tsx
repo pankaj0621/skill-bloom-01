@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { Trophy, Medal, Award, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 0) return <Trophy className="h-5 w-5 text-primary" />;
@@ -69,15 +70,24 @@ const Leaderboard = () => {
                 {leaderboard.map((entry, i) => {
                   const isMe = entry.id === user?.id;
                   return (
-                    <div
+                    <motion.div
                       key={entry.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
+                      whileHover={{ scale: 1.015 }}
                       className={`flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-3 transition-colors ${
                         isMe ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"
                       }`}
                     >
-                      <div className="w-6 sm:w-8 text-center font-bold text-muted-foreground flex-shrink-0">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20, delay: i * 0.06 + 0.15 }}
+                        className="w-6 sm:w-8 text-center font-bold text-muted-foreground flex-shrink-0"
+                      >
                         <RankIcon rank={i} />
-                      </div>
+                      </motion.div>
                       <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         <User className="h-4 w-4 text-muted-foreground" />
                       </div>
@@ -99,7 +109,7 @@ const Leaderboard = () => {
                         <p className="font-semibold text-sm sm:text-base">{entry.completedSkills}</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground">skills</p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
