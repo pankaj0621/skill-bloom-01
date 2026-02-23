@@ -21,13 +21,13 @@ const Navbar = () => {
   const { data: unreadCount } = useQuery({
     queryKey: ["unread_peer_messages", user?.id],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from("peer_messages")
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("to_user_id", user!.id)
-        .eq("read" as any, false);
+        .eq("read", false);
       if (error) throw error;
-      return count || 0;
+      return data?.length || 0;
     },
     enabled: !!user,
     refetchInterval: 15000,
