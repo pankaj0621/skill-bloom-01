@@ -1,13 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Map, UserCircle, LogOut, Users } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
   { to: "/peers", label: "Peers", icon: Users },
+  { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 

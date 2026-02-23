@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -73,8 +73,29 @@ const Peers = () => {
       return data;
     },
     enabled: !!user && !!selectedPeer,
-    refetchInterval: 5000,
   });
+
+  // Real-time subscription for messages
+  useEffect(() => {
+    if (!user || !selectedPeer) return;
+    const channel = supabase
+      .channel(`peer-msgs-${selectedPeer}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "peer_messages" },
+        (payload) => {
+          const msg = payload.new as any;
+          const isRelevant =
+            (msg.from_user_id === user.id && msg.to_user_id === selectedPeer) ||
+            (msg.from_user_id === selectedPeer && msg.to_user_id === user.id);
+          if (isRelevant) {
+            queryClient.invalidateQueries({ queryKey: ["peer_messages", user.id, selectedPeer] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, selectedPeer, queryClient]);
 
   const sendMessage = useMutation({
     mutationFn: async () => {
