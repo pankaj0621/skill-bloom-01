@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +19,7 @@ const navItems = [
 const Navbar = () => {
   const { signOut, user } = useAuth();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const { data: unreadCount } = useQuery({
     queryKey: ["unread_peer_messages", user?.id],
@@ -32,6 +35,47 @@ const Navbar = () => {
     enabled: !!user,
     refetchInterval: 15000,
   });
+
+  // Global realtime listener for incoming messages
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("global-peer-msgs")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "peer_messages" },
+        (payload) => {
+          const msg = payload.new as any;
+          if (msg.to_user_id === user.id) {
+            // Play notification sound
+            try {
+              const audio = new Audio("data:audio/wav;base64,UklGRl9vT19teleXBEYXRh");
+              const ctx = new AudioContext();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.frequency.value = 800;
+              gain.gain.value = 0.15;
+              osc.start();
+              osc.stop(ctx.currentTime + 0.15);
+            } catch {}
+
+            toast("New message", {
+              description: msg.body?.slice(0, 60) || "You have a new message",
+              action: {
+                label: "View",
+                onClick: () => { window.location.href = "/peers"; },
+              },
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
