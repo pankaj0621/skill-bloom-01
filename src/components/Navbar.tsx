@@ -11,6 +11,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversations } from "@/hooks/useMessages";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatPopup from "@/components/ChatPopup";
+import appIcon from "@/assets/app-icon-512.png";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -58,7 +59,10 @@ const Navbar = () => {
       {/* Desktop top navbar */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
         <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
-          <Link to="/dashboard" className="font-bold text-lg mr-8">📊 SPCT</Link>
+          <Link to="/dashboard" className="font-bold text-lg mr-8 flex items-center gap-2">
+            <img src={appIcon} alt="SPCT" className="w-7 h-7 rounded-md" />
+            SPCT
+          </Link>
           <nav className="flex items-center gap-1 flex-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
@@ -101,7 +105,10 @@ const Navbar = () => {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
         <div className="flex h-12 items-center justify-between px-3">
-          <Link to="/dashboard" className="font-bold text-base">📊 SPCT</Link>
+          <Link to="/dashboard" className="font-bold text-base flex items-center gap-1.5">
+            <img src={appIcon} alt="SPCT" className="w-6 h-6 rounded-md" />
+            SPCT
+          </Link>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setChatOpen(true)}>
               <MessageCircle className="h-4 w-4" />

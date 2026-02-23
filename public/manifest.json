@@ -1,13 +1,13 @@
 {
-  "name": "Student Progress & Career Tracker",
-  "short_name": "SPCT",
+  "name": "SkillTracker — Student Progress & Career Tracker",
+  "short_name": "SkillTracker",
   "description": "Track skills, goals, and progress for any stream or course",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#2563eb",
-  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
   "icons": [
     {
       "src": "/icon-192.png",
