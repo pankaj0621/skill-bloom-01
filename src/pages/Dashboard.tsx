@@ -99,8 +99,8 @@ const Dashboard = () => {
           initial="hidden"
           animate="show"
         >
-          <motion.div variants={itemVariants}>
-            <Card>
+          <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "tween", duration: 0.2 }}>
+            <Card className="transition-shadow duration-200 hover:shadow-md">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Overall Progress</CardTitle>
               </CardHeader>
@@ -112,8 +112,8 @@ const Dashboard = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <Card>
+          <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "tween", duration: 0.2 }}>
+            <Card className="transition-shadow duration-200 hover:shadow-md">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Current Level</CardTitle>
               </CardHeader>
@@ -128,8 +128,8 @@ const Dashboard = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <Card>
+          <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "tween", duration: 0.2 }}>
+            <Card className="transition-shadow duration-200 hover:shadow-md">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
               </CardHeader>
@@ -146,8 +146,8 @@ const Dashboard = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <Card>
+          <motion.div variants={itemVariants} whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "tween", duration: 0.2 }}>
+            <Card className="transition-shadow duration-200 hover:shadow-md">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Tracks Following</CardTitle>
               </CardHeader>
@@ -217,8 +217,8 @@ const Dashboard = () => {
                 const pct = track.total > 0 ? Math.round((track.completed / track.total) * 100) : 0;
                 const trackLevel = getLevel(track.completed, track.total);
                 return (
-                  <motion.div key={i} variants={itemVariants} whileHover={{ scale: 1.02 }}>
-                    <Card>
+                  <motion.div key={i} variants={itemVariants} whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "tween", duration: 0.2 }}>
+                    <Card className="transition-shadow duration-200 hover:shadow-md">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base">{track.name}</CardTitle>
                     </CardHeader>
