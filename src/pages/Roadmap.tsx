@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateStreak } from "@/lib/streak";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { syncUserLevel } from "@/lib/syncLevel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ const Roadmap = () => {
     onSuccess: async () => {
       if (user) {
         await updateStreak(user.id);
+        await syncUserLevel(user.id);
         const newBadges = await checkAndAwardBadges(user.id);
         if (newBadges.length > 0) {
           const { BADGES } = await import("@/lib/badges");
