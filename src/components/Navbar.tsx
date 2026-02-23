@@ -1,5 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,8 +15,23 @@ const navItems = [
 ];
 
 const Navbar = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
+
+  const { data: unreadCount } = useQuery({
+    queryKey: ["unread_peer_messages", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("peer_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("to_user_id", user!.id)
+        .eq("read" as any, false);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,7 +45,7 @@ const Navbar = () => {
               key={to}
               to={to}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "relative flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 location.pathname === to
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -36,6 +53,11 @@ const Navbar = () => {
             >
               <Icon className="h-4 w-4" />
               <span className="hidden sm:inline">{label}</span>
+              {to === "/peers" && !!unreadCount && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
