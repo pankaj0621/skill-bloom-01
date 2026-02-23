@@ -7,6 +7,7 @@ import { checkAndAwardBadges } from "@/lib/badges";
 import { syncUserLevel } from "@/lib/syncLevel";
 import type { Level } from "@/lib/levels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ const Roadmap = () => {
   const { triggerLevelUp, LevelUpAnimation } = LevelUpToast();
   const { showBadgePopup, BadgePopup } = useBadgePopup();
 
-  const { data: progress } = useQuery({
+  const { data: progress, isLoading: progressLoading } = useQuery({
     queryKey: ["user_progress_full", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -142,6 +143,34 @@ const Roadmap = () => {
     if (current === "in_progress") return "completed";
     return "not_started";
   };
+
+  if (progressLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <Skeleton className="h-9 w-56 mb-2" />
+            <Skeleton className="h-5 w-40" />
+          </div>
+          <Skeleton className="h-10 w-64" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-72" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (trackList.length === 0) {
     return (
