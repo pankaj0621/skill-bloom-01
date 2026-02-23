@@ -1,67 +1,147 @@
 
 
-# College Skill Progress Tracker — Implementation Plan
+# Phase 1 Implementation Plan -- College Skill Progress Tracker MVP
 
-## Overview
-A full-stack web app where engineering students track skill progress across curated roadmaps, earn levels, get next-step recommendations, and connect with seniors for mentorship. Built with React + Supabase.
-
----
-
-## User Flow
-
-1. **Sign Up / Login** → Email & password authentication
-2. **Onboarding** → Select role (Junior / Senior), pick skill tracks (e.g., DSA, Web Dev, System Design)
-3. **Dashboard** → See overall progress, current level, recommended next steps
-4. **Skill Roadmap View** → Browse pre-defined roadmaps + add custom skills, mark milestones as complete
-5. **Profile** → Public profile showing skills, levels, and progress stats
-6. **Community** → Browse senior profiles, request mentorship, post/answer questions in a Q&A feed
-7. **Leaderboard** → See top students by skill area or overall progress
+This plan covers setting up Supabase, authentication, database schema, seed data, and the core UI for skill tracking with levels and recommendations.
 
 ---
 
-## Database Structure (Supabase)
+## Step 1: Connect Supabase
 
-- **profiles** — id, user_id, display_name, avatar_url, role (junior/senior), bio, year, college
-- **skill_tracks** — id, name, description, icon, is_default (pre-defined vs custom)
-- **skills** — id, track_id, name, description, order, difficulty_level
-- **user_skill_progress** — id, user_id, skill_id, status (not_started/in_progress/completed), completed_at
-- **user_custom_skills** — id, user_id, track_id, name, status
-- **mentorship_requests** — id, from_user_id, to_user_id, message, status (pending/accepted/declined)
-- **community_posts** — id, user_id, title, body, skill_track_id, created_at
-- **post_replies** — id, post_id, user_id, body, created_at
+Connect the project to Supabase to enable authentication and database features.
 
 ---
 
-## Feature Phases
+## Step 2: Database Schema (Migration)
 
-### Phase 1 — MVP (Core Tracking)
-- Email/password auth with Supabase
-- User profiles with junior/senior role selection
-- Pre-defined skill roadmaps (DSA, Web Dev, System Design, etc.)
-- Skill progress tracking — mark skills as not started / in progress / completed
-- **Level system** — Beginner → Intermediate → Advanced based on % completion
-- **Next-step recommendations** — highlight the next uncompleted skill in each track
-- Personal dashboard with progress overview and stats
+Create all Phase 1 tables in a single migration:
 
-### Phase 2 — Community & Mentorship
-- Public user profiles showing skills and levels
-- Senior directory — browse seniors by skill expertise
-- Mentorship request system (send request + message, accept/decline)
-- Community Q&A feed — post questions tagged by skill track, seniors can reply
-- Notifications for mentorship requests and replies
+**Tables:**
+- `profiles` -- id (uuid PK, FK to auth.users ON DELETE CASCADE), display_name, avatar_url, role (text, 'junior' or 'senior'), bio, year (int), college (text), created_at
+- `skill_tracks` -- id (uuid PK), name, description, icon (text), is_default (bool), created_at
+- `skills` -- id (uuid PK), track_id (FK to skill_tracks), name, description, order (int), difficulty_level (text), created_at
+- `user_skill_progress` -- id (uuid PK), user_id (FK to profiles), skill_id (FK to skills), status (text: 'not_started'/'in_progress'/'completed'), completed_at (timestamptz nullable), created_at
+- `user_custom_skills` -- id (uuid PK), user_id (FK to profiles), track_id (FK to skill_tracks), name, status (text), created_at
 
-### Phase 3 — Engagement & Polish
-- Leaderboard — rank students by track or overall progress
-- Custom skill tracks — students create personal learning paths
-- Progress streaks and activity history
-- Mobile-optimized responsive design refinements
-- Dark mode support
+**Trigger:** Auto-create a profile row when a new user signs up via `auth.users`.
+
+**RLS Policies:**
+- `profiles`: Anyone can SELECT; INSERT/UPDATE only for own row (`auth.uid() = id`)
+- `skill_tracks`: SELECT for all authenticated; no INSERT/UPDATE/DELETE (admin-seeded)
+- `skills`: SELECT for all authenticated; no INSERT/UPDATE/DELETE
+- `user_skill_progress`: SELECT/INSERT/UPDATE only for own rows
+- `user_custom_skills`: SELECT/INSERT/UPDATE only for own rows
+
+**Enable RLS** on all tables.
 
 ---
 
-## Design Direction
-- Clean, modern dashboard layout with cards and progress bars
-- Responsive design that works equally well on desktop and mobile
-- Soft, motivating color palette (blues/greens for progress indicators)
-- Clear visual hierarchy: progress stats → roadmap → community
+## Step 3: Seed Pre-defined Skill Roadmaps
 
+Insert default skill tracks and skills using a data insert:
+
+1. **DSA Track** -- Arrays, Linked Lists, Stacks & Queues, Trees, Graphs, Sorting Algorithms, Dynamic Programming, Recursion, Hashing, Greedy Algorithms
+2. **Web Development Track** -- HTML/CSS Basics, JavaScript Fundamentals, React Basics, State Management, REST APIs, Node.js/Express, Databases (SQL), Authentication, Deployment, Testing
+3. **System Design Track** -- Scalability Basics, Load Balancing, Caching, Database Design, API Design, Message Queues, Microservices, CAP Theorem, Monitoring & Logging, Security Fundamentals
+
+---
+
+## Step 4: Supabase Client Setup
+
+Create `src/integrations/supabase/client.ts` with the Supabase JS client, and generate TypeScript types for the database tables.
+
+---
+
+## Step 5: Authentication Pages
+
+**Files to create:**
+- `src/pages/Auth.tsx` -- Login and Sign Up forms (email/password) using Supabase auth, with toggle between login/signup modes
+- `src/contexts/AuthContext.tsx` -- React context providing current user, session, loading state, and sign-out function. Uses `onAuthStateChange` listener.
+- `src/components/ProtectedRoute.tsx` -- Wrapper that redirects unauthenticated users to `/auth`
+
+---
+
+## Step 6: Onboarding Page
+
+**File:** `src/pages/Onboarding.tsx`
+
+After first signup, user selects:
+- Role: Junior or Senior (radio buttons)
+- Skill tracks to follow (checkboxes for DSA, Web Dev, System Design)
+
+On submit: updates profile with role, initializes `user_skill_progress` rows for all skills in selected tracks (status = 'not_started').
+
+---
+
+## Step 7: Dashboard Page
+
+**File:** `src/pages/Dashboard.tsx`
+
+Shows:
+- Welcome header with user's display name
+- Overall progress card (% of all tracked skills completed)
+- Level badge: Beginner (0-33%), Intermediate (34-66%), Advanced (67-100%)
+- Per-track progress cards with progress bars
+- "Recommended Next Steps" section: first uncompleted skill per track
+- Quick action buttons to navigate to roadmap views
+
+---
+
+## Step 8: Skill Roadmap Page
+
+**File:** `src/pages/Roadmap.tsx`
+
+Shows:
+- Tab/selector for each skill track the user follows
+- Ordered list of skills in the selected track
+- Each skill shows: name, description, difficulty badge, status indicator
+- Buttons to change status: Not Started / In Progress / Completed
+- Section to add custom skills to a track
+
+---
+
+## Step 9: Profile Page
+
+**File:** `src/pages/Profile.tsx`
+
+Shows:
+- Display name (editable), role, year, college, bio
+- Avatar placeholder
+- Skills overview with level per track
+- Edit profile form
+
+---
+
+## Step 10: Navigation & Layout
+
+**Files to create:**
+- `src/components/Layout.tsx` -- App shell with sidebar/top nav and main content area
+- `src/components/Navbar.tsx` -- Navigation links: Dashboard, Roadmap, Profile, Sign Out
+
+**Routes to add in App.tsx:**
+- `/auth` -- Auth page (public)
+- `/onboarding` -- Onboarding (protected)
+- `/dashboard` -- Dashboard (protected, default after login)
+- `/roadmap` -- Skill Roadmap (protected)
+- `/profile` -- Profile (protected)
+
+---
+
+## Step 11: Color Theme Update
+
+Update CSS variables for a motivating blue/green palette:
+- Primary: blue tone for main actions
+- Accent/success: green for progress indicators and completed states
+- Keep clean, modern feel with good contrast
+
+---
+
+## Technical Details
+
+- All database queries use the Supabase JS client with proper typing
+- React Query (`@tanstack/react-query`) for data fetching, caching, and mutations
+- Level calculation is a pure utility function based on completion percentage
+- "Next step" recommendation is derived client-side by finding the first skill with status != 'completed' in track order
+- Form handling with react-hook-form + zod validation where needed
+- Toast notifications (sonner) for success/error feedback
+- Responsive design using Tailwind's responsive utilities throughout
