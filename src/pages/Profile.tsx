@@ -21,6 +21,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import PinchZoomPreview from "@/components/PinchZoomPreview";
 
 const STREAM_LABELS: Record<string, string> = { btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "Other" };
 const GOAL_LABELS: Record<string, string> = { job: "Job", higher_studies: "Higher Studies", competitive_exams: "Competitive Exams", skill_career: "Skill-based Career" };
@@ -671,33 +672,14 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Fullscreen Avatar Preview */}
+      {/* Fullscreen Avatar Preview with pinch-to-zoom */}
       <AnimatePresence>
         {avatarPreviewOpen && profile?.avatar_url && (
-          <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setAvatarPreviewOpen(false)}
-          >
-            <motion.img
-              src={profile.avatar_url}
-              alt={profile.display_name || "Profile picture"}
-              className="max-w-[90vw] max-h-[90vh] rounded-2xl object-contain"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            />
-            <button
-              onClick={() => setAvatarPreviewOpen(false)}
-              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </motion.div>
+          <PinchZoomPreview
+            src={profile.avatar_url}
+            alt={profile.display_name || "Profile picture"}
+            onClose={() => setAvatarPreviewOpen(false)}
+          />
         )}
       </AnimatePresence>
 
