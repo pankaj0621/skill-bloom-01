@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useConversations } from "@/hooks/useMessages";
 import { AnimatePresence, motion } from "framer-motion";
+import ChatPopup from "@/components/ChatPopup";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -38,6 +41,8 @@ const Navbar = () => {
   const location = useLocation();
   const { resolvedTheme, setTheme } = useTheme();
   const { pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
+  const { totalUnread } = useConversations(user?.id);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useRealtimeNotifications(user?.id);
 
@@ -79,6 +84,10 @@ const Navbar = () => {
               </Link>
             ))}
           </nav>
+          <Button variant="ghost" size="icon" className="relative mr-1" onClick={() => setChatOpen(true)}>
+            <MessageCircle className="h-4 w-4" />
+            {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
+          </Button>
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
             {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -94,6 +103,10 @@ const Navbar = () => {
         <div className="flex h-12 items-center justify-between px-3">
           <Link to="/dashboard" className="font-bold text-base">📊 SPCT</Link>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setChatOpen(true)}>
+              <MessageCircle className="h-4 w-4" />
+              {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
               {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
@@ -136,6 +149,9 @@ const Navbar = () => {
           })}
         </div>
       </nav>
+
+      {/* Chat Popup */}
+      <ChatPopup open={chatOpen} onOpenChange={setChatOpen} />
     </>
   );
 };
