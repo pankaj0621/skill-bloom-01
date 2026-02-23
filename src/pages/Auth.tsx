@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Wand2, Loader2 } from "lucide-react";
+import appIcon from "@/assets/app-icon-512.png";
 
 const Auth = () => {
   const { user } = useAuth();
@@ -97,7 +98,8 @@ const Auth = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <CardTitle className="text-2xl font-bold">📊 Student Progress & Career Tracker</CardTitle>
+              <img src={appIcon} alt="SPCT" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" />
+              <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
             </motion.div>
             <CardDescription>
               {isLogin ? "Sign in to track your progress" : "Create an account to get started"}
