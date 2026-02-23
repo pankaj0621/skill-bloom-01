@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
   { to: "/peers", label: "Peers", icon: Users },
-  { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/leaderboard", label: "Board", icon: Trophy },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
@@ -36,7 +36,6 @@ const Navbar = () => {
     refetchInterval: 15000,
   });
 
-  // Global realtime listener for incoming messages
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -47,9 +46,7 @@ const Navbar = () => {
         (payload) => {
           const msg = payload.new as any;
           if (msg.to_user_id === user.id) {
-            // Play notification sound
             try {
-              const audio = new Audio("data:audio/wav;base64,UklGRl9vT19teleXBEYXRh");
               const ctx = new AudioContext();
               const osc = ctx.createOscillator();
               const gain = ctx.createGain();
@@ -78,39 +75,68 @@ const Navbar = () => {
   }, [user, queryClient]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
-        <Link to="/dashboard" className="font-bold text-lg mr-8">
-          🎯 SkillTracker
-        </Link>
-        <nav className="flex items-center gap-1 flex-1">
+    <>
+      {/* Desktop top navbar */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
+        <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
+          <Link to="/dashboard" className="font-bold text-lg mr-8">
+            🎯 SkillTracker
+          </Link>
+          <nav className="flex items-center gap-1 flex-1">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className={cn(
+                  "relative flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location.pathname === to
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+                {to === "/peers" && !!unreadCount && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </nav>
+          <Button variant="ghost" size="sm" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      </header>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden safe-area-bottom">
+        <div className="flex items-center justify-around h-14">
           {navItems.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}
               className={cn(
-                "relative flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] font-medium transition-colors",
                 location.pathname === to
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-primary"
+                  : "text-muted-foreground"
               )}
             >
-              <Icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{label}</span>
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
               {to === "/peers" && !!unreadCount && unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                <span className="absolute top-1 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </Link>
           ))}
-        </nav>
-        <Button variant="ghost" size="sm" onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Sign Out</span>
-        </Button>
-      </div>
-    </header>
+        </div>
+      </nav>
+    </>
   );
 };
 
