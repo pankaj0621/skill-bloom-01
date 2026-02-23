@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import confetti from "canvas-confetti";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -111,7 +112,34 @@ const Leaderboard = () => {
 
   // Find current user's rank
   const myRank = leaderboard?.findIndex((e) => e.id === user?.id) ?? -1;
+  const confettiFired = useRef(false);
 
+  useEffect(() => {
+    if (myRank >= 0 && myRank < 3 && !confettiFired.current) {
+      confettiFired.current = true;
+      const duration = 2000;
+      const end = Date.now() + duration;
+      const frame = () => {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.7 },
+          colors: ["#FFD700", "#C0C0C0", "#CD7F32"],
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.7 },
+          colors: ["#FFD700", "#C0C0C0", "#CD7F32"],
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    }
+    if (myRank < 0 || myRank >= 3) confettiFired.current = false;
+  }, [myRank]);
   return (
     <Layout>
       <div className="space-y-6">
