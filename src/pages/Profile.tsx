@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,12 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { getLevel, getLevelColor } from "@/lib/levels";
-import { User, Plus, X, BookOpen, Camera, Loader2, Trash2 } from "lucide-react";
+import { User, Plus, X, BookOpen, Camera, Loader2, Trash2, Check, Pencil } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,6 +43,13 @@ const Profile = () => {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
+
+  // Username change state
+  const [usernameDialogOpen, setUsernameDialogOpen] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -160,6 +167,49 @@ const Profile = () => {
       return data;
     },
     enabled: !!user,
+  });
+  const checkUsername = useCallback(async (value: string) => {
+    const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    setNewUsername(clean);
+    if (clean.length < 3) {
+      setUsernameStatus(clean.length > 0 ? "invalid" : "idle");
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+    if (clean === (profile as any)?.username) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    if (usernameTimer.current) clearTimeout(usernameTimer.current);
+    usernameTimer.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", clean)
+        .maybeSingle();
+      setUsernameStatus(data ? "taken" : "available");
+    }, 400);
+  }, [profile]);
+
+  const saveUsername = useMutation({
+    mutationFn: async () => {
+      if (usernameStatus !== "available") throw new Error("Username not available");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ username: newUsername, username_changes: ((profile as any)?.username_changes || 0) + 1 })
+        .eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      setUsernameDialogOpen(false);
+      toast.success("Username updated!");
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to update username"),
   });
 
   const { data: progress, isLoading: progressLoading } = useQuery({
@@ -401,20 +451,40 @@ const Profile = () => {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
                   >
-                    {(profile as any)?.username_changes === 0 && (
-                      <div className="space-y-2">
-                        <Label>Username <span className="text-xs text-muted-foreground">(can only be changed once)</span></Label>
-                        <div className="relative">
+                    <div className="space-y-2">
+                      <Label>Username</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
                           <Input
-                            value={(profile as any)?.username || ""}
+                            value={(profile as any)?.username || "Not set"}
                             disabled
                             className="pl-8 opacity-60"
                           />
                         </div>
-                        <p className="text-[11px] text-muted-foreground">Username change coming soon from settings</p>
+                        {((profile as any)?.username_changes ?? 0) < 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 flex-shrink-0"
+                            onClick={() => {
+                              setNewUsername((profile as any)?.username || "");
+                              setUsernameStatus("idle");
+                              setUsernameDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Change
+                          </Button>
+                        )}
                       </div>
-                    )}
+                      {((profile as any)?.username_changes ?? 0) >= 1 ? (
+                        <p className="text-[11px] text-muted-foreground">Username has already been changed once (limit reached)</p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground">You can change your username once</p>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       <Label>Display Name</Label>
                       <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
@@ -747,6 +817,49 @@ const Profile = () => {
               </Button>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Username Change Dialog */}
+      <Dialog open={usernameDialogOpen} onOpenChange={setUsernameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Username</DialogTitle>
+            <DialogDescription>Choose a new username. You can only change it once.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+              <Input
+                value={newUsername}
+                onChange={(e) => checkUsername(e.target.value)}
+                placeholder="new_username"
+                className="pl-8 pr-10 h-11"
+                maxLength={30}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {usernameStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" />}
+                {(usernameStatus === "taken" || usernameStatus === "invalid") && <X className="h-4 w-4 text-destructive" />}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {usernameStatus === "idle" && "3-30 characters, lowercase letters, numbers, and underscores"}
+              {usernameStatus === "checking" && "Checking availability..."}
+              {usernameStatus === "available" && <span className="text-green-500">✓ Username is available!</span>}
+              {usernameStatus === "taken" && <span className="text-destructive">✗ Username is already taken</span>}
+              {usernameStatus === "invalid" && <span className="text-destructive">✗ Min 3 chars, only a-z, 0-9, _</span>}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUsernameDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => saveUsername.mutate()}
+              disabled={usernameStatus !== "available" || saveUsername.isPending}
+            >
+              {saveUsername.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Save Username
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Layout>
