@@ -362,6 +362,12 @@ const Dashboard = () => {
                 </h2>
                 <p className="text-sm text-muted-foreground -mt-2">{summaryLine}</p>
 
+                <motion.div
+                  initial={{ boxShadow: "0 0 0 0 hsl(var(--primary) / 0)" }}
+                  animate={{ boxShadow: ["0 0 0 0 hsl(var(--primary) / 0)", "0 0 20px 4px hsl(var(--primary) / 0.25)", "0 0 0 0 hsl(var(--primary) / 0)"] }}
+                  transition={{ duration: 1.5, delay: 0.6, ease: "easeInOut" }}
+                  className="rounded-lg"
+                >
                 <Card className="border-primary/30 bg-primary/5 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
@@ -380,6 +386,7 @@ const Dashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </motion.div>
 
                 {optionalActions.length > 0 && (
                   <div className="grid gap-3 md:grid-cols-2">
