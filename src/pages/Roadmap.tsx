@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateStreak } from "@/lib/streak";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,8 +69,10 @@ const Roadmap = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      if (user) updateStreak(user.id);
       queryClient.invalidateQueries({ queryKey: ["user_progress_full"] });
       queryClient.invalidateQueries({ queryKey: ["user_progress"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });
 

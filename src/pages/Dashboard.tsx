@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
-import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info } from "lucide-react";
+import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const Dashboard = () => {
@@ -67,7 +67,7 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Here's your skill progress overview</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Overall Progress</CardTitle>
@@ -89,6 +89,22 @@ const Dashboard = () => {
                 {level === "Beginner" && "Keep going! Complete more skills to level up."}
                 {level === "Intermediate" && "Great progress! You're halfway there."}
                 {level === "Advanced" && "Outstanding! You're a skill master."}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Flame className={`h-6 w-6 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+                <span className="text-2xl font-bold">{profile?.current_streak ?? 0}</span>
+                <span className="text-sm text-muted-foreground">days</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Best: {profile?.longest_streak ?? 0} days
               </p>
             </CardContent>
           </Card>
