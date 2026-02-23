@@ -97,6 +97,20 @@ const Peers = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, selectedPeer, queryClient]);
 
+  // Mark messages as read when opening a conversation
+  useEffect(() => {
+    if (!user || !selectedPeer) return;
+    supabase
+      .from("peer_messages")
+      .update({ read: true })
+      .eq("to_user_id", user.id)
+      .eq("from_user_id", selectedPeer)
+      .eq("read", false)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
+      });
+  }, [user, selectedPeer, messages, queryClient]);
+
   const sendMessage = useMutation({
     mutationFn: async () => {
       if (!messageText.trim() || !selectedPeer) return;
