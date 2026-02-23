@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateStreak } from "@/lib/streak";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { syncUserLevel } from "@/lib/syncLevel";
+import type { Level } from "@/lib/levels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
+import LevelUpToast from "@/components/LevelUpToast";
 import { CheckCircle, Circle, Clock, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +34,7 @@ const Roadmap = () => {
   const queryClient = useQueryClient();
   const [newSkillName, setNewSkillName] = useState("");
   const [addingToTrack, setAddingToTrack] = useState<string | null>(null);
+  const { triggerLevelUp, LevelUpAnimation } = LevelUpToast();
 
   const { data: progress } = useQuery({
     queryKey: ["user_progress_full", user?.id],
@@ -74,7 +77,10 @@ const Roadmap = () => {
     onSuccess: async () => {
       if (user) {
         await updateStreak(user.id);
-        await syncUserLevel(user.id);
+        const { previousLevel, newLevel } = await syncUserLevel(user.id);
+        if (newLevel !== previousLevel) {
+          triggerLevelUp(newLevel as Level);
+        }
         const newBadges = await checkAndAwardBadges(user.id);
         if (newBadges.length > 0) {
           const { BADGES } = await import("@/lib/badges");
@@ -151,6 +157,7 @@ const Roadmap = () => {
 
   return (
     <Layout>
+      {LevelUpAnimation}
       <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
