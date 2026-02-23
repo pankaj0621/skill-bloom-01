@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Mail, Phone, Loader2 } from "lucide-react";
 
 const Auth = () => {
   const { user } = useAuth();
@@ -20,6 +23,12 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Phone OTP state
+  const [phone, setPhone] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [phoneLoading, setPhoneLoading] = useState(false);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -52,6 +61,69 @@ const Auth = () => {
     }
   };
 
+  const handleSendOTP = async () => {
+    const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
+    if (!/^\+[1-9]\d{6,14}$/.test(formattedPhone)) {
+      toast.error("Enter valid phone with country code (e.g., +919876543210)");
+      return;
+    }
+
+    setPhoneLoading(true);
+    try {
+      const res = await supabase.functions.invoke("send-otp", {
+        body: { phone: formattedPhone },
+      });
+
+      if (res.error) throw new Error(res.error.message || "Failed to send OTP");
+      if (res.data?.error) throw new Error(res.data.error);
+
+      setOtpSent(true);
+      setPhone(formattedPhone);
+      toast.success("OTP sent to your phone!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send OTP");
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter the 6-digit OTP");
+      return;
+    }
+
+    setPhoneLoading(true);
+    try {
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: { phone, code: otp },
+      });
+
+      if (res.error) throw new Error(res.error.message || "Verification failed");
+      if (res.data?.error) throw new Error(res.data.error);
+
+      if (res.data?.session) {
+        // Set the session in supabase client
+        await supabase.auth.setSession({
+          access_token: res.data.session.access_token,
+          refresh_token: res.data.session.refresh_token,
+        });
+
+        if (res.data.isNewUser) {
+          toast.success("Account created! Let's set up your profile.");
+          navigate("/onboarding");
+        } else {
+          toast.success("Welcome back!");
+          navigate("/dashboard");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Invalid OTP");
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div
@@ -74,53 +146,164 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <motion.div
-                  className="space-y-2"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Your name"
-                    required={!isLogin}
-                  />
-                </motion.div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                />
-              </div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
-                </Button>
-              </motion.div>
-            </form>
+            <Tabs defaultValue="email" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="email" className="gap-1.5 text-sm">
+                  <Mail className="h-3.5 w-3.5" />
+                  Email
+                </TabsTrigger>
+                <TabsTrigger value="phone" className="gap-1.5 text-sm">
+                  <Phone className="h-3.5 w-3.5" />
+                  Phone
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Email Tab */}
+              <TabsContent value="email">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {!isLogin && (
+                    <motion.div
+                      className="space-y-2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <Label htmlFor="displayName">Display Name</Label>
+                      <Input
+                        id="displayName"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="Your name"
+                        required={!isLogin}
+                      />
+                    </motion.div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
+                    </Button>
+                  </motion.div>
+                </form>
+
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                  >
+                    {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                  </button>
+                </div>
+              </TabsContent>
+
+              {/* Phone OTP Tab */}
+              <TabsContent value="phone">
+                <div className="space-y-4">
+                  {!otpSent ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="+919876543210"
+                        />
+                        <p className="text-xs text-muted-foreground">Include country code (e.g., +91 for India)</p>
+                      </div>
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={handleSendOTP}
+                          disabled={phoneLoading || !phone}
+                        >
+                          {phoneLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          {phoneLoading ? "Sending..." : "Send OTP"}
+                        </Button>
+                      </motion.div>
+                    </>
+                  ) : (
+                    <motion.div
+                      className="space-y-4"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="text-center space-y-1">
+                        <p className="text-sm font-medium">Enter OTP</p>
+                        <p className="text-xs text-muted-foreground">
+                          Sent to {phone}
+                        </p>
+                      </div>
+                      <div className="flex justify-center">
+                        <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={handleVerifyOTP}
+                          disabled={phoneLoading || otp.length !== 6}
+                        >
+                          {phoneLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          {phoneLoading ? "Verifying..." : "Verify & Sign In"}
+                        </Button>
+                      </motion.div>
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setOtp(""); }}
+                        className="w-full text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline text-center"
+                      >
+                        Change phone number
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendOTP}
+                        disabled={phoneLoading}
+                        className="w-full text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline text-center"
+                      >
+                        Resend OTP
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <div className="relative my-6">
               <Separator />
@@ -155,16 +338,6 @@ const Auth = () => {
                 Continue with Google
               </Button>
             </motion.div>
-
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            </div>
           </CardContent>
         </Card>
       </motion.div>
