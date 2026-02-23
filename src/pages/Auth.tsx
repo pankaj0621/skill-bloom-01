@@ -8,36 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Phone, Loader2, ChevronDown } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const COUNTRY_CODES = [
-  { code: "+91", country: "🇮🇳 India", short: "IN" },
-  { code: "+1", country: "🇺🇸 USA", short: "US" },
-  { code: "+44", country: "🇬🇧 UK", short: "GB" },
-  { code: "+61", country: "🇦🇺 Australia", short: "AU" },
-  { code: "+971", country: "🇦🇪 UAE", short: "AE" },
-  { code: "+966", country: "🇸🇦 Saudi Arabia", short: "SA" },
-  { code: "+65", country: "🇸🇬 Singapore", short: "SG" },
-  { code: "+60", country: "🇲🇾 Malaysia", short: "MY" },
-  { code: "+977", country: "🇳🇵 Nepal", short: "NP" },
-  { code: "+880", country: "🇧🇩 Bangladesh", short: "BD" },
-  { code: "+92", country: "🇵🇰 Pakistan", short: "PK" },
-  { code: "+94", country: "🇱🇰 Sri Lanka", short: "LK" },
-  { code: "+49", country: "🇩🇪 Germany", short: "DE" },
-  { code: "+33", country: "🇫🇷 France", short: "FR" },
-  { code: "+81", country: "🇯🇵 Japan", short: "JP" },
-  { code: "+86", country: "🇨🇳 China", short: "CN" },
-  { code: "+82", country: "🇰🇷 South Korea", short: "KR" },
-  { code: "+55", country: "🇧🇷 Brazil", short: "BR" },
-  { code: "+27", country: "🇿🇦 South Africa", short: "ZA" },
-  { code: "+234", country: "🇳🇬 Nigeria", short: "NG" },
-];
+import { Mail, Wand2, Loader2 } from "lucide-react";
 
 const Auth = () => {
   const { user } = useAuth();
@@ -48,12 +23,10 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Phone OTP state
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phone, setPhone] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [phoneLoading, setPhoneLoading] = useState(false);
+  // Magic Link state
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -86,67 +59,26 @@ const Auth = () => {
     }
   };
 
-  const handleSendOTP = async () => {
-    const rawDigits = phone.replace(/\D/g, "");
-    const formattedPhone = `${countryCode}${rawDigits}`;
-    if (!/^\+[1-9]\d{6,14}$/.test(formattedPhone)) {
-      toast.error("Enter a valid phone number");
+  const handleMagicLink = async () => {
+    if (!magicEmail) {
+      toast.error("Enter your email address");
       return;
     }
-
-    setPhoneLoading(true);
+    setMagicLoading(true);
     try {
-      const res = await supabase.functions.invoke("send-otp", {
-        body: { phone: formattedPhone },
+      const { error } = await supabase.auth.signInWithOtp({
+        email: magicEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
       });
-
-      if (res.error) throw new Error(res.error.message || "Failed to send OTP");
-      if (res.data?.error) throw new Error(res.data.error);
-
-      setOtpSent(true);
-      setPhone(formattedPhone);
-      toast.success("OTP sent to your phone!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP");
+      if (error) throw error;
+      setMagicSent(true);
+      toast.success("Magic link sent! Check your email inbox.");
+    } catch (error: any) {
+      toast.error(error.message);
     } finally {
-      setPhoneLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
-      toast.error("Enter the 6-digit OTP");
-      return;
-    }
-
-    setPhoneLoading(true);
-    try {
-      const res = await supabase.functions.invoke("verify-otp", {
-        body: { phone, code: otp },
-      });
-
-      if (res.error) throw new Error(res.error.message || "Verification failed");
-      if (res.data?.error) throw new Error(res.data.error);
-
-      if (res.data?.session) {
-        // Set the session in supabase client
-        await supabase.auth.setSession({
-          access_token: res.data.session.access_token,
-          refresh_token: res.data.session.refresh_token,
-        });
-
-        if (res.data.isNewUser) {
-          toast.success("Account created! Let's set up your profile.");
-          navigate("/onboarding");
-        } else {
-          toast.success("Welcome back!");
-          navigate("/dashboard");
-        }
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Invalid OTP");
-    } finally {
-      setPhoneLoading(false);
+      setMagicLoading(false);
     }
   };
 
@@ -178,9 +110,9 @@ const Auth = () => {
                   <Mail className="h-3.5 w-3.5" />
                   Email
                 </TabsTrigger>
-                <TabsTrigger value="phone" className="gap-1.5 text-sm">
-                  <Phone className="h-3.5 w-3.5" />
-                  Phone
+                <TabsTrigger value="magic" className="gap-1.5 text-sm">
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Magic Link
                 </TabsTrigger>
               </TabsList>
 
@@ -246,98 +178,62 @@ const Auth = () => {
                 </div>
               </TabsContent>
 
-              {/* Phone OTP Tab */}
-              <TabsContent value="phone">
+              {/* Magic Link Tab */}
+              <TabsContent value="magic">
                 <div className="space-y-4">
-                  {!otpSent ? (
+                  {!magicSent ? (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <div className="flex gap-2">
-                          <Select value={countryCode} onValueChange={setCountryCode}>
-                            <SelectTrigger className="w-[130px] shrink-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {COUNTRY_CODES.map((c) => (
-                                <SelectItem key={c.code} value={c.code}>
-                                  {c.country} ({c.code})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            id="phone"
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                            placeholder="9876543210"
-                            className="flex-1"
-                          />
-                        </div>
+                        <Label htmlFor="magicEmail">Email Address</Label>
+                        <Input
+                          id="magicEmail"
+                          type="email"
+                          value={magicEmail}
+                          onChange={(e) => setMagicEmail(e.target.value)}
+                          placeholder="you@example.com"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          We'll send a magic link to sign you in — no password needed!
+                        </p>
                       </div>
                       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <Button
                           type="button"
                           className="w-full"
-                          onClick={handleSendOTP}
-                          disabled={phoneLoading || !phone}
+                          onClick={handleMagicLink}
+                          disabled={magicLoading || !magicEmail}
                         >
-                          {phoneLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          {phoneLoading ? "Sending..." : "Send OTP"}
+                          {magicLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                          {magicLoading ? "Sending..." : "Send Magic Link"}
                         </Button>
                       </motion.div>
                     </>
                   ) : (
                     <motion.div
-                      className="space-y-4"
+                      className="space-y-4 text-center py-4"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <div className="text-center space-y-1">
-                        <p className="text-sm font-medium">Enter OTP</p>
-                        <p className="text-xs text-muted-foreground">
-                          Sent to {phone}
-                        </p>
-                      </div>
-                      <div className="flex justify-center">
-                        <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                          type="button"
-                          className="w-full"
-                          onClick={handleVerifyOTP}
-                          disabled={phoneLoading || otp.length !== 6}
-                        >
-                          {phoneLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          {phoneLoading ? "Verifying..." : "Verify & Sign In"}
-                        </Button>
-                      </motion.div>
+                      <div className="text-4xl">✉️</div>
+                      <p className="text-sm font-medium">Check your email!</p>
+                      <p className="text-xs text-muted-foreground">
+                        We sent a magic link to <span className="font-medium text-foreground">{magicEmail}</span>. Click the link to sign in.
+                      </p>
                       <button
                         type="button"
-                        onClick={() => { setOtpSent(false); setOtp(""); }}
-                        className="w-full text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline text-center"
+                        onClick={() => { setMagicSent(false); setMagicEmail(""); }}
+                        className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
                       >
-                        Change phone number
+                        Use a different email
                       </button>
                       <button
                         type="button"
-                        onClick={handleSendOTP}
-                        disabled={phoneLoading}
-                        className="w-full text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline text-center"
+                        onClick={handleMagicLink}
+                        disabled={magicLoading}
+                        className="block mx-auto text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
                       >
-                        Resend OTP
+                        Resend magic link
                       </button>
                     </motion.div>
                   )}
