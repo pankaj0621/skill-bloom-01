@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,16 @@ const Navbar = () => {
     },
     enabled: !!user,
     refetchInterval: 15000,
+  });
+
+  const { data: navProfile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("avatar_url").eq("id", user!.id).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -100,7 +111,14 @@ const Navbar = () => {
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                {to === "/profile" && navProfile?.avatar_url ? (
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={navProfile.avatar_url} alt="Profile" />
+                    <AvatarFallback><Icon className="h-3 w-3" /></AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
                 <span>{label}</span>
                 {to === "/peers" && !!unreadCount && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
@@ -156,7 +174,14 @@ const Navbar = () => {
                 {isActive && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
                 )}
-                <Icon className={cn("h-5 w-5", isActive && "scale-110")} style={{ transition: "transform 0.15s ease" }} />
+                {to === "/profile" && navProfile?.avatar_url ? (
+                  <Avatar className={cn("h-5 w-5", isActive && "ring-2 ring-primary")}>
+                    <AvatarImage src={navProfile.avatar_url} alt="Profile" />
+                    <AvatarFallback><Icon className="h-3 w-3" /></AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Icon className={cn("h-5 w-5", isActive && "scale-110")} style={{ transition: "transform 0.15s ease" }} />
+                )}
                 <span>{label}</span>
                 {to === "/peers" && !!unreadCount && unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>

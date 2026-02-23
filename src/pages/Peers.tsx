@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { User, Send, MessageCircle, ArrowLeft } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 
@@ -25,6 +26,7 @@ interface ConversationPreview {
   peerId: string;
   peerName: string;
   peerLevel: string;
+  peerAvatarUrl: string | null;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
@@ -100,7 +102,7 @@ const Peers = () => {
       if (peerIds.length === 0) return [];
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, computed_level")
+        .select("id, display_name, avatar_url, computed_level")
         .in("id", peerIds);
       if (error) throw error;
       return data;
@@ -120,6 +122,7 @@ const Peers = () => {
           peerId,
           peerName: profile?.display_name || "Student",
           peerLevel: profile?.computed_level || "Beginner",
+          peerAvatarUrl: profile?.avatar_url || null,
           lastMessage: msg.body,
           lastMessageTime: msg.created_at,
           unreadCount: 0,
@@ -304,9 +307,14 @@ const Peers = () => {
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        <Avatar className="h-9 w-9 flex-shrink-0">
+                          {conv.peerAvatarUrl ? (
+                            <AvatarImage src={conv.peerAvatarUrl} alt={conv.peerName} />
+                          ) : null}
+                          <AvatarFallback className="bg-muted">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium truncate">{conv.peerName}</p>
@@ -360,9 +368,14 @@ const Peers = () => {
                               className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.98]"
                               onClick={() => setSelectedPeer(senior.id)}
                             >
-                              <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                              </div>
+                              <Avatar className="h-9 w-9 flex-shrink-0">
+                                {senior.avatar_url ? (
+                                  <AvatarImage src={senior.avatar_url} alt={senior.display_name || "Student"} />
+                                ) : null}
+                                <AvatarFallback className="bg-muted">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                </AvatarFallback>
+                              </Avatar>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{senior.display_name || "Student"}</p>
                                 <div className="flex items-center gap-2">
@@ -388,9 +401,14 @@ const Peers = () => {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedPeer(null)}>
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      {(selectedProfile as any)?.avatar_url ? (
+                        <AvatarImage src={(selectedProfile as any).avatar_url} alt={selectedProfile?.display_name || "Student"} />
+                      ) : null}
+                      <AvatarFallback className="bg-muted">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0">
                       <p className="font-medium text-sm truncate">{selectedProfile?.display_name || "Student"}</p>
                       <Badge variant="outline" className={`text-[10px] ${getLevelColor((selectedProfile?.computed_level || "Beginner") as Level)}`}>

@@ -8,6 +8,7 @@ import { getLevelColor, type Level } from "@/lib/levels";
 import { Trophy, Medal, Award, User, BarChart3 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 
 const RankIcon = ({ rank }: { rank: number }) => {
@@ -108,9 +109,14 @@ const Leaderboard = () => {
                       >
                         <RankIcon rank={i} />
                       </motion.div>
-                      <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                      <Avatar className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
+                        {entry.avatar_url ? (
+                          <AvatarImage src={entry.avatar_url} alt={entry.display_name || "Student"} />
+                        ) : null}
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-medium text-sm sm:text-base">
