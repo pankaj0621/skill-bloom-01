@@ -38,6 +38,10 @@ const Profile = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "", stream: "", primary_goal: "" });
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -336,59 +340,38 @@ const Profile = () => {
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
                 >
-                  <Avatar className="h-16 w-16">
-                    {profile?.avatar_url ? (
-                      <AvatarImage src={profile.avatar_url} alt={profile.display_name || "Avatar"} />
-                    ) : null}
-                    <AvatarFallback className="bg-muted">
-                      <User className="h-8 w-8 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar || removingAvatar}
-                    className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
-                    aria-label="Change profile picture"
+                    className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ring-offset-2 ring-offset-background cursor-pointer select-none"
+                    onPointerDown={() => {
+                      didLongPress.current = false;
+                      longPressTimer.current = setTimeout(() => {
+                        didLongPress.current = true;
+                        setAvatarMenuOpen(true);
+                      }, 500);
+                    }}
+                    onPointerUp={() => {
+                      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                      if (!didLongPress.current && profile?.avatar_url) {
+                        setAvatarPreviewOpen(true);
+                      } else if (!didLongPress.current && !profile?.avatar_url) {
+                        setAvatarMenuOpen(true);
+                      }
+                    }}
+                    onPointerLeave={() => {
+                      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                    }}
+                    onContextMenu={(e) => e.preventDefault()}
                   >
-                    {uploadingAvatar ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Camera className="h-3.5 w-3.5" />
-                    )}
+                    <Avatar className="h-16 w-16 ring-2 ring-primary/20 hover:ring-primary/50 transition-all">
+                      {profile?.avatar_url ? (
+                        <AvatarImage src={profile.avatar_url} alt={profile.display_name || "Avatar"} />
+                      ) : null}
+                      <AvatarFallback className="bg-muted">
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
                   </button>
-                  {profile?.avatar_url && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          type="button"
-                          disabled={removingAvatar || uploadingAvatar}
-                          className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md hover:bg-destructive/90 transition-colors"
-                          aria-label="Remove profile picture"
-                        >
-                          {removingAvatar ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <X className="h-3 w-3" />
-                          )}
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remove profile picture?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Your profile picture will be removed and replaced with the default avatar.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleRemoveAvatar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -685,6 +668,86 @@ const Profile = () => {
               Save
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Avatar Preview */}
+      <AnimatePresence>
+        {avatarPreviewOpen && profile?.avatar_url && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setAvatarPreviewOpen(false)}
+          >
+            <motion.img
+              src={profile.avatar_url}
+              alt={profile.display_name || "Profile picture"}
+              className="max-w-[90vw] max-h-[90vh] rounded-2xl object-contain"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            />
+            <button
+              onClick={() => setAvatarPreviewOpen(false)}
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Long Press Avatar Menu */}
+      <Dialog open={avatarMenuOpen} onOpenChange={setAvatarMenuOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Profile Picture</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-12"
+              onClick={() => {
+                setAvatarMenuOpen(false);
+                fileInputRef.current?.click();
+              }}
+              disabled={uploadingAvatar}
+            >
+              <Camera className="h-4 w-4" />
+              {profile?.avatar_url ? "Change Photo" : "Upload Photo"}
+            </Button>
+            {profile?.avatar_url && (
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-12 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setAvatarMenuOpen(false);
+                  handleRemoveAvatar();
+                }}
+                disabled={removingAvatar}
+              >
+                {removingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Remove Photo
+              </Button>
+            )}
+            {profile?.avatar_url && (
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-12"
+                onClick={() => {
+                  setAvatarMenuOpen(false);
+                  setAvatarPreviewOpen(true);
+                }}
+              >
+                <User className="h-4 w-4" />
+                View Photo
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </Layout>
