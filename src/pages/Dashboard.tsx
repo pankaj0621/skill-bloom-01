@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
+import { AlertTriangle } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -130,6 +131,72 @@ const Dashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Priority Skills Analysis */}
+        {progress && progress.length > 0 && (() => {
+          // Analyze: group incomplete skills by track, find tracks with lowest completion %
+          const trackAnalysis = Object.entries(
+            progress.reduce((acc: Record<string, { name: string; total: number; completed: number; incompleteSkills: { name: string; status: string; difficulty: string; order: number }[] }>, p: any) => {
+              const trackId = p.skills?.track_id || "unknown";
+              const trackName = p.skills?.skill_tracks?.name || "Unknown";
+              if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, incompleteSkills: [] };
+              acc[trackId].total++;
+              if (p.status === "completed") acc[trackId].completed++;
+              else acc[trackId].incompleteSkills.push({
+                name: p.skills?.name || "",
+                status: p.status,
+                difficulty: p.skills?.difficulty_level || "beginner",
+                order: p.skills?.order || 0,
+              });
+              return acc;
+            }, {})
+          );
+
+          // Score each incomplete skill: lower completion % track + earlier order + not_started > in_progress
+          const scoredSkills = trackAnalysis.flatMap(([_, track]) => {
+            const trackPct = track.total > 0 ? track.completed / track.total : 0;
+            return track.incompleteSkills.map((skill) => ({
+              ...skill,
+              trackName: track.name,
+              trackPct,
+              score: (1 - trackPct) * 100 + (skill.status === "not_started" ? 20 : 0) + (100 - skill.order),
+              reason:
+                trackPct < 0.2
+                  ? `Your ${track.name} track is at ${Math.round(trackPct * 100)}% — needs the most attention`
+                  : skill.status === "not_started"
+                  ? `Not yet started — falling behind in ${track.name}`
+                  : `In progress but incomplete in your weakest track`,
+            }));
+          });
+
+          const prioritySkills = scoredSkills.sort((a, b) => b.score - a.score).slice(0, 2);
+
+          if (prioritySkills.length === 0) return null;
+
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Priority Skills
+              </h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                {prioritySkills.map((skill, i) => (
+                  <Card key={i} className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
+                    <CardContent className="p-4 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-amber-600 bg-amber-100 dark:bg-amber-900/40">Priority #{i + 1}</Badge>
+                        <Badge variant="outline" className="capitalize">{skill.difficulty}</Badge>
+                      </div>
+                      <p className="font-semibold">{skill.name}</p>
+                      <p className="text-sm text-muted-foreground">{skill.trackName}</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">{skill.reason}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {trackStats.some((t) => t.nextSkill) && (
           <div className="space-y-4">
