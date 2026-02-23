@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import ChatPopup from "@/components/ChatPopup";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -27,6 +28,7 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const [skillsOpen, setSkillsOpen] = useState(true);
   const [badgesOpen, setBadgesOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
 
   
 
@@ -145,6 +147,7 @@ const UserProfile = () => {
   }
 
   return (
+    <>
     <Layout>
       <div className="space-y-4 max-w-2xl mx-auto">
         {/* Back Button */}
@@ -231,7 +234,7 @@ const UserProfile = () => {
                       variant="outline"
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => navigate(`/peers?chat=${userId}`)}
+                      onClick={() => setChatOpen(true)}
                     >
                       <MessageCircle className="h-4 w-4" />
                       Message
@@ -363,6 +366,8 @@ const UserProfile = () => {
         </motion.div>
       </div>
     </Layout>
+    <ChatPopup open={chatOpen} onOpenChange={setChatOpen} initialPeerId={profile?.id} />
+    </>
   );
 };
 
