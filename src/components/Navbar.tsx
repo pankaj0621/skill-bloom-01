@@ -1,14 +1,12 @@
-import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { toast } from "sonner";
 import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { useNavbarBadges } from "@/hooks/useNavbarBadges";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,165 +17,36 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
-// On mobile bottom nav, show only 5 key items
 const mobileNavItems = navItems.filter(i => i.to !== "/leaderboard");
+
+const BadgeCount = ({ count, className }: { count: number; className?: string }) => (
+  <span className={cn("flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground", className)}>
+    {count > 99 ? "99+" : count}
+  </span>
+);
 
 const Navbar = () => {
   const { signOut, user } = useAuth();
   const location = useLocation();
-  const queryClient = useQueryClient();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const { unreadCount, pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
 
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  useRealtimeNotifications(user?.id);
+
+  const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
+
+  const getBadgeCount = (to: string) => {
+    if (to === "/peers") return unreadCount;
+    if (to === "/community") return pendingRequestCount;
+    return 0;
   };
-
-  const { data: unreadCount } = useQuery({
-    queryKey: ["unread_peer_messages", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("peer_messages")
-        .select("id")
-        .eq("to_user_id", user!.id)
-        .eq("read", false);
-      if (error) throw error;
-      return data?.length || 0;
-    },
-    enabled: !!user,
-    refetchInterval: 15000,
-  });
-
-  const { data: pendingRequestCount } = useQuery({
-    queryKey: ["pending_friend_requests_count", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("friendships")
-        .select("id")
-        .eq("addressee_id", user!.id)
-        .eq("status", "pending");
-      if (error) throw error;
-      return data?.length || 0;
-    },
-    enabled: !!user,
-  });
-
-  const { data: navProfile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("avatar_url").eq("id", user!.id).single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("global-peer-msgs")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "peer_messages" },
-        (payload) => {
-          const msg = payload.new as any;
-          if (msg.to_user_id === user.id) {
-            try {
-              const ctx = new AudioContext();
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.frequency.value = 800;
-              gain.gain.value = 0.15;
-              osc.start();
-              osc.stop(ctx.currentTime + 0.15);
-            } catch {}
-
-            toast("New message", {
-              description: msg.body?.slice(0, 60) || "You have a new message",
-              action: {
-                label: "View",
-                onClick: () => { window.location.href = "/peers"; },
-              },
-            });
-
-            queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "friendships" },
-        (payload) => {
-          const row = payload.new as any;
-          if (row.addressee_id === user.id && row.status === "pending") {
-            try {
-              const ctx = new AudioContext();
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.frequency.value = 600;
-              gain.gain.value = 0.12;
-              osc.start();
-              osc.stop(ctx.currentTime + 0.12);
-              setTimeout(() => {
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.frequency.value = 900;
-                gain2.gain.value = 0.12;
-                osc2.start();
-                osc2.stop(ctx.currentTime + 0.12);
-              }, 130);
-            } catch {}
-
-            toast("New friend request", {
-              description: "Someone wants to connect with you!",
-              action: {
-                label: "View",
-                onClick: () => { window.location.href = "/community"; },
-              },
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
-          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
-          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "friendships" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
-          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
-          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
-          queryClient.invalidateQueries({ queryKey: ["friendship"] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "friendships" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
-          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
-          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
-          queryClient.invalidateQueries({ queryKey: ["friendship"] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
 
   return (
     <>
       {/* Desktop top navbar */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
         <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
-          <Link to="/dashboard" className="font-bold text-lg mr-8">
-            📊 SPCT
-          </Link>
+          <Link to="/dashboard" className="font-bold text-lg mr-8">📊 SPCT</Link>
           <nav className="flex items-center gap-1 flex-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
@@ -199,16 +68,7 @@ const Navbar = () => {
                   <Icon className="h-4 w-4" />
                 )}
                 <span>{label}</span>
-                {to === "/peers" && !!unreadCount && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {to === "/community" && !!pendingRequestCount && pendingRequestCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
-                  </span>
-                )}
+                {getBadgeCount(to) > 0 && <BadgeCount count={getBadgeCount(to)} className="absolute -top-1 -right-1" />}
               </Link>
             ))}
           </nav>
@@ -222,12 +82,10 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Mobile top bar - logo + theme + sign out */}
+      {/* Mobile top bar */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
         <div className="flex h-12 items-center justify-between px-3">
-          <Link to="/dashboard" className="font-bold text-base">
-            📊 SPCT
-          </Link>
+          <Link to="/dashboard" className="font-bold text-base">📊 SPCT</Link>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
               {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -250,9 +108,7 @@ const Navbar = () => {
                 to={to}
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[56px] text-[11px] font-medium transition-colors active:bg-muted/50",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 {isActive && (
@@ -267,16 +123,7 @@ const Navbar = () => {
                   <Icon className={cn("h-5 w-5", isActive && "scale-110")} style={{ transition: "transform 0.15s ease" }} />
                 )}
                 <span>{label}</span>
-                {to === "/peers" && !!unreadCount && unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                {to === "/community" && !!pendingRequestCount && pendingRequestCount > 0 && (
-                  <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>
-                    {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
-                  </span>
-                )}
+                {getBadgeCount(to) > 0 && <BadgeCount count={getBadgeCount(to)} className="absolute top-1.5 right-1/4" data-small-target />}
               </Link>
             );
           })}
