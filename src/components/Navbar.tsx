@@ -19,6 +19,9 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
+// On mobile bottom nav, show only 5 key items
+const mobileNavItems = navItems.filter(i => i.to !== "/leaderboard");
+
 const Navbar = () => {
   const { signOut, user } = useAuth();
   const location = useLocation();
@@ -159,7 +162,7 @@ const Navbar = () => {
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden safe-bottom">
         <div className="flex items-stretch justify-around" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {navItems.map(({ to, label, icon: Icon }) => {
+          {mobileNavItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to;
             return (
               <Link
