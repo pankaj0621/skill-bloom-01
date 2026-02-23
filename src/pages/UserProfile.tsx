@@ -28,46 +28,58 @@ const UserProfile = () => {
   const [skillsOpen, setSkillsOpen] = useState(true);
   const [badgesOpen, setBadgesOpen] = useState(true);
 
-  const isOwnProfile = user?.id === userId;
+  
+
+  // Support both UUID and username in URL
+  const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["public_profile", userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, stream, college, primary_goal, bio, current_streak")
-        .eq("id", userId!)
-        .single();
+        .select("id, display_name, avatar_url, computed_level, stream, college, primary_goal, bio, current_streak, username");
+
+      if (isUuid) {
+        query = query.eq("id", userId!);
+      } else {
+        query = query.eq("username", userId!);
+      }
+
+      const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
     enabled: !!userId,
   });
 
+  const profileId = profile?.id;
+  const isOwnProfile = user?.id === profileId;
+
   const { data: skillProgress } = useQuery({
-    queryKey: ["public_skill_progress", userId],
+    queryKey: ["public_skill_progress", profileId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_skill_progress")
         .select("*, skills(name, skill_tracks(id, name))")
-        .eq("user_id", userId!);
+        .eq("user_id", profileId!);
       if (error) throw error;
       return data;
     },
-    enabled: !!userId,
+    enabled: !!profileId,
   });
 
   const { data: userBadges } = useQuery({
-    queryKey: ["public_badges", userId],
+    queryKey: ["public_badges", profileId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_badges")
         .select("*")
-        .eq("user_id", userId!);
+        .eq("user_id", profileId!);
       if (error) throw error;
       return data;
     },
-    enabled: !!userId,
+    enabled: !!profileId,
   });
 
   const {
@@ -78,7 +90,7 @@ const UserProfile = () => {
     acceptRequest,
     rejectRequest,
     removeFriend,
-  } = useFriendship(user?.id, userId);
+  } = useFriendship(user?.id, profileId);
 
   const isFriend = friendStatus === "accepted";
 
@@ -178,6 +190,9 @@ const UserProfile = () => {
                       {profile.computed_level}
                     </Badge>
                   </div>
+                  {(profile as any).username && (
+                    <p className="text-sm text-muted-foreground">@{(profile as any).username}</p>
+                  )}
 
                   {profile.bio && <p className="text-sm text-muted-foreground">{profile.bio}</p>}
 

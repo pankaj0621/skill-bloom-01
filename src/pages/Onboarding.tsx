@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { Check, X, Loader2 } from "lucide-react";
 
 const STREAMS = [
   { value: "btech", label: "BTech" },
@@ -30,11 +32,34 @@ const Onboarding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [username, setUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<string>("junior");
   const [stream, setStream] = useState<string>("");
   const [primaryGoal, setPrimaryGoal] = useState<string>("");
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const checkUsername = useCallback(async (value: string) => {
+    const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    setUsername(clean);
+    if (clean.length < 3) {
+      setUsernameStatus(clean.length > 0 ? "invalid" : "idle");
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+    setUsernameStatus("checking");
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", clean)
+      .maybeSingle();
+    setUsernameStatus(data ? "taken" : "available");
+  }, []);
 
   const { data: tracks } = useQuery({
     queryKey: ["skill_tracks", stream],
@@ -57,6 +82,7 @@ const Onboarding = () => {
   };
 
   const handleSubmit = async () => {
+    if (!username || usernameStatus !== "available") { toast.error("Please choose a valid username."); return; }
     if (!stream) { toast.error("Please select your stream."); return; }
     if (!primaryGoal) { toast.error("Please select your primary goal."); return; }
     if (selectedTracks.length === 0) { toast.error("Please select at least one skill track."); return; }
@@ -64,7 +90,13 @@ const Onboarding = () => {
     try {
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ role, stream, primary_goal: primaryGoal })
+        .update({
+          username,
+          display_name: displayName.trim() || username,
+          role,
+          stream,
+          primary_goal: primaryGoal,
+        })
         .eq("id", user!.id);
       if (profileError) throw profileError;
 
@@ -95,7 +127,7 @@ const Onboarding = () => {
     }
   };
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -139,6 +171,67 @@ const Onboarding = () => {
                   transition={{ duration: 0.3 }}
                 >
                   <div className="space-y-3">
+                    <Label className="text-base font-semibold">Choose your username</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+                      <Input
+                        value={username}
+                        onChange={(e) => checkUsername(e.target.value)}
+                        placeholder="your_username"
+                        className="pl-8 pr-10 h-11"
+                        maxLength={30}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {usernameStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" />}
+                        {(usernameStatus === "taken" || usernameStatus === "invalid") && <X className="h-4 w-4 text-destructive" />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {usernameStatus === "idle" && "3-30 characters, lowercase letters, numbers, and underscores"}
+                      {usernameStatus === "checking" && "Checking availability..."}
+                      {usernameStatus === "available" && <span className="text-green-500">✓ Username is available!</span>}
+                      {usernameStatus === "taken" && <span className="text-destructive">✗ Username is already taken</span>}
+                      {usernameStatus === "invalid" && <span className="text-destructive">✗ Min 3 chars, only a-z, 0-9, _</span>}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Display Name <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+                    <Input
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Your name"
+                      className="h-11"
+                      maxLength={50}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      if (!username || usernameStatus !== "available") {
+                        toast.error("Please choose a valid, available username.");
+                        return;
+                      }
+                      setStep(2);
+                    }}
+                    className="w-full"
+                  >
+                    Next →
+                  </Button>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  className="space-y-5"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="space-y-3">
                     <Label className="text-base font-semibold">I am a...</Label>
                     <RadioGroup value={role} onValueChange={setRole} className="flex gap-4">
                       <div className="flex items-center space-x-2">
@@ -173,15 +266,16 @@ const Onboarding = () => {
                     </div>
                   </div>
 
-                  <Button onClick={() => { if (!stream) { toast.error("Please select your stream."); return; } setSelectedTracks([]); setStep(2); }} className="w-full">
-                    Next →
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">← Back</Button>
+                    <Button onClick={() => { if (!stream) { toast.error("Please select your stream."); return; } setSelectedTracks([]); setStep(3); }} className="flex-1">Next →</Button>
+                  </div>
                 </motion.div>
               )}
 
-              {step === 2 && (
+              {step === 3 && (
                 <motion.div
-                  key="step2"
+                  key="step3"
                   className="space-y-5"
                   initial={{ opacity: 0, x: 30 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -211,15 +305,15 @@ const Onboarding = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">← Back</Button>
-                    <Button onClick={() => { if (!primaryGoal) { toast.error("Please select your goal."); return; } setStep(3); }} className="flex-1">Next →</Button>
+                    <Button variant="outline" onClick={() => setStep(2)} className="flex-1">← Back</Button>
+                    <Button onClick={() => { if (!primaryGoal) { toast.error("Please select your goal."); return; } setStep(4); }} className="flex-1">Next →</Button>
                   </div>
                 </motion.div>
               )}
 
-              {step === 3 && (
+              {step === 4 && (
                 <motion.div
-                  key="step3"
+                  key="step4"
                   className="space-y-5"
                   initial={{ opacity: 0, x: 30 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -257,7 +351,7 @@ const Onboarding = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(2)} className="flex-1">← Back</Button>
+                    <Button variant="outline" onClick={() => setStep(3)} className="flex-1">← Back</Button>
                     <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button onClick={handleSubmit} className="w-full" disabled={loading}>
                         {loading ? "Setting up..." : "Get Started 🎉"}

@@ -32,9 +32,9 @@ const Community = () => {
       const q = searchQuery.trim().toLowerCase();
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, stream, college")
+        .select("id, display_name, avatar_url, computed_level, stream, college, username")
         .neq("id", user!.id)
-        .or(`display_name.ilike.%${q}%,stream.ilike.%${q}%,college.ilike.%${q}%,computed_level.ilike.%${q}%`)
+        .or(`display_name.ilike.%${q}%,username.ilike.%${q}%,stream.ilike.%${q}%,college.ilike.%${q}%,computed_level.ilike.%${q}%`)
         .limit(20);
       if (error) throw error;
       return data || [];
@@ -65,7 +65,7 @@ const Community = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, stream, level, or college..."
+              placeholder="Search by name, username, stream, level..."
               className="pl-9 h-11"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -223,6 +223,7 @@ interface UserRowProps {
     computed_level: string;
     stream?: string | null;
     college?: string | null;
+    username?: string | null;
   };
   onClick: () => void;
   showBadge?: boolean;
@@ -242,7 +243,8 @@ const UserRow = ({ user, onClick, showBadge, isRequest }: UserRowProps) => (
     </Avatar>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-1.5">
-        <p className="text-sm font-medium truncate">{user.display_name || "Student"}</p>
+      <p className="text-sm font-medium truncate">{user.display_name || "Student"}</p>
+        {user.username && <span className="text-[11px] text-muted-foreground">@{user.username}</span>}
         <Badge variant="outline" className={`text-[10px] ${getLevelColor(user.computed_level as Level)}`}>
           {user.computed_level}
         </Badge>
