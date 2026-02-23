@@ -103,6 +103,7 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          stream: string | null
         }
         Insert: {
           created_at?: string
@@ -111,6 +112,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          stream?: string | null
         }
         Update: {
           created_at?: string
@@ -119,11 +121,13 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          stream?: string | null
         }
         Relationships: []
       }
       skills: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           difficulty_level: string | null
@@ -133,6 +137,7 @@ export type Database = {
           track_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           difficulty_level?: string | null
@@ -142,6 +147,7 @@ export type Database = {
           track_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           difficulty_level?: string | null

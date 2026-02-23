@@ -42,7 +42,7 @@ const Roadmap = () => {
         .eq("user_id", user!.id)
         .order("skills(order)");
       if (error) throw error;
-      return data;
+      return data as any[];
     },
     enabled: !!user,
   });
@@ -125,7 +125,7 @@ const Roadmap = () => {
     return acc;
   }, {}) || {};
 
-  const trackList = Object.values(tracks);
+  const trackList: { name: string; trackId: string; skills: any[] }[] = Object.values(tracks);
 
   const cycleStatus = (current: string) => {
     if (current === "not_started") return "in_progress";
@@ -178,86 +178,114 @@ const Roadmap = () => {
 
           {trackList.map((track) => {
             const trackCustom = customSkills?.filter((cs: any) => cs.track_id === track.trackId) || [];
+            
+            // Group skills by category
+            const sorted = track.skills.sort((a: any, b: any) => (a.skills?.order || 0) - (b.skills?.order || 0));
+            const categories: Record<string, any[]> = {};
+            sorted.forEach((p: any) => {
+              const cat = p.skills?.category || "General";
+              if (!categories[cat]) categories[cat] = [];
+              categories[cat].push(p);
+            });
+            const categoryList = Object.entries(categories);
+
+            let globalIndex = 0;
+
             return (
-              <TabsContent key={track.trackId} value={track.trackId} className="space-y-3">
-                {track.skills
-                  .sort((a: any, b: any) => (a.skills?.order || 0) - (b.skills?.order || 0))
-                  .map((p: any, i: number) => {
-                    const config = statusConfig[p.status as keyof typeof statusConfig];
-                    const Icon = config.icon;
-                    return (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
-                      >
-                        <Card className="hover:shadow-sm transition-shadow">
-                          <CardContent className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <motion.button
-                                onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
-                                className={`${config.color}`}
-                                whileHover={{ scale: 1.2 }}
-                                whileTap={{ scale: 0.9, rotate: 15 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                              >
-                                <Icon className="h-5 w-5" />
-                              </motion.button>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{p.skills?.name}</span>
-                                  {p.skills?.difficulty_level && (
-                                    <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
-                                      {p.skills.difficulty_level}
-                                    </Badge>
-                                  )}
+              <TabsContent key={track.trackId} value={track.trackId} className="space-y-5">
+                {categoryList.map(([category, skills]) => (
+                  <motion.div
+                    key={category}
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">{category}</h3>
+                    {skills.map((p: any) => {
+                      const config = statusConfig[p.status as keyof typeof statusConfig];
+                      const Icon = config.icon;
+                      const idx = globalIndex++;
+                      return (
+                        <motion.div
+                          key={p.id}
+                          initial={{ opacity: 0, x: -16 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: idx * 0.04 }}
+                        >
+                          <Card className="hover:shadow-sm transition-shadow">
+                            <CardContent className="p-4 flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                <motion.button
+                                  onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
+                                  className={`${config.color}`}
+                                  whileHover={{ scale: 1.2 }}
+                                  whileTap={{ scale: 0.9, rotate: 15 }}
+                                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                                >
+                                  <Icon className="h-5 w-5" />
+                                </motion.button>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{p.skills?.name}</span>
+                                    {p.skills?.difficulty_level && (
+                                      <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
+                                        {p.skills.difficulty_level}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{p.skills?.description}</p>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{p.skills?.description}</p>
                               </div>
-                            </div>
-                            <Badge variant="outline" className={config.color}>
-                              {config.label}
-                            </Badge>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
+                              <Badge variant="outline" className={config.color}>
+                                {config.label}
+                              </Badge>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                ))}
 
                 {/* Custom skills */}
-                {trackCustom.map((cs: any, i: number) => {
-                  const config = statusConfig[cs.status as keyof typeof statusConfig];
-                  const Icon = config.icon;
-                  return (
-                    <motion.div
-                      key={cs.id}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: (track.skills.length + i) * 0.05 }}
-                    >
-                      <Card className="border-dashed hover:shadow-sm transition-shadow">
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <motion.button
-                              onClick={() => updateCustomStatus.mutate({ id: cs.id, status: cycleStatus(cs.status) })}
-                              className={config.color}
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9, rotate: 15 }}
-                            >
-                              <Icon className="h-5 w-5" />
-                            </motion.button>
-                            <span className="font-medium">{cs.name}</span>
-                            <Badge variant="outline">Custom</Badge>
-                          </div>
-                          <Badge variant="outline" className={config.color}>
-                            {config.label}
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
+                {trackCustom.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">Custom</h3>
+                    {trackCustom.map((cs: any, i: number) => {
+                      const config = statusConfig[cs.status as keyof typeof statusConfig];
+                      const Icon = config.icon;
+                      return (
+                        <motion.div
+                          key={cs.id}
+                          initial={{ opacity: 0, x: -16 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: (globalIndex + i) * 0.04 }}
+                        >
+                          <Card className="border-dashed hover:shadow-sm transition-shadow">
+                            <CardContent className="p-4 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <motion.button
+                                  onClick={() => updateCustomStatus.mutate({ id: cs.id, status: cycleStatus(cs.status) })}
+                                  className={config.color}
+                                  whileHover={{ scale: 1.2 }}
+                                  whileTap={{ scale: 0.9, rotate: 15 }}
+                                >
+                                  <Icon className="h-5 w-5" />
+                                </motion.button>
+                                <span className="font-medium">{cs.name}</span>
+                                <Badge variant="outline">Custom</Badge>
+                              </div>
+                              <Badge variant="outline" className={config.color}>
+                                {config.label}
+                              </Badge>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Add custom skill */}
                 <AnimatePresence mode="wait">
