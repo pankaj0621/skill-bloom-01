@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PageTransition from "@/components/PageTransition";
 import Auth from "./pages/Auth";
@@ -59,6 +60,7 @@ const App = () => {
             <BrowserRouter>
               <AnimatedRoutes />
             </BrowserRouter>
+            <SpeedInsights />
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
