@@ -13,6 +13,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Flame as FlameIcon } from "lucide-react";
+
+const PODIUM_COLORS = [
+  { ring: "ring-yellow-400", bg: "bg-yellow-400/10", text: "text-yellow-500", bar: "bg-gradient-to-t from-yellow-500/80 to-yellow-300/60" },
+  { ring: "ring-slate-400", bg: "bg-slate-400/10", text: "text-slate-400", bar: "bg-gradient-to-t from-slate-400/80 to-slate-300/60" },
+  { ring: "ring-amber-600", bg: "bg-amber-600/10", text: "text-amber-600", bar: "bg-gradient-to-t from-amber-700/80 to-amber-500/60" },
+];
+
+const PODIUM_ORDER = [1, 0, 2]; // silver, gold, bronze (display order)
+const PODIUM_HEIGHTS = ["h-20", "h-28", "h-16"];
 
 type TimeFilter = "all" | "monthly" | "weekly";
 
@@ -176,6 +186,92 @@ const Leaderboard = () => {
             </button>
           ))}
         </motion.div>
+
+        {/* Podium Top 3 */}
+        <AnimatePresence mode="wait">
+          {!isLoading && leaderboard && leaderboard.length >= 3 && (
+            <motion.div
+              key={`podium-${filter}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex items-end justify-center gap-3 sm:gap-6 py-4"
+            >
+              {PODIUM_ORDER.map((rank, displayIdx) => {
+                const entry = leaderboard[rank];
+                if (!entry) return null;
+                const color = PODIUM_COLORS[rank];
+                const isMe = entry.id === user?.id;
+                return (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: displayIdx * 0.12 + 0.2, type: "spring", stiffness: 260, damping: 22 }}
+                    className="flex flex-col items-center cursor-pointer group"
+                    onClick={() => navigate(`/user/${entry.id}`)}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.08 }}
+                      className="relative mb-2"
+                    >
+                      <Avatar className={cn(
+                        "ring-[3px] transition-shadow group-hover:shadow-lg",
+                        color.ring,
+                        rank === 0 ? "h-16 w-16 sm:h-20 sm:w-20" : "h-12 w-12 sm:h-16 sm:w-16"
+                      )}>
+                        {entry.avatar_url ? (
+                          <AvatarImage src={entry.avatar_url} alt={entry.display_name || "Student"} />
+                        ) : null}
+                        <AvatarFallback className="bg-muted">
+                          <User className={rank === 0 ? "h-6 w-6" : "h-4 w-4"} />
+                        </AvatarFallback>
+                      </Avatar>
+                      {rank === 0 && (
+                        <motion.span
+                          className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl"
+                          initial={{ scale: 0, rotate: -20 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+                        >
+                          👑
+                        </motion.span>
+                      )}
+                    </motion.div>
+                    <p className={cn(
+                      "font-semibold text-xs sm:text-sm text-center truncate max-w-[80px] sm:max-w-[100px]",
+                      isMe && "text-primary"
+                    )}>
+                      {entry.display_name || "Student"}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className={cn("text-xs font-bold", color.text)}>{entry.completedSkills}</span>
+                      <span className="text-[10px] text-muted-foreground">skills</span>
+                    </div>
+                    {(entry.current_streak || 0) > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-orange-500 mt-0.5">
+                        <FlameIcon className="h-2.5 w-2.5" />{entry.current_streak}d
+                      </span>
+                    )}
+                    {/* Podium bar */}
+                    <div className={cn(
+                      "w-16 sm:w-20 rounded-t-lg mt-2",
+                      PODIUM_HEIGHTS[displayIdx],
+                      color.bar
+                    )}>
+                      <div className="flex items-center justify-center pt-2">
+                        <span className={cn("font-bold text-sm sm:text-lg", color.text)}>
+                          {rank === 0 ? "🥇" : rank === 1 ? "🥈" : "🥉"}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <Card>
           <CardHeader>
