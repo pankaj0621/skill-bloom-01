@@ -47,6 +47,21 @@ const Navbar = () => {
     refetchInterval: 15000,
   });
 
+  const { data: pendingRequestCount } = useQuery({
+    queryKey: ["pending_friend_requests_count", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("friendships")
+        .select("id")
+        .eq("addressee_id", user!.id)
+        .eq("status", "pending");
+      if (error) throw error;
+      return data?.length || 0;
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
   const { data: navProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
@@ -129,6 +144,11 @@ const Navbar = () => {
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
+                {to === "/community" && !!pendingRequestCount && pendingRequestCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                    {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -190,6 +210,11 @@ const Navbar = () => {
                 {to === "/peers" && !!unreadCount && unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>
                     {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+                {to === "/community" && !!pendingRequestCount && pendingRequestCount > 0 && (
+                  <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>
+                    {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
                   </span>
                 )}
               </Link>
