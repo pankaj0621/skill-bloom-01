@@ -30,6 +30,36 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "", stream: "", primary_goal: "" });
 
+  const compressImage = (file: File, maxSize = 512): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Compression failed"))),
+          "image/webp",
+          0.8
+        );
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -38,19 +68,15 @@ const Profile = () => {
       toast.error("Please select an image file.");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image must be under 2MB.");
-      return;
-    }
 
     setUploadingAvatar(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
+      const compressed = await compressImage(file);
+      const path = `${user.id}/avatar.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true });
+        .upload(path, compressed, { upsert: true, contentType: "image/webp" });
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
