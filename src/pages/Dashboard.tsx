@@ -95,7 +95,7 @@ const Dashboard = () => {
             <Skeleton className="h-9 w-72 mb-2" />
             <Skeleton className="h-5 w-56" />
           </div>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Card key={i}>
                 <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
@@ -113,7 +113,7 @@ const Dashboard = () => {
           </div>
           <div>
             <Skeleton className="h-6 w-40 mb-3" />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}>
                   <CardHeader className="pb-2"><Skeleton className="h-5 w-32" /></CardHeader>
@@ -131,14 +131,14 @@ const Dashboard = () => {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold">
             Welcome back, {profile?.display_name || "Student"} 👋
           </h1>
-          <p className="text-muted-foreground">Here's your skill progress overview</p>
+          <p className="text-sm text-muted-foreground">Here's your skill progress overview</p>
         </div>
 
         <motion.div
-          className="grid gap-4 md:grid-cols-4"
+          className="grid gap-3 grid-cols-2 md:grid-cols-4"
           variants={containerVariants}
           initial="hidden"
           animate="show"
@@ -259,7 +259,7 @@ const Dashboard = () => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Track Progress</h2>
             <motion.div
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
               variants={containerVariants}
               initial="hidden"
               animate="show"

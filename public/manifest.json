@@ -2,7 +2,8 @@
   "name": "Student Progress & Career Tracker",
   "short_name": "SPCT",
   "description": "Track skills, goals, and progress for any stream or course",
-  "start_url": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#2563eb",
@@ -21,5 +22,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["education", "productivity"]
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false
 }

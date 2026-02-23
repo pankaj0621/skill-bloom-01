@@ -97,5 +97,49 @@
 
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Mobile-first: ensure minimum tap target size */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  /* Smaller tap targets for inline text links and badges */
+  .inline-link,
+  [data-small-target] {
+    min-height: auto;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* PWA standalone mode: ensure full-bleed content */
+  @media (display-mode: standalone) {
+    body {
+      overscroll-behavior: none;
+    }
+  }
+
+  /* Safe area insets for notched devices */
+  html {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 }
