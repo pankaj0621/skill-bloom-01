@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { CheckCircle, Circle, Clock, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const statusConfig = {
   not_started: { icon: Circle, label: "Not Started", color: "text-muted-foreground" },
@@ -116,7 +117,6 @@ const Roadmap = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
   });
 
-  // Group by track
   const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: any[] }>, p: any) => {
     const trackId = p.skills?.track_id;
     const trackName = p.skills?.skill_tracks?.name || "Unknown";
@@ -136,10 +136,15 @@ const Roadmap = () => {
   if (trackList.length === 0) {
     return (
       <Layout>
-        <div className="text-center py-12">
+        <motion.div
+          className="text-center py-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        >
           <p className="text-muted-foreground mb-4">No skill tracks found. Complete onboarding first.</p>
           <Button onClick={() => window.location.href = "/onboarding"}>Go to Onboarding</Button>
-        </div>
+        </motion.div>
       </Layout>
     );
   }
@@ -147,19 +152,29 @@ const Roadmap = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <h1 className="text-3xl font-bold">Skill Roadmap 🗺️</h1>
           <p className="text-muted-foreground">Track your learning journey</p>
-        </div>
+        </motion.div>
 
         <Tabs defaultValue={trackList[0]?.trackId}>
-          <TabsList className="flex-wrap h-auto">
-            {trackList.map((track) => (
-              <TabsTrigger key={track.trackId} value={track.trackId}>
-                {track.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <TabsList className="flex-wrap h-auto">
+              {trackList.map((track) => (
+                <TabsTrigger key={track.trackId} value={track.trackId}>
+                  {track.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </motion.div>
 
           {trackList.map((track) => {
             const trackCustom = customSkills?.filter((cs: any) => cs.track_id === track.trackId) || [];
@@ -167,94 +182,125 @@ const Roadmap = () => {
               <TabsContent key={track.trackId} value={track.trackId} className="space-y-3">
                 {track.skills
                   .sort((a: any, b: any) => (a.skills?.order || 0) - (b.skills?.order || 0))
-                  .map((p: any) => {
+                  .map((p: any, i: number) => {
                     const config = statusConfig[p.status as keyof typeof statusConfig];
                     const Icon = config.icon;
                     return (
-                      <Card key={p.id} className="hover:shadow-sm transition-shadow">
+                      <motion.div
+                        key={p.id}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                      >
+                        <Card className="hover:shadow-sm transition-shadow">
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <motion.button
+                                onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
+                                className={`${config.color}`}
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.9, rotate: 15 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                              >
+                                <Icon className="h-5 w-5" />
+                              </motion.button>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{p.skills?.name}</span>
+                                  {p.skills?.difficulty_level && (
+                                    <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
+                                      {p.skills.difficulty_level}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{p.skills?.description}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className={config.color}>
+                              {config.label}
+                            </Badge>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+
+                {/* Custom skills */}
+                {trackCustom.map((cs: any, i: number) => {
+                  const config = statusConfig[cs.status as keyof typeof statusConfig];
+                  const Icon = config.icon;
+                  return (
+                    <motion.div
+                      key={cs.id}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: (track.skills.length + i) * 0.05 }}
+                    >
+                      <Card className="border-dashed hover:shadow-sm transition-shadow">
                         <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            <button
-                              onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
-                              className={`${config.color} hover:scale-110 transition-transform`}
+                          <div className="flex items-center gap-3">
+                            <motion.button
+                              onClick={() => updateCustomStatus.mutate({ id: cs.id, status: cycleStatus(cs.status) })}
+                              className={config.color}
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9, rotate: 15 }}
                             >
                               <Icon className="h-5 w-5" />
-                            </button>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{p.skills?.name}</span>
-                                {p.skills?.difficulty_level && (
-                                  <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
-                                    {p.skills.difficulty_level}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{p.skills?.description}</p>
-                            </div>
+                            </motion.button>
+                            <span className="font-medium">{cs.name}</span>
+                            <Badge variant="outline">Custom</Badge>
                           </div>
                           <Badge variant="outline" className={config.color}>
                             {config.label}
                           </Badge>
                         </CardContent>
                       </Card>
-                    );
-                  })}
-
-                {/* Custom skills */}
-                {trackCustom.map((cs: any) => {
-                  const config = statusConfig[cs.status as keyof typeof statusConfig];
-                  const Icon = config.icon;
-                  return (
-                    <Card key={cs.id} className="border-dashed hover:shadow-sm transition-shadow">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => updateCustomStatus.mutate({ id: cs.id, status: cycleStatus(cs.status) })}
-                            className={`${config.color} hover:scale-110 transition-transform`}
-                          >
-                            <Icon className="h-5 w-5" />
-                          </button>
-                          <span className="font-medium">{cs.name}</span>
-                          <Badge variant="outline">Custom</Badge>
-                        </div>
-                        <Badge variant="outline" className={config.color}>
-                          {config.label}
-                        </Badge>
-                      </CardContent>
-                    </Card>
+                    </motion.div>
                   );
                 })}
 
                 {/* Add custom skill */}
-                {addingToTrack === track.trackId ? (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Skill name..."
-                      value={newSkillName}
-                      onChange={(e) => setNewSkillName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && newSkillName.trim()) {
-                          addCustomSkill.mutate({ trackId: track.trackId, name: newSkillName.trim() });
-                        }
-                      }}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (newSkillName.trim()) addCustomSkill.mutate({ trackId: track.trackId, name: newSkillName.trim() });
-                      }}
+                <AnimatePresence mode="wait">
+                  {addingToTrack === track.trackId ? (
+                    <motion.div
+                      key="input"
+                      className="flex gap-2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      Add
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { setAddingToTrack(null); setNewSkillName(""); }}>
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" className="w-full" onClick={() => setAddingToTrack(track.trackId)}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Custom Skill
-                  </Button>
-                )}
+                      <Input
+                        placeholder="Skill name..."
+                        value={newSkillName}
+                        onChange={(e) => setNewSkillName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && newSkillName.trim()) {
+                            addCustomSkill.mutate({ trackId: track.trackId, name: newSkillName.trim() });
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (newSkillName.trim()) addCustomSkill.mutate({ trackId: track.trackId, name: newSkillName.trim() });
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setAddingToTrack(null); setNewSkillName(""); }}>
+                        Cancel
+                      </Button>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="button" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                      <Button variant="outline" className="w-full" onClick={() => setAddingToTrack(track.trackId)}>
+                        <Plus className="h-4 w-4 mr-2" /> Add Custom Skill
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </TabsContent>
             );
           })}

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { User, Send, MessageCircle, ArrowLeft } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 const LEVEL_ORDER: Level[] = ["Beginner", "Intermediate", "Advanced"];
 
@@ -222,10 +223,14 @@ const Peers = () => {
   return (
     <Layout>
       <div className="space-y-3 md:space-y-4">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <h1 className="text-2xl md:text-3xl font-bold">Peer Guidance 🤝</h1>
           <p className="text-sm text-muted-foreground">Connect with students ahead of you</p>
-        </div>
+        </motion.div>
 
         <div className="flex gap-3 md:gap-4 h-[calc(100vh-11rem)] md:h-[calc(100vh-12rem)]">
           {/* Conversation sidebar */}
