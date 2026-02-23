@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConversations, useChatMessages, useSendMessage, formatMessageTime } from "@/hooks/useMessages";
 import { useFriendsList } from "@/hooks/useFriendship";
+import { usePresence, useTypingIndicator } from "@/hooks/usePresence";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatPopupProps {
@@ -19,16 +20,73 @@ interface ChatPopupProps {
   initialPeerId?: string | null;
 }
 
+// ─── Online Status Dot ───
+function OnlineDot({ isOnline }: { isOnline: boolean }) {
+  return (
+    <span
+      className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background transition-colors duration-300 ${
+        isOnline ? "bg-emerald-500" : "bg-muted-foreground/40"
+      }`}
+      data-small-target
+    />
+  );
+}
+
+// ─── Typing Indicator Animation ───
+function TypingIndicator() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 5 }}
+      transition={{ duration: 0.2 }}
+      className="flex justify-start"
+    >
+      <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2.5 flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60"
+            animate={{ y: [0, -4, 0] }}
+            transition={{
+              duration: 0.6,
+              repeat: Infinity,
+              delay: i * 0.15,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Read Receipt Icon ───
+function ReadReceipt({ isMine, isRead }: { isMine: boolean; isRead: boolean }) {
+  if (!isMine) return null;
+  return (
+    <span className="inline-flex items-center ml-1">
+      {isRead ? (
+        <CheckCheck className="h-3 w-3 text-primary" />
+      ) : (
+        <Check className="h-3 w-3 text-primary-foreground/50" />
+      )}
+    </span>
+  );
+}
+
+// ─── Conversation List ───
 function ConversationList({
   conversations,
   friends,
   onSelect,
+  isOnline,
 }: {
   conversations: { peerId: string; peerName: string; peerAvatarUrl: string | null; peerUsername: string | null; lastMessage: string; lastMessageTime: string; unreadCount: number }[];
   friends: any[];
   onSelect: (peerId: string) => void;
+  isOnline: (id: string) => boolean;
 }) {
-  // Merge friends who have no conversation yet
   const conversationPeerIds = new Set(conversations.map((c) => c.peerId));
   const friendsWithoutConvo = (friends || []).filter((f) => !conversationPeerIds.has(f.id));
 
@@ -49,10 +107,13 @@ function ConversationList({
           className="w-full text-left px-3 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <Avatar className="h-9 w-9 flex-shrink-0">
-              {conv.peerAvatarUrl && <AvatarImage src={conv.peerAvatarUrl} alt={conv.peerName} />}
-              <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
-            </Avatar>
+            <div className="relative flex-shrink-0">
+              <Avatar className="h-9 w-9">
+                {conv.peerAvatarUrl && <AvatarImage src={conv.peerAvatarUrl} alt={conv.peerName} />}
+                <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+              </Avatar>
+              <OnlineDot isOnline={isOnline(conv.peerId)} />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium truncate">{conv.peerName}</p>
@@ -85,10 +146,13 @@ function ConversationList({
               className="w-full text-left px-3 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2.5">
-                <Avatar className="h-9 w-9 flex-shrink-0">
-                  {friend.avatar_url && <AvatarImage src={friend.avatar_url} alt={friend.display_name} />}
-                  <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
-                </Avatar>
+                <div className="relative flex-shrink-0">
+                  <Avatar className="h-9 w-9">
+                    {friend.avatar_url && <AvatarImage src={friend.avatar_url} alt={friend.display_name} />}
+                    <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+                  </Avatar>
+                  <OnlineDot isOnline={isOnline(friend.id)} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{friend.display_name || "Student"}</p>
                   <p className="text-xs text-muted-foreground">Tap to message</p>
@@ -103,28 +167,32 @@ function ConversationList({
   );
 }
 
+// ─── Chat View ───
 function ChatView({
   userId,
   peerId,
   peerProfile,
   onBack,
   onNavigateProfile,
+  isOnline,
 }: {
   userId: string;
   peerId: string;
   peerProfile: any;
   onBack: () => void;
   onNavigateProfile: () => void;
+  isOnline: boolean;
 }) {
   const { messages } = useChatMessages(userId, peerId);
   const { messageText, setMessageText, sendMessage } = useSendMessage(userId, peerId);
+  const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, peerIsTyping]);
 
   return (
     <div className="flex flex-col h-full">
@@ -137,11 +205,39 @@ function ChatView({
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
           onClick={onNavigateProfile}
         >
-          <Avatar className="h-8 w-8 flex-shrink-0">
-            {peerProfile?.avatar_url && <AvatarImage src={peerProfile.avatar_url} alt={peerProfile?.display_name} />}
-            <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
-          </Avatar>
-          <p className="font-medium text-sm truncate">{peerProfile?.display_name || "Student"}</p>
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-8 w-8">
+              {peerProfile?.avatar_url && <AvatarImage src={peerProfile.avatar_url} alt={peerProfile?.display_name} />}
+              <AvatarFallback className="bg-muted"><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+            </Avatar>
+            <OnlineDot isOnline={isOnline} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate leading-tight">{peerProfile?.display_name || "Student"}</p>
+            <AnimatePresence mode="wait">
+              {peerIsTyping ? (
+                <motion.p
+                  key="typing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-[10px] text-primary leading-tight"
+                >
+                  typing…
+                </motion.p>
+              ) : (
+                <motion.p
+                  key="status"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-[10px] text-muted-foreground leading-tight"
+                >
+                  {isOnline ? "online" : "offline"}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -169,15 +265,23 @@ function ChatView({
                     }`}
                   >
                     <p className="break-words">{msg.body}</p>
-                    <p className={`text-[10px] mt-1 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
+                    <div className={`flex items-center justify-end gap-0.5 mt-1`}>
+                      <span className={`text-[10px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <ReadReceipt isMine={isMine} isRead={msg.read} />
+                    </div>
                   </div>
                 </motion.div>
               );
             })}
           </AnimatePresence>
         )}
+
+        {/* Typing indicator in chat */}
+        <AnimatePresence>
+          {peerIsTyping && <TypingIndicator />}
+        </AnimatePresence>
       </div>
 
       {/* Input */}
@@ -185,7 +289,10 @@ function ChatView({
         <Input
           placeholder="Type a message..."
           value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
+          onChange={(e) => {
+            setMessageText(e.target.value);
+            if (e.target.value.trim()) broadcastTyping();
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && messageText.trim()) sendMessage.mutate();
           }}
@@ -204,12 +311,14 @@ function ChatView({
   );
 }
 
+// ─── Chat Popup Content ───
 function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, "open">) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedPeer, setSelectedPeer] = useState<string | null>(initialPeerId || null);
   const { conversations, peerProfiles } = useConversations(user?.id);
   const { data: friends } = useFriendsList(user?.id);
+  const { isOnline } = usePresence(user?.id);
 
   useEffect(() => {
     if (initialPeerId) setSelectedPeer(initialPeerId);
@@ -230,6 +339,7 @@ function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, 
           const username = (selectedProfile as any)?.username || selectedPeer;
           navigate(`/user/${username}`);
         }}
+        isOnline={isOnline(selectedPeer)}
       />
     );
   }
@@ -239,10 +349,12 @@ function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, 
       conversations={conversations}
       friends={friends || []}
       onSelect={setSelectedPeer}
+      isOnline={isOnline}
     />
   );
 }
 
+// ─── Main Export ───
 export default function ChatPopup({ open, onOpenChange, initialPeerId }: ChatPopupProps) {
   const isMobile = useIsMobile();
 

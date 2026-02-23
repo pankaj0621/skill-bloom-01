@@ -108,6 +108,17 @@ export function useConversations(userId: string | undefined) {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "peer_messages" },
+        (payload) => {
+          const msg = payload.new as any;
+          if (msg.from_user_id === userId || msg.to_user_id === userId) {
+            queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
+            queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
+          }
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [userId, queryClient]);
