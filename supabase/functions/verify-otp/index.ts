@@ -21,9 +21,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID")!;
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
+
+    if (!accountSid || !authToken || !serviceSid) {
+      console.error("Missing Twilio env vars");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Verify OTP with Twilio
     const twilioUrl = `https://verify.twilio.com/v2/Services/${serviceSid}/VerificationChecks`;
@@ -48,8 +56,16 @@ Deno.serve(async (req) => {
     }
 
     // OTP verified — create or sign in user via Supabase Admin
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Missing Supabase env vars");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
