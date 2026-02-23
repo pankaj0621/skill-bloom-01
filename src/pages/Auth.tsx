@@ -67,7 +67,7 @@ const Auth = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <CardTitle className="text-2xl font-bold">🎯 SkillTracker</CardTitle>
+              <CardTitle className="text-2xl font-bold">📊 Student Progress & Career Tracker</CardTitle>
             </motion.div>
             <CardDescription>
               {isLogin ? "Sign in to track your progress" : "Create an account to get started"}

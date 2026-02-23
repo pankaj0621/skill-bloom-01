@@ -86,7 +86,7 @@ const Navbar = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
         <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
           <Link to="/dashboard" className="font-bold text-lg mr-8">
-            🎯 SkillTracker
+            📊 SPCT
           </Link>
           <nav className="flex items-center gap-1 flex-1">
             {navItems.map(({ to, label, icon: Icon }) => (
@@ -124,7 +124,7 @@ const Navbar = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
         <div className="flex h-12 items-center justify-between px-3">
           <Link to="/dashboard" className="font-bold text-base">
-            🎯 SkillTracker
+            📊 SPCT
           </Link>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>

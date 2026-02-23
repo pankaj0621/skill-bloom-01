@@ -112,7 +112,7 @@ const Onboarding = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <CardTitle className="text-2xl">Welcome to SkillTracker 🚀</CardTitle>
+              <CardTitle className="text-2xl">Welcome to SPCT 🚀</CardTitle>
             </motion.div>
             <CardDescription>Step {step} of {totalSteps} — Let's personalize your experience</CardDescription>
             <div className="flex gap-1.5 justify-center pt-2">
@@ -143,11 +143,11 @@ const Onboarding = () => {
                     <RadioGroup value={role} onValueChange={setRole} className="flex gap-4">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="junior" id="junior" />
-                        <Label htmlFor="junior">Junior (Learning)</Label>
+                        <Label htmlFor="junior">Student (Learning)</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="senior" id="senior" />
-                        <Label htmlFor="senior">Senior (Mentoring)</Label>
+                        <Label htmlFor="senior">Peer Guide (Mentoring)</Label>
                       </div>
                     </RadioGroup>
                   </div>
