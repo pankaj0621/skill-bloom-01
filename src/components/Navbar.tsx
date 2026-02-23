@@ -107,11 +107,41 @@ const Navbar = () => {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "friendships" },
+        { event: "INSERT", schema: "public", table: "friendships" },
+        (payload) => {
+          const row = payload.new as any;
+          if (row.addressee_id === user.id && row.status === "pending") {
+            toast("New friend request", {
+              description: "Someone wants to connect with you!",
+              action: {
+                label: "View",
+                onClick: () => { window.location.href = "/community"; },
+              },
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
+          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
+          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "friendships" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
           queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
           queryClient.invalidateQueries({ queryKey: ["friends_list"] });
+          queryClient.invalidateQueries({ queryKey: ["friendship"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "friendships" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
+          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
+          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
+          queryClient.invalidateQueries({ queryKey: ["friendship"] });
         }
       )
       .subscribe();
