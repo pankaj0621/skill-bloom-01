@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -198,23 +199,122 @@ const Dashboard = () => {
           );
         })()}
 
-        {trackStats.some((t) => t.nextSkill) && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Recommended Next Steps</h2>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {trackStats
-                .filter((t) => t.nextSkill)
-                .map((track, i) => (
-                  <Card key={i} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
-                    <CardContent className="p-4">
-                      <p className="text-sm text-muted-foreground">{track.name}</p>
-                      <p className="font-medium">{track.nextSkill}</p>
+        {/* Smart Recommendations */}
+        {progress && progress.length > 0 && (() => {
+          // Build scored list of incomplete skills
+          const trackMap = progress.reduce((acc: Record<string, { name: string; total: number; completed: number; skills: any[] }>, p: any) => {
+            const trackId = p.skills?.track_id || "unknown";
+            const trackName = p.skills?.skill_tracks?.name || "Unknown";
+            if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, skills: [] };
+            acc[trackId].total++;
+            if (p.status === "completed") acc[trackId].completed++;
+            else acc[trackId].skills.push({
+              name: p.skills?.name || "",
+              status: p.status,
+              difficulty: p.skills?.difficulty_level || "beginner",
+              order: p.skills?.order || 0,
+              trackName,
+            });
+            return acc;
+          }, {});
+
+          const allIncomplete = Object.values(trackMap).flatMap((track) => {
+            const trackPct = track.total > 0 ? track.completed / track.total : 0;
+            return track.skills.map((s: any) => ({
+              ...s,
+              trackPct,
+              // Prioritize: weakest track, not_started over in_progress, earlier order, match difficulty to level
+              score:
+                (1 - trackPct) * 50 +
+                (s.status === "not_started" ? 15 : 0) +
+                (100 - s.order) +
+                (level === "Beginner" && s.difficulty === "beginner" ? 20 : 0) +
+                (level === "Intermediate" && s.difficulty === "intermediate" ? 20 : 0) +
+                (level === "Advanced" && s.difficulty === "advanced" ? 20 : 0),
+            }));
+          }).sort((a, b) => b.score - a.score);
+
+          if (allIncomplete.length === 0) return null;
+
+          const mainStep = allIncomplete[0];
+          const optionalActions = allIncomplete.slice(1, 3);
+
+          // Build explanation
+          const weakestTrack = Object.values(trackMap).sort((a, b) => (a.completed / a.total) - (b.completed / b.total))[0];
+          const weakestPct = weakestTrack ? Math.round((weakestTrack.completed / weakestTrack.total) * 100) : 0;
+
+          const whyExplanation = level === "Beginner"
+            ? `As a Beginner (${overallPct}% complete), we're recommending foundational skills in your weakest track (${weakestTrack?.name} at ${weakestPct}%) to build a strong base.`
+            : level === "Intermediate"
+            ? `At the Intermediate level (${overallPct}% complete), we're targeting gaps in ${weakestTrack?.name} (${weakestPct}%) with skills matching your current ability.`
+            : `You're Advanced (${overallPct}% complete)! We're surfacing the remaining challenging skills in ${weakestTrack?.name} (${weakestPct}%) to reach mastery.`;
+
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                Smart Recommendations
+              </h2>
+
+              {/* Main next step */}
+              <Card className="border-primary/30 bg-primary/5 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-full bg-primary/10 p-2.5 mt-0.5">
+                      <ArrowRight className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-primary text-primary-foreground">Main Next Step</Badge>
+                        <Badge variant="outline" className="capitalize">{mainStep.difficulty}</Badge>
+                      </div>
+                      <p className="text-lg font-semibold">{mainStep.name}</p>
+                      <p className="text-sm text-muted-foreground">{mainStep.trackName} · {mainStep.status === "not_started" ? "Not started yet" : "Already in progress"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Optional actions */}
+              {optionalActions.length > 0 && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {optionalActions.map((action, i) => {
+                    const ActionIcon = i === 0 ? BookOpen : Users;
+                    return (
+                      <Card key={i} className="cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/roadmap")}>
+                        <CardContent className="p-4 flex items-start gap-3">
+                          <div className="rounded-full bg-muted p-2 mt-0.5">
+                            <ActionIcon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <Badge variant="outline" className="text-xs">Optional</Badge>
+                            <p className="font-medium">{action.name}</p>
+                            <p className="text-xs text-muted-foreground">{action.trackName} · {action.difficulty}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Why this recommendation */}
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                  <Info className="h-4 w-4" />
+                  <span>Why this recommendation?</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-4 text-sm text-muted-foreground">
+                      {whyExplanation}
                     </CardContent>
                   </Card>
-                ))}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {trackStats.length === 0 && (
           <Card>
