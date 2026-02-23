@@ -10,6 +10,8 @@ import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { BADGES } from "@/lib/badges";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -31,6 +33,19 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("user_skill_progress")
         .select("*, skills(*, skill_tracks(*))")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: earnedBadges } = useQuery({
+    queryKey: ["user_badges", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_badges")
+        .select("badge_key, earned_at")
         .eq("user_id", user!.id);
       if (error) throw error;
       return data;
@@ -119,6 +134,44 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Badges */}
+        {(() => {
+          const earnedKeys = new Set(earnedBadges?.map((b) => b.badge_key) || []);
+
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Badges</h2>
+              <div className="flex flex-wrap gap-3">
+                {BADGES.map((badge) => {
+                  const isEarned = earnedKeys.has(badge.key);
+                  const Icon = badge.icon;
+                  return (
+                    <Tooltip key={badge.key}>
+                      <TooltipTrigger>
+                        <div className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all w-28 ${
+                          isEarned
+                            ? "bg-primary/10 border-primary/30 shadow-sm"
+                            : "bg-muted/30 border-border opacity-40 grayscale"
+                        }`}>
+                          <Icon className={`h-7 w-7 ${isEarned ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className="text-xs font-medium text-center leading-tight">{badge.name}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-medium">{badge.name}</p>
+                        <p className="text-xs text-muted-foreground">{badge.description}</p>
+                        {isEarned && earnedBadges && (
+                          <p className="text-xs mt-1">Earned {new Date(earnedBadges.find((b) => b.badge_key === badge.key)!.earned_at).toLocaleDateString()}</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {trackStats.length > 0 && (
           <div className="space-y-4">

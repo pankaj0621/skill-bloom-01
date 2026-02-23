@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateStreak } from "@/lib/streak";
+import { checkAndAwardBadges } from "@/lib/badges";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,11 +69,22 @@ const Roadmap = () => {
         .eq("id", progressId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      if (user) updateStreak(user.id);
+    onSuccess: async () => {
+      if (user) {
+        await updateStreak(user.id);
+        const newBadges = await checkAndAwardBadges(user.id);
+        if (newBadges.length > 0) {
+          const { BADGES } = await import("@/lib/badges");
+          newBadges.forEach((key) => {
+            const badge = BADGES.find((b) => b.key === key);
+            if (badge) toast.success(`🏆 Badge earned: ${badge.name}!`);
+          });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["user_progress_full"] });
       queryClient.invalidateQueries({ queryKey: ["user_progress"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user_badges"] });
     },
   });
 
