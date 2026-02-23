@@ -138,28 +138,34 @@ const Navbar = () => {
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <div className="flex items-center justify-around h-14 pb-[env(safe-area-inset-bottom)]">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] font-medium transition-colors",
-                location.pathname === to
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              <span>{label}</span>
-              {to === "/peers" && !!unreadCount && unreadCount > 0 && (
-                <span className="absolute top-1 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </Link>
-          ))}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden safe-bottom">
+        <div className="flex items-stretch justify-around" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          {navItems.map(({ to, label, icon: Icon }) => {
+            const isActive = location.pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[56px] text-[11px] font-medium transition-colors active:bg-muted/50",
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                {isActive && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+                )}
+                <Icon className={cn("h-5 w-5", isActive && "scale-110")} style={{ transition: "transform 0.15s ease" }} />
+                <span>{label}</span>
+                {to === "/peers" && !!unreadCount && unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-small-target>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </>
