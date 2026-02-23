@@ -53,7 +53,9 @@ export type Database = {
           id: string
           last_activity_date: string | null
           longest_streak: number
+          primary_goal: string | null
           role: string | null
+          stream: string | null
           updated_at: string
           year: number | null
         }
@@ -68,7 +70,9 @@ export type Database = {
           id: string
           last_activity_date?: string | null
           longest_streak?: number
+          primary_goal?: string | null
           role?: string | null
+          stream?: string | null
           updated_at?: string
           year?: number | null
         }
@@ -83,7 +87,9 @@ export type Database = {
           id?: string
           last_activity_date?: string | null
           longest_streak?: number
+          primary_goal?: string | null
           role?: string | null
+          stream?: string | null
           updated_at?: string
           year?: number | null
         }
