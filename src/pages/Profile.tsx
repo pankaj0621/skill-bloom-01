@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import { User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -83,77 +84,123 @@ const Profile = () => {
   return (
     <Layout>
       <div className="space-y-6 max-w-2xl">
-        <h1 className="text-3xl font-bold">Profile</h1>
+        <motion.h1
+          className="text-3xl font-bold"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          Profile
+        </motion.h1>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div>
-                <CardTitle>{profile?.display_name || "Student"}</CardTitle>
-                <p className="text-sm text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {editing ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Display Name</Label>
-                  <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Bio</Label>
-                  <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Tell us about yourself..." />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Year</Label>
-                    <Input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} placeholder="e.g. 3" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>College</Label>
-                    <Input value={form.college} onChange={(e) => setForm({ ...form, college: e.target.value })} placeholder="Your college" />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => updateProfile.mutate()}>Save</Button>
-                  <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {profile?.bio && <p className="text-sm">{profile.bio}</p>}
-                {profile?.college && <p className="text-sm text-muted-foreground">🎓 {profile.college}</p>}
-                {profile?.year && <p className="text-sm text-muted-foreground">Year {profile.year}</p>}
-                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit Profile</Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {trackStats.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Skills Overview</CardTitle>
+              <div className="flex items-center gap-4">
+                <motion.div
+                  className="h-16 w-16 rounded-full bg-muted flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+                >
+                  <User className="h-8 w-8 text-muted-foreground" />
+                </motion.div>
+                <div>
+                  <CardTitle>{profile?.display_name || "Student"}</CardTitle>
+                  <p className="text-sm text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {trackStats.map((track, i) => {
-                const level = getLevel(track.completed, track.total);
-                return (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="font-medium">{track.name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{track.completed}/{track.total}</span>
-                      <Badge className={getLevelColor(level)}>{level}</Badge>
+            <CardContent>
+              <AnimatePresence mode="wait">
+                {editing ? (
+                  <motion.div
+                    key="edit"
+                    className="space-y-4"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <div className="space-y-2">
+                      <Label>Display Name</Label>
+                      <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
                     </div>
-                  </div>
-                );
-              })}
+                    <div className="space-y-2">
+                      <Label>Bio</Label>
+                      <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Tell us about yourself..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Year</Label>
+                        <Input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} placeholder="e.g. 3" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>College</Label>
+                        <Input value={form.college} onChange={(e) => setForm({ ...form, college: e.target.value })} placeholder="Your college" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => updateProfile.mutate()}>Save</Button>
+                      <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="view"
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {profile?.bio && <p className="text-sm">{profile.bio}</p>}
+                    {profile?.college && <p className="text-sm text-muted-foreground">🎓 {profile.college}</p>}
+                    {profile?.year && <p className="text-sm text-muted-foreground">Year {profile.year}</p>}
+                    <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit Profile</Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {trackStats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Skills Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {trackStats.map((track, i) => {
+                  const level = getLevel(track.completed, track.total);
+                  return (
+                    <motion.div
+                      key={i}
+                      className="flex items-center justify-between"
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 + i * 0.08 }}
+                    >
+                      <span className="font-medium">{track.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">{track.completed}/{track.total}</span>
+                        <Badge className={getLevelColor(level)}>{level}</Badge>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </div>
     </Layout>
