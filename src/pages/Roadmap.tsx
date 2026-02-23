@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import LevelUpToast from "@/components/LevelUpToast";
+import useBadgePopup from "@/components/BadgePopup";
 import { CheckCircle, Circle, Clock, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -35,6 +36,7 @@ const Roadmap = () => {
   const [newSkillName, setNewSkillName] = useState("");
   const [addingToTrack, setAddingToTrack] = useState<string | null>(null);
   const { triggerLevelUp, LevelUpAnimation } = LevelUpToast();
+  const { showBadgePopup, BadgePopup } = useBadgePopup();
 
   const { data: progress } = useQuery({
     queryKey: ["user_progress_full", user?.id],
@@ -84,9 +86,11 @@ const Roadmap = () => {
         const newBadges = await checkAndAwardBadges(user.id);
         if (newBadges.length > 0) {
           const { BADGES } = await import("@/lib/badges");
-          newBadges.forEach((key) => {
+          newBadges.forEach((key, i) => {
             const badge = BADGES.find((b) => b.key === key);
-            if (badge) toast.success(`🏆 Badge earned: ${badge.name}!`);
+            if (badge) {
+              setTimeout(() => showBadgePopup(badge.name), i * 800);
+            }
           });
         }
       }
@@ -158,6 +162,7 @@ const Roadmap = () => {
   return (
     <Layout>
       {LevelUpAnimation}
+      {BadgePopup}
       <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}

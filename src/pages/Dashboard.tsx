@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import AnimatedCounter from "@/components/AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,8 +136,15 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
-                  <Flame className={`h-6 w-6 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
-                  <span className="text-2xl font-bold">{profile?.current_streak ?? 0}</span>
+                  <motion.div
+                    key={profile?.current_streak}
+                    initial={{ scale: 1.3, rotate: -10 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  >
+                    <Flame className={`h-6 w-6 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+                  </motion.div>
+                  <AnimatedCounter value={profile?.current_streak ?? 0} className="text-2xl font-bold" />
                   <span className="text-sm text-muted-foreground">days</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
