@@ -59,7 +59,6 @@ const Navbar = () => {
       return data?.length || 0;
     },
     enabled: !!user,
-    refetchInterval: 30000,
   });
 
   const { data: navProfile } = useQuery({
@@ -104,6 +103,15 @@ const Navbar = () => {
 
             queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "friendships" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
+          queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
+          queryClient.invalidateQueries({ queryKey: ["friends_list"] });
         }
       )
       .subscribe();
