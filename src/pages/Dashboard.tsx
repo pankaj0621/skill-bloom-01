@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import AnimatedProgress from "@/components/AnimatedProgress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -106,7 +106,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{overallPct}%</div>
-                <Progress value={overallPct} className="mt-2" />
+                <AnimatedProgress value={overallPct} className="mt-2" />
                 <p className="text-xs text-muted-foreground mt-1">{totalCompleted}/{totalSkills} skills completed</p>
               </CardContent>
             </Card>
@@ -227,7 +227,7 @@ const Dashboard = () => {
                         <span>{track.completed}/{track.total} done</span>
                         <Badge variant="outline" className={getLevelColor(trackLevel)}>{trackLevel}</Badge>
                       </div>
-                      <Progress value={pct} />
+                      <AnimatedProgress value={pct} />
                       {track.nextSkill && (
                         <p className="text-xs text-muted-foreground">Next: {track.nextSkill}</p>
                       )}
