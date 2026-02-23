@@ -6,13 +6,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
+  { to: "/community", label: "Community", icon: UsersRound },
   { to: "/peers", label: "Peers", icon: Users },
   { to: "/leaderboard", label: "Board", icon: Trophy },
   { to: "/profile", label: "Profile", icon: UserCircle },

@@ -15,6 +15,8 @@ import Roadmap from "./pages/Roadmap";
 import Profile from "./pages/Profile";
 import Peers from "./pages/Peers";
 import Leaderboard from "./pages/Leaderboard";
+import Community from "./pages/Community";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const AnimatedRoutes = () => {
         <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
         <Route path="/peers" element={<ProtectedRoute><PageTransition><Peers /></PageTransition></ProtectedRoute>} />
         <Route path="/leaderboard" element={<ProtectedRoute><PageTransition><Leaderboard /></PageTransition></ProtectedRoute>} />
+        <Route path="/community" element={<ProtectedRoute><PageTransition><Community /></PageTransition></ProtectedRoute>} />
+        <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

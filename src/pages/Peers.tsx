@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
@@ -34,6 +35,7 @@ interface ConversationPreview {
 
 const Peers = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedPeer, setSelectedPeer] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
@@ -401,19 +403,21 @@ const Peers = () => {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedPeer(null)}>
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      {(selectedProfile as any)?.avatar_url ? (
-                        <AvatarImage src={(selectedProfile as any).avatar_url} alt={selectedProfile?.display_name || "Student"} />
-                      ) : null}
-                      <AvatarFallback className="bg-muted">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{selectedProfile?.display_name || "Student"}</p>
-                      <Badge variant="outline" className={`text-[10px] ${getLevelColor((selectedProfile?.computed_level || "Beginner") as Level)}`}>
-                        {selectedProfile?.computed_level}
-                      </Badge>
+                    <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => selectedPeer && navigate(`/user/${selectedPeer}`)}>
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        {(selectedProfile as any)?.avatar_url ? (
+                          <AvatarImage src={(selectedProfile as any).avatar_url} alt={selectedProfile?.display_name || "Student"} />
+                        ) : null}
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{selectedProfile?.display_name || "Student"}</p>
+                        <Badge variant="outline" className={`text-[10px] ${getLevelColor((selectedProfile?.computed_level || "Beginner") as Level)}`}>
+                          {selectedProfile?.computed_level}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
 
