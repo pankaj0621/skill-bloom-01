@@ -1,7 +1,7 @@
 {
-  "name": "College Skill Progress Tracker",
-  "short_name": "SkillTracker",
-  "description": "Track skills, levels, streaks, and get guidance from seniors",
+  "name": "Student Progress & Career Tracker",
+  "short_name": "SPCT",
+  "description": "Track skills, goals, and progress for any stream or course",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
