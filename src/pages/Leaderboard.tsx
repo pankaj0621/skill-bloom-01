@@ -71,31 +71,33 @@ const Leaderboard = () => {
                   return (
                     <div
                       key={entry.id}
-                      className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+                      className={`flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-3 transition-colors ${
                         isMe ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"
                       }`}
                     >
-                      <div className="w-8 text-center font-bold text-muted-foreground">
+                      <div className="w-6 sm:w-8 text-center font-bold text-muted-foreground flex-shrink-0">
                         <RankIcon rank={i} />
                       </div>
-                      <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         <User className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {entry.display_name || "Student"}
-                          {isMe && <span className="text-xs text-muted-foreground ml-2">(you)</span>}
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-sm sm:text-base">
+                            {entry.display_name || "Student"}
+                            {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
+                          </p>
+                          <Badge variant="outline" className={`text-[10px] sm:text-xs ${getLevelColor(entry.computed_level as Level)}`}>
+                            {entry.computed_level}
+                          </Badge>
+                        </div>
                         {entry.college && (
-                          <p className="text-xs text-muted-foreground">{entry.college}</p>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{entry.college}</p>
                         )}
                       </div>
-                      <Badge variant="outline" className={getLevelColor(entry.computed_level as Level)}>
-                        {entry.computed_level}
-                      </Badge>
-                      <div className="text-right min-w-[60px]">
-                        <p className="font-semibold">{entry.completedSkills}</p>
-                        <p className="text-xs text-muted-foreground">skills</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-semibold text-sm sm:text-base">{entry.completedSkills}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">skills</p>
                       </div>
                     </div>
                   );
