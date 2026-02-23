@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ const Peers = () => {
   const [messageText, setMessageText] = useState("");
   const isMobile = useIsMobile();
 
-  const { data: myProfile } = useQuery({
+  const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
@@ -53,7 +54,7 @@ const Peers = () => {
     return diff >= 1 && diff <= 2;
   });
 
-  const { data: seniors } = useQuery({
+  const { data: seniors, isLoading: seniorsLoading } = useQuery({
     queryKey: ["recommended_seniors", myLevel],
     queryFn: async () => {
       if (targetLevels.length === 0) return [];
@@ -219,6 +220,57 @@ const Peers = () => {
 
   const showSidebar = !isMobile || !selectedPeer;
   const showChat = !isMobile || !!selectedPeer;
+
+  const isLoading = profileLoading || seniorsLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-3 md:space-y-4">
+          <div>
+            <Skeleton className="h-8 w-56 mb-2" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="flex gap-3 md:gap-4 h-[calc(100vh-11rem)] md:h-[calc(100vh-12rem)]">
+            {/* Sidebar skeleton */}
+            <Card className={`flex flex-col ${isMobile ? "w-full" : "w-72 lg:w-80 flex-shrink-0"}`}>
+              <div className="p-3 border-b"><Skeleton className="h-4 w-24" /></div>
+              <div className="p-2 space-y-1">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2.5 px-3 py-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+            {/* Main area skeleton */}
+            {!isMobile && (
+              <Card className="flex-1">
+                <CardContent className="p-4 space-y-4">
+                  <Skeleton className="h-6 w-36" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-lg border p-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-4 w-28" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
