@@ -13,7 +13,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Roadmap from "./pages/Roadmap";
 import Profile from "./pages/Profile";
-import Peers from "./pages/Peers";
+
 import Leaderboard from "./pages/Leaderboard";
 import Community from "./pages/Community";
 import UserProfile from "./pages/UserProfile";
@@ -30,7 +30,7 @@ const AnimatedRoutes = () => {
         <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
         <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
-        <Route path="/peers" element={<ProtectedRoute><PageTransition><Peers /></PageTransition></ProtectedRoute>} />
+        <Route path="/peers" element={<Navigate to="/leaderboard" replace />} />
         <Route path="/leaderboard" element={<ProtectedRoute><PageTransition><Leaderboard /></PageTransition></ProtectedRoute>} />
         <Route path="/community" element={<ProtectedRoute><PageTransition><Community /></PageTransition></ProtectedRoute>} />
         <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />

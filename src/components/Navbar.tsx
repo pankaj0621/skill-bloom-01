@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Users, Trophy, Sun, Moon, UsersRound } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
@@ -13,12 +13,9 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
   { to: "/community", label: "Community", icon: UsersRound },
-  { to: "/peers", label: "Peers", icon: Users },
   { to: "/leaderboard", label: "Board", icon: Trophy },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
-
-const mobileNavItems = navItems.filter(i => i.to !== "/leaderboard");
 
 const BadgeCount = ({ count, className, ...rest }: { count: number; className?: string; [key: string]: any }) => (
   <AnimatePresence mode="wait">
@@ -40,14 +37,13 @@ const Navbar = () => {
   const { signOut, user } = useAuth();
   const location = useLocation();
   const { resolvedTheme, setTheme } = useTheme();
-  const { unreadCount, pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
+  const { pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
 
   useRealtimeNotifications(user?.id);
 
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
 
   const getBadgeCount = (to: string) => {
-    if (to === "/peers") return unreadCount;
     if (to === "/community") return pendingRequestCount;
     return 0;
   };
@@ -111,7 +107,7 @@ const Navbar = () => {
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden safe-bottom">
         <div className="flex items-stretch justify-around" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {mobileNavItems.map(({ to, label, icon: Icon }) => {
+          {navItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to;
             return (
               <Link
