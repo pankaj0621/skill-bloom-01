@@ -13,7 +13,31 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Phone, Loader2 } from "lucide-react";
+import { Mail, Phone, Loader2, ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const COUNTRY_CODES = [
+  { code: "+91", country: "🇮🇳 India", short: "IN" },
+  { code: "+1", country: "🇺🇸 USA", short: "US" },
+  { code: "+44", country: "🇬🇧 UK", short: "GB" },
+  { code: "+61", country: "🇦🇺 Australia", short: "AU" },
+  { code: "+971", country: "🇦🇪 UAE", short: "AE" },
+  { code: "+966", country: "🇸🇦 Saudi Arabia", short: "SA" },
+  { code: "+65", country: "🇸🇬 Singapore", short: "SG" },
+  { code: "+60", country: "🇲🇾 Malaysia", short: "MY" },
+  { code: "+977", country: "🇳🇵 Nepal", short: "NP" },
+  { code: "+880", country: "🇧🇩 Bangladesh", short: "BD" },
+  { code: "+92", country: "🇵🇰 Pakistan", short: "PK" },
+  { code: "+94", country: "🇱🇰 Sri Lanka", short: "LK" },
+  { code: "+49", country: "🇩🇪 Germany", short: "DE" },
+  { code: "+33", country: "🇫🇷 France", short: "FR" },
+  { code: "+81", country: "🇯🇵 Japan", short: "JP" },
+  { code: "+86", country: "🇨🇳 China", short: "CN" },
+  { code: "+82", country: "🇰🇷 South Korea", short: "KR" },
+  { code: "+55", country: "🇧🇷 Brazil", short: "BR" },
+  { code: "+27", country: "🇿🇦 South Africa", short: "ZA" },
+  { code: "+234", country: "🇳🇬 Nigeria", short: "NG" },
+];
 
 const Auth = () => {
   const { user } = useAuth();
@@ -25,6 +49,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
   // Phone OTP state
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -62,9 +87,10 @@ const Auth = () => {
   };
 
   const handleSendOTP = async () => {
-    const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
+    const rawDigits = phone.replace(/\D/g, "");
+    const formattedPhone = `${countryCode}${rawDigits}`;
     if (!/^\+[1-9]\d{6,14}$/.test(formattedPhone)) {
-      toast.error("Enter valid phone with country code (e.g., +919876543210)");
+      toast.error("Enter a valid phone number");
       return;
     }
 
@@ -227,14 +253,28 @@ const Auth = () => {
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+919876543210"
-                        />
-                        <p className="text-xs text-muted-foreground">Include country code (e.g., +91 for India)</p>
+                        <div className="flex gap-2">
+                          <Select value={countryCode} onValueChange={setCountryCode}>
+                            <SelectTrigger className="w-[130px] shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COUNTRY_CODES.map((c) => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  {c.country} ({c.code})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                            placeholder="9876543210"
+                            className="flex-1"
+                          />
+                        </div>
                       </div>
                       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <Button

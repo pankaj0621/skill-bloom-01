@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -30,9 +28,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID")!;
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
+
+    if (!accountSid || !authToken || !serviceSid) {
+      console.error("Missing Twilio env vars:", {
+        hasAccountSid: !!accountSid,
+        hasAuthToken: !!authToken,
+        hasServiceSid: !!serviceSid,
+      });
+      return new Response(
+        JSON.stringify({ error: "Server configuration error. Twilio credentials not set." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const twilioUrl = `https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`;
     const credentials = btoa(`${accountSid}:${authToken}`);
