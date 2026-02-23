@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { getLevel, getLevelColor } from "@/lib/levels";
@@ -17,6 +18,8 @@ import { User, Plus, X, BookOpen, Camera, Loader2 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 
 const STREAM_LABELS: Record<string, string> = { btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "Other" };
 const GOAL_LABELS: Record<string, string> = { job: "Job", higher_studies: "Higher Studies", competitive_exams: "Competitive Exams", skill_career: "Skill-based Career" };
@@ -27,56 +30,68 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [managingTracks, setManagingTracks] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "", stream: "", primary_goal: "" });
 
-  const compressImage = (file: File, maxSize = 512): Promise<Blob> => {
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
+
+  const getCroppedBlob = (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = Math.round((height * maxSize) / width);
-            width = maxSize;
-          } else {
-            width = Math.round((width * maxSize) / height);
-            height = maxSize;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
+        const size = 512;
+        canvas.width = size;
+        canvas.height = size;
         const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(
+          img,
+          pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+          0, 0, size, size
+        );
         canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("Compression failed"))),
+          (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
           "image/webp",
-          0.8
+          0.85
         );
       };
       img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = URL.createObjectURL(file);
+      img.src = imageSrc;
     });
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
-
+    if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file.");
       return;
     }
+    const url = URL.createObjectURL(file);
+    setCropImage(url);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCropDialogOpen(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
+  const handleCropConfirm = async () => {
+    if (!cropImage || !croppedAreaPixels || !user) return;
     setUploadingAvatar(true);
     try {
-      const compressed = await compressImage(file);
+      const blob = await getCroppedBlob(cropImage, croppedAreaPixels);
       const path = `${user.id}/avatar.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, compressed, { upsert: true, contentType: "image/webp" });
+        .upload(path, blob, { upsert: true, contentType: "image/webp" });
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
@@ -93,11 +108,13 @@ const Profile = () => {
 
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Profile picture updated!");
+      setCropDialogOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to upload avatar.");
     } finally {
       setUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cropImage) URL.revokeObjectURL(cropImage);
+      setCropImage(null);
     }
   };
 
@@ -324,7 +341,7 @@ const Profile = () => {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleAvatarUpload}
+                    onChange={handleFileSelect}
                   />
                 </motion.div>
                 <div>
@@ -566,6 +583,57 @@ const Profile = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Crop Dialog */}
+      <Dialog open={cropDialogOpen} onOpenChange={(open) => {
+        if (!open && cropImage) {
+          URL.revokeObjectURL(cropImage);
+          setCropImage(null);
+        }
+        setCropDialogOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Picture</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
+            {cropImage && (
+              <Cropper
+                image={cropImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-3 px-1">
+            <span className="text-xs text-muted-foreground">Zoom</span>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1 accent-primary h-2"
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setCropDialogOpen(false)} disabled={uploadingAvatar}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm} disabled={uploadingAvatar}>
+              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
