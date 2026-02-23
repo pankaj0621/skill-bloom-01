@@ -188,11 +188,15 @@ const Peers = () => {
 
   const sendMessage = useMutation({
     mutationFn: async () => {
-      if (!messageText.trim() || !selectedPeer) return;
+      const trimmed = messageText.trim();
+      if (!trimmed || !selectedPeer) return;
+      if (trimmed.length > 5000) {
+        throw new Error("Message must be 5000 characters or fewer");
+      }
       const { error } = await supabase.from("peer_messages").insert({
         from_user_id: user!.id,
         to_user_id: selectedPeer,
-        body: messageText.trim(),
+        body: trimmed,
       });
       if (error) throw error;
     },
