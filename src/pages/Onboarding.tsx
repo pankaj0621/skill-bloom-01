@@ -37,12 +37,17 @@ const Onboarding = () => {
   const [loading, setLoading] = useState(false);
 
   const { data: tracks } = useQuery({
-    queryKey: ["skill_tracks"],
+    queryKey: ["skill_tracks", stream],
     queryFn: async () => {
-      const { data, error } = await supabase.from("skill_tracks").select("*").eq("is_default", true);
+      const query = supabase.from("skill_tracks").select("*").eq("is_default", true);
+      if (stream) {
+        query.eq("stream", stream);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!stream,
   });
 
   const toggleTrack = (trackId: string) => {
@@ -168,7 +173,7 @@ const Onboarding = () => {
                     </div>
                   </div>
 
-                  <Button onClick={() => { if (!stream) { toast.error("Please select your stream."); return; } setStep(2); }} className="w-full">
+                  <Button onClick={() => { if (!stream) { toast.error("Please select your stream."); return; } setSelectedTracks([]); setStep(2); }} className="w-full">
                     Next →
                   </Button>
                 </motion.div>
