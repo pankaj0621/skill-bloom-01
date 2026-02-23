@@ -12,6 +12,17 @@ import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } fr
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BADGES } from "@/lib/badges";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] as const } },
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -82,58 +93,71 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Here's your skill progress overview</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Overall Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overallPct}%</div>
-              <Progress value={overallPct} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">{totalCompleted}/{totalSkills} skills completed</p>
-            </CardContent>
-          </Card>
+        <motion.div
+          className="grid gap-4 md:grid-cols-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Overall Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{overallPct}%</div>
+                <Progress value={overallPct} className="mt-2" />
+                <p className="text-xs text-muted-foreground mt-1">{totalCompleted}/{totalSkills} skills completed</p>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Current Level</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge className={getLevelColor(level)}>{level}</Badge>
-              <p className="text-xs text-muted-foreground mt-2">
-                {level === "Beginner" && "Keep going! Complete more skills to level up."}
-                {level === "Intermediate" && "Great progress! You're halfway there."}
-                {level === "Advanced" && "Outstanding! You're a skill master."}
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Current Level</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Badge className={getLevelColor(level)}>{level}</Badge>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {level === "Beginner" && "Keep going! Complete more skills to level up."}
+                  {level === "Intermediate" && "Great progress! You're halfway there."}
+                  {level === "Advanced" && "Outstanding! You're a skill master."}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Flame className={`h-6 w-6 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
-                <span className="text-2xl font-bold">{profile?.current_streak ?? 0}</span>
-                <span className="text-sm text-muted-foreground">days</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Best: {profile?.longest_streak ?? 0} days
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Flame className={`h-6 w-6 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+                  <span className="text-2xl font-bold">{profile?.current_streak ?? 0}</span>
+                  <span className="text-sm text-muted-foreground">days</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Best: {profile?.longest_streak ?? 0} days
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Tracks Following</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{trackStats.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">skill tracks active</p>
-            </CardContent>
-          </Card>
-        </div>
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Tracks Following</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{trackStats.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">skill tracks active</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
 
         {/* Badges */}
         {(() => {
@@ -142,33 +166,40 @@ const Dashboard = () => {
           return (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Badges</h2>
-              <div className="flex flex-wrap gap-3">
+              <motion.div
+                className="flex flex-wrap gap-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {BADGES.map((badge) => {
                   const isEarned = earnedKeys.has(badge.key);
                   const Icon = badge.icon;
                   return (
-                    <Tooltip key={badge.key}>
-                      <TooltipTrigger>
-                        <div className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all w-28 ${
-                          isEarned
-                            ? "bg-primary/10 border-primary/30 shadow-sm"
-                            : "bg-muted/30 border-border opacity-40 grayscale"
-                        }`}>
-                          <Icon className={`h-7 w-7 ${isEarned ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className="text-xs font-medium text-center leading-tight">{badge.name}</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-medium">{badge.name}</p>
-                        <p className="text-xs text-muted-foreground">{badge.description}</p>
-                        {isEarned && earnedBadges && (
-                          <p className="text-xs mt-1">Earned {new Date(earnedBadges.find((b) => b.badge_key === badge.key)!.earned_at).toLocaleDateString()}</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
+                    <motion.div key={badge.key} variants={itemVariants}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all w-28 ${
+                            isEarned
+                              ? "bg-primary/10 border-primary/30 shadow-sm"
+                              : "bg-muted/30 border-border opacity-40 grayscale"
+                          }`}>
+                            <Icon className={`h-7 w-7 ${isEarned ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className="text-xs font-medium text-center leading-tight">{badge.name}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium">{badge.name}</p>
+                          <p className="text-xs text-muted-foreground">{badge.description}</p>
+                          {isEarned && earnedBadges && (
+                            <p className="text-xs mt-1">Earned {new Date(earnedBadges.find((b) => b.badge_key === badge.key)!.earned_at).toLocaleDateString()}</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
           );
         })()}
@@ -176,12 +207,18 @@ const Dashboard = () => {
         {trackStats.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Track Progress</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+            >
               {trackStats.map((track, i) => {
                 const pct = track.total > 0 ? Math.round((track.completed / track.total) * 100) : 0;
                 const trackLevel = getLevel(track.completed, track.total);
                 return (
-                  <Card key={i}>
+                  <motion.div key={i} variants={itemVariants} whileHover={{ scale: 1.02 }}>
+                    <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base">{track.name}</CardTitle>
                     </CardHeader>
@@ -196,9 +233,10 @@ const Dashboard = () => {
                       )}
                     </CardContent>
                   </Card>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
         )}
 
