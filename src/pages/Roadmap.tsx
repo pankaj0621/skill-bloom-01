@@ -16,7 +16,8 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import LevelUpToast from "@/components/LevelUpToast";
 import useBadgePopup from "@/components/BadgePopup";
-import { CheckCircle, Circle, Clock, Plus } from "lucide-react";
+import { CheckCircle, Circle, Clock, Plus, Map } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
 const statusConfig = {
@@ -175,15 +176,13 @@ const Roadmap = () => {
   if (trackList.length === 0) {
     return (
       <Layout>
-        <motion.div
-          className="text-center py-12"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-        >
-          <p className="text-muted-foreground mb-4">No skill tracks found. Complete onboarding first.</p>
-          <Button onClick={() => window.location.href = "/onboarding"}>Go to Onboarding</Button>
-        </motion.div>
+        <EmptyState
+          icon={Map}
+          title="No skill tracks yet"
+          description="Start by picking your stream and interests — we'll build your personalized roadmap."
+          actionLabel="Get Started"
+          onAction={() => window.location.href = "/onboarding"}
+        />
       </Layout>
     );
   }

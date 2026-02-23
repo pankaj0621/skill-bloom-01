@@ -5,7 +5,9 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLevelColor, type Level } from "@/lib/levels";
-import { Trophy, Medal, Award, User } from "lucide-react";
+import { Trophy, Medal, Award, User, BarChart3 } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 
 const RankIcon = ({ rank }: { rank: number }) => {
@@ -62,9 +64,27 @@ const Leaderboard = () => {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center text-muted-foreground py-8">Loading...</p>
+              <div className="space-y-3 py-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                ))}
+              </div>
             ) : !leaderboard || leaderboard.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No data yet. Complete skills to appear here!</p>
+              <EmptyState
+                icon={BarChart3}
+                title="No rankings yet"
+                description="Complete skills to climb the leaderboard — every step counts!"
+                actionLabel="Start Learning"
+                onAction={() => window.location.href = "/roadmap"}
+              />
             ) : (
               <div className="space-y-2">
                 {leaderboard.map((entry, i) => {

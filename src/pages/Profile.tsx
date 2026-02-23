@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { getLevel, getLevelColor } from "@/lib/levels";
-import { User, Plus, X } from "lucide-react";
+import { User, Plus, X, BookOpen } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STREAM_LABELS: Record<string, string> = { btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "Other" };
@@ -409,7 +410,13 @@ const Profile = () => {
                         );
                       })
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">No tracks selected yet.</p>
+                      <EmptyState
+                        icon={BookOpen}
+                        title="No tracks selected"
+                        description="Add skill tracks from your stream to start tracking progress."
+                        actionLabel="Browse Tracks"
+                        onAction={() => setManagingTracks(true)}
+                      />
                     )}
                   </motion.div>
                 )}
