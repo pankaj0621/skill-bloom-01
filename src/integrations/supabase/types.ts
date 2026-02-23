@@ -84,6 +84,8 @@ export type Database = {
           role: string | null
           stream: string | null
           updated_at: string
+          username: string | null
+          username_changes: number
           year: number | null
         }
         Insert: {
@@ -101,6 +103,8 @@ export type Database = {
           role?: string | null
           stream?: string | null
           updated_at?: string
+          username?: string | null
+          username_changes?: number
           year?: number | null
         }
         Update: {
@@ -118,6 +122,8 @@ export type Database = {
           role?: string | null
           stream?: string | null
           updated_at?: string
+          username?: string | null
+          username_changes?: number
           year?: number | null
         }
         Relationships: []

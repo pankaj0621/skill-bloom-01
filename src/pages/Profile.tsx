@@ -383,7 +383,10 @@ const Profile = () => {
                 </motion.div>
                 <div>
                   <CardTitle>{profile?.display_name || "Student"}</CardTitle>
-                  <p className="text-sm text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
+                  {(profile as any)?.username && (
+                    <p className="text-sm text-muted-foreground">@{(profile as any).username}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
                 </div>
               </div>
             </CardHeader>
@@ -398,6 +401,20 @@ const Profile = () => {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.25 }}
                   >
+                    {(profile as any)?.username_changes === 0 && (
+                      <div className="space-y-2">
+                        <Label>Username <span className="text-xs text-muted-foreground">(can only be changed once)</span></Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+                          <Input
+                            value={(profile as any)?.username || ""}
+                            disabled
+                            className="pl-8 opacity-60"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Username change coming soon from settings</p>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label>Display Name</Label>
                       <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
