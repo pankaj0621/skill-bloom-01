@@ -240,186 +240,187 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Priority Skills Analysis */}
+        {/* Priority Skills & Smart Recommendations */}
         {progress && progress.length > 0 && (() => {
-          // Analyze: group incomplete skills by track, find tracks with lowest completion %
-          const trackAnalysis = Object.entries(
-            progress.reduce((acc: Record<string, { name: string; total: number; completed: number; incompleteSkills: { name: string; status: string; difficulty: string; order: number }[] }>, p: any) => {
-              const trackId = p.skills?.track_id || "unknown";
-              const trackName = p.skills?.skill_tracks?.name || "Unknown";
-              if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, incompleteSkills: [] };
-              acc[trackId].total++;
-              if (p.status === "completed") acc[trackId].completed++;
-              else acc[trackId].incompleteSkills.push({
-                name: p.skills?.name || "",
-                status: p.status,
-                difficulty: p.skills?.difficulty_level || "beginner",
-                order: p.skills?.order || 0,
-              });
-              return acc;
-            }, {})
-          );
+          const userStream = (profile as any)?.stream || "";
+          const userGoal = (profile as any)?.primary_goal || "";
+          const streamLabel = ({ btech: "BTech", ba: "BA", bcom: "BCom", bsc: "BSc", other: "General" } as Record<string, string>)[userStream] || "your stream";
+          const goalLabel = ({ job: "Job Preparation", higher_studies: "Higher Studies", competitive_exams: "Competitive Exams", skill_career: "Skill-based Career" } as Record<string, string>)[userGoal] || "your goal";
 
-          // Score each incomplete skill: lower completion % track + earlier order + not_started > in_progress
-          const scoredSkills = trackAnalysis.flatMap(([_, track]) => {
-            const trackPct = track.total > 0 ? track.completed / track.total : 0;
-            return track.incompleteSkills.map((skill) => ({
-              ...skill,
-              trackName: track.name,
-              trackPct,
-              score: (1 - trackPct) * 100 + (skill.status === "not_started" ? 20 : 0) + (100 - skill.order),
-              reason:
-                trackPct < 0.2
-                  ? `Your ${track.name} track is at ${Math.round(trackPct * 100)}% — needs the most attention`
-                  : skill.status === "not_started"
-                  ? `Not yet started — falling behind in ${track.name}`
-                  : `In progress but incomplete in your weakest track`,
-            }));
-          });
+          const goalSkillBoost: Record<string, string[]> = {
+            job: ["interview", "resume", "api", "rest", "deploy", "test", "react", "javascript", "node", "express", "database", "sql", "excel", "digital marketing", "communication", "python", "accounting", "finance"],
+            higher_studies: ["research", "thesis", "writing", "literature", "calculus", "linear algebra", "probability", "statistics", "methodology", "publication", "scientific"],
+            competitive_exams: ["current affairs", "reasoning", "aptitude", "fundamentals", "basics", "writing", "problem solving", "time management", "calculus", "statistics", "critical thinking"],
+            skill_career: ["project", "portfolio", "practical", "tool", "design", "build", "create", "automation", "ai", "machine learning", "entrepreneurship", "freelance"],
+          };
+          const boostKeywords = goalSkillBoost[userGoal] || [];
+          const getGoalBoost = (name: string) => boostKeywords.some((kw) => name.toLowerCase().includes(kw)) ? 25 : 0;
 
-          const prioritySkills = scoredSkills.sort((a, b) => b.score - a.score).slice(0, 2);
-
-          if (prioritySkills.length === 0) return null;
-
-          return (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                Priority Skills
-              </h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {prioritySkills.map((skill, i) => (
-                  <Card key={i} className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
-                    <CardContent className="p-4 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-amber-600 bg-amber-100 dark:bg-amber-900/40">Priority #{i + 1}</Badge>
-                        <Badge variant="outline" className="capitalize">{skill.difficulty}</Badge>
-                      </div>
-                      <p className="font-semibold">{skill.name}</p>
-                      <p className="text-sm text-muted-foreground">{skill.trackName}</p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">{skill.reason}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Smart Recommendations */}
-        {progress && progress.length > 0 && (() => {
-          // Build scored list of incomplete skills
-          const trackMap = progress.reduce((acc: Record<string, { name: string; total: number; completed: number; skills: any[] }>, p: any) => {
+          const trackMap = progress.reduce((acc: Record<string, { name: string; total: number; completed: number; incompleteSkills: { name: string; status: string; difficulty: string; order: number }[] }>, p: any) => {
             const trackId = p.skills?.track_id || "unknown";
             const trackName = p.skills?.skill_tracks?.name || "Unknown";
-            if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, skills: [] };
+            if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, incompleteSkills: [] };
             acc[trackId].total++;
             if (p.status === "completed") acc[trackId].completed++;
-            else acc[trackId].skills.push({
+            else acc[trackId].incompleteSkills.push({
               name: p.skills?.name || "",
               status: p.status,
               difficulty: p.skills?.difficulty_level || "beginner",
               order: p.skills?.order || 0,
-              trackName,
             });
             return acc;
           }, {});
 
-          const allIncomplete = Object.values(trackMap).flatMap((track) => {
+          // Score all incomplete skills with stream + goal context
+          const allScored = Object.values(trackMap).flatMap((track) => {
             const trackPct = track.total > 0 ? track.completed / track.total : 0;
-            return track.skills.map((s: any) => ({
-              ...s,
-              trackPct,
-              // Prioritize: weakest track, not_started over in_progress, earlier order, match difficulty to level
-              score:
+            return track.incompleteSkills.map((skill) => {
+              const goalBoost = getGoalBoost(skill.name);
+              const score =
                 (1 - trackPct) * 50 +
-                (s.status === "not_started" ? 15 : 0) +
-                (100 - s.order) +
-                (level === "Beginner" && s.difficulty === "beginner" ? 20 : 0) +
-                (level === "Intermediate" && s.difficulty === "intermediate" ? 20 : 0) +
-                (level === "Advanced" && s.difficulty === "advanced" ? 20 : 0),
-            }));
+                (skill.status === "not_started" ? 15 : 0) +
+                (100 - skill.order) +
+                goalBoost +
+                (level === "Beginner" && skill.difficulty === "beginner" ? 20 : 0) +
+                (level === "Intermediate" && skill.difficulty === "intermediate" ? 20 : 0) +
+                (level === "Advanced" && skill.difficulty === "advanced" ? 20 : 0);
+
+              let reason = "";
+              if (goalBoost > 0 && trackPct < 0.3) {
+                reason = `Important for ${goalLabel} and your ${track.name} track needs attention (${Math.round(trackPct * 100)}% done)`;
+              } else if (goalBoost > 0) {
+                reason = `Directly relevant to your ${goalLabel} goal — focus here to stay on track`;
+              } else if (trackPct < 0.2) {
+                reason = `Your ${track.name} track is only at ${Math.round(trackPct * 100)}% — this is your weakest area`;
+              } else if (skill.status === "not_started") {
+                reason = `You haven't started this yet — it'll help round out your ${track.name} skills`;
+              } else {
+                reason = `Already in progress in ${track.name} — finishing this will boost your level`;
+              }
+
+              return { ...skill, trackName: track.name, trackPct, score, reason, goalRelevant: goalBoost > 0 };
+            });
           }).sort((a, b) => b.score - a.score);
 
-          if (allIncomplete.length === 0) return null;
+          if (allScored.length === 0) return null;
 
-          const mainStep = allIncomplete[0];
-          const optionalActions = allIncomplete.slice(1, 3);
-
-          // Build explanation
+          const prioritySkills = allScored.slice(0, 2);
+          const mainStep = allScored[0];
+          const optionalActions = allScored.slice(1, 3);
           const weakestTrack = Object.values(trackMap).sort((a, b) => (a.completed / a.total) - (b.completed / b.total))[0];
           const weakestPct = weakestTrack ? Math.round((weakestTrack.completed / weakestTrack.total) * 100) : 0;
 
+          const goalContext = userGoal && userStream ? `As a ${streamLabel} student aiming for ${goalLabel}, ` : "";
           const whyExplanation = level === "Beginner"
-            ? `As a Beginner (${overallPct}% complete), we're recommending foundational skills in your weakest track (${weakestTrack?.name} at ${weakestPct}%) to build a strong base.`
+            ? `${goalContext}you're just getting started (${overallPct}% done). We're picking foundational skills from your weakest track — ${weakestTrack?.name} (${weakestPct}%) — so you build a strong base first.`
             : level === "Intermediate"
-            ? `At the Intermediate level (${overallPct}% complete), we're targeting gaps in ${weakestTrack?.name} (${weakestPct}%) with skills matching your current ability.`
-            : `You're Advanced (${overallPct}% complete)! We're surfacing the remaining challenging skills in ${weakestTrack?.name} (${weakestPct}%) to reach mastery.`;
+            ? `${goalContext}you're making solid progress (${overallPct}% done). We're focusing on skills in ${weakestTrack?.name} (${weakestPct}%) that match your current level and are most relevant to your goals.`
+            : `${goalContext}you're nearly there (${overallPct}% done)! We're highlighting the remaining advanced skills in ${weakestTrack?.name} (${weakestPct}%) to help you reach mastery.`;
+
+          const summaryLine = mainStep.goalRelevant
+            ? `"${mainStep.name}" is key for ${goalLabel} — and it's in your weakest area right now.`
+            : `"${mainStep.name}" is in ${mainStep.trackName}, your weakest track — finishing it will level you up.`;
 
           return (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-primary" />
-                Smart Recommendations
-              </h2>
-
-              {/* Main next step */}
-              <Card className="border-primary/30 bg-primary/5 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-full bg-primary/10 p-2.5 mt-0.5">
-                      <ArrowRight className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-primary text-primary-foreground">Main Next Step</Badge>
-                        <Badge variant="outline" className="capitalize">{mainStep.difficulty}</Badge>
-                      </div>
-                      <p className="text-lg font-semibold">{mainStep.name}</p>
-                      <p className="text-sm text-muted-foreground">{mainStep.trackName} · {mainStep.status === "not_started" ? "Not started yet" : "Already in progress"}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Optional actions */}
-              {optionalActions.length > 0 && (
+            <>
+              {/* Priority Skills */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Priority Skills
+                </h2>
+                {userStream && userGoal && (
+                  <p className="text-sm text-muted-foreground -mt-2">
+                    Based on your <span className="font-medium text-foreground">{streamLabel}</span> stream + <span className="font-medium text-foreground">{goalLabel}</span> goal
+                  </p>
+                )}
                 <div className="grid gap-3 md:grid-cols-2">
-                  {optionalActions.map((action, i) => {
-                    const ActionIcon = i === 0 ? BookOpen : Users;
-                    return (
-                      <Card key={i} className="cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/roadmap")}>
-                        <CardContent className="p-4 flex items-start gap-3">
-                          <div className="rounded-full bg-muted p-2 mt-0.5">
-                            <ActionIcon className="h-4 w-4 text-muted-foreground" />
+                  {prioritySkills.map((skill, i) => (
+                    <Card key={i} className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
+                      <CardContent className="p-4 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-amber-600 bg-amber-100 dark:bg-amber-900/40">Priority #{i + 1}</Badge>
+                            {skill.goalRelevant && <Badge variant="outline" className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30">🎯 Goal</Badge>}
                           </div>
-                          <div className="space-y-0.5">
-                            <Badge variant="outline" className="text-xs">Optional</Badge>
-                            <p className="font-medium">{action.name}</p>
-                            <p className="text-xs text-muted-foreground">{action.trackName} · {action.difficulty}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          <Badge variant="outline" className="capitalize">{skill.difficulty}</Badge>
+                        </div>
+                        <p className="font-semibold">{skill.name}</p>
+                        <p className="text-sm text-muted-foreground">{skill.trackName}</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-400">{skill.reason}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              )}
+              </div>
 
-              {/* Why this recommendation */}
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
-                  <Info className="h-4 w-4" />
-                  <span>Why this recommendation?</span>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <Card className="bg-muted/50">
-                    <CardContent className="p-4 text-sm text-muted-foreground">
-                      {whyExplanation}
-                    </CardContent>
-                  </Card>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
+              {/* Smart Recommendations */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5 text-primary" />
+                  Smart Recommendations
+                </h2>
+                <p className="text-sm text-muted-foreground -mt-2">{summaryLine}</p>
+
+                <Card className="border-primary/30 bg-primary/5 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/roadmap")}>
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-full bg-primary/10 p-2.5 mt-0.5">
+                        <ArrowRight className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-primary text-primary-foreground">Main Next Step</Badge>
+                          <Badge variant="outline" className="capitalize">{mainStep.difficulty}</Badge>
+                          {mainStep.goalRelevant && <Badge variant="outline" className="text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40">🎯 Goal-relevant</Badge>}
+                        </div>
+                        <p className="text-lg font-semibold">{mainStep.name}</p>
+                        <p className="text-sm text-muted-foreground">{mainStep.trackName} · {mainStep.status === "not_started" ? "Not started yet" : "Already in progress"}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {optionalActions.length > 0 && (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {optionalActions.map((action, i) => {
+                      const ActionIcon = i === 0 ? BookOpen : Users;
+                      return (
+                        <Card key={i} className="cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/roadmap")}>
+                          <CardContent className="p-4 flex items-start gap-3">
+                            <div className="rounded-full bg-muted p-2 mt-0.5">
+                              <ActionIcon className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <Badge variant="outline" className="text-xs">Also consider</Badge>
+                                {action.goalRelevant && <Badge variant="outline" className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30">🎯 Goal</Badge>}
+                              </div>
+                              <p className="font-medium">{action.name}</p>
+                              <p className="text-xs text-muted-foreground">{action.trackName} · {action.difficulty}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                    <Info className="h-4 w-4" />
+                    <span>Why this recommendation?</span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <Card className="bg-muted/50">
+                      <CardContent className="p-4 text-sm text-muted-foreground">
+                        {whyExplanation}
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </>
           );
         })()}
 
