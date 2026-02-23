@@ -20,8 +20,11 @@ export type Database = {
           bio: string | null
           college: string | null
           created_at: string
+          current_streak: number
           display_name: string | null
           id: string
+          last_activity_date: string | null
+          longest_streak: number
           role: string | null
           updated_at: string
           year: number | null
@@ -31,8 +34,11 @@ export type Database = {
           bio?: string | null
           college?: string | null
           created_at?: string
+          current_streak?: number
           display_name?: string | null
           id: string
+          last_activity_date?: string | null
+          longest_streak?: number
           role?: string | null
           updated_at?: string
           year?: number | null
@@ -42,8 +48,11 @@ export type Database = {
           bio?: string | null
           college?: string | null
           created_at?: string
+          current_streak?: number
           display_name?: string | null
           id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
           role?: string | null
           updated_at?: string
           year?: number | null
