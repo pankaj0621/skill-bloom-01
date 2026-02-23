@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ const RankIcon = ({ rank }: { rank: number }) => {
 
 const Leaderboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { data: leaderboard, isLoading } = useQuery({
     queryKey: ["leaderboard"],
@@ -97,9 +99,10 @@ const Leaderboard = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
                       whileHover={{ scale: 1.015 }}
-                      className={`flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-3 transition-colors ${
+                      className={`flex items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-3 transition-colors cursor-pointer ${
                         isMe ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"
                       }`}
+                      onClick={() => navigate(`/user/${entry.id}`)}
                     >
                       <motion.div
                         initial={{ scale: 0 }}
