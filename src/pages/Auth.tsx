@@ -98,7 +98,7 @@ const Auth = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <img src={appIcon} alt="SPCT" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" />
+              <img src={appIcon} alt="SPCT" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
               <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
             </motion.div>
             <CardDescription>
