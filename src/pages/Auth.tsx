@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { Mail, Wand2, Loader2 } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 import PasswordStrength from "@/components/PasswordStrength";
+import PasswordInput from "@/components/PasswordInput";
 
 const Auth = () => {
   const { user } = useAuth();
@@ -160,9 +161,8 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="password"
-                      type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
