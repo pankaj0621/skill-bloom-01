@@ -10,6 +10,7 @@ import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PageTransition from "@/components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -64,6 +65,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
+            <PwaInstallPrompt />
             <BrowserRouter>
               <AnimatedRoutes />
             </BrowserRouter>
