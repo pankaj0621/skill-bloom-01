@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { SITE_URL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,7 @@ const Auth = () => {
           password,
           options: {
             data: { display_name: displayName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: SITE_URL,
           },
         });
         if (error) throw error;
@@ -80,7 +81,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: SITE_URL,
         },
       });
       if (error) throw error;
@@ -221,7 +222,7 @@ const Auth = () => {
                           setForgotLoading(true);
                           try {
                             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                              redirectTo: `${window.location.origin}/reset-password`,
+                              redirectTo: `${SITE_URL}/reset-password`,
                             });
                             if (error) throw error;
                             toast.success("Password reset link sent! Check your email.");
@@ -325,7 +326,7 @@ const Auth = () => {
                   setLoading(true);
                   try {
                     const { error } = await lovable.auth.signInWithOAuth("google", {
-                      redirect_uri: window.location.origin,
+                      redirect_uri: SITE_URL,
                       extraParams: { prompt: "select_account" },
                     });
                     if (error) {
