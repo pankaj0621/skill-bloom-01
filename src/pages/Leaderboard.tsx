@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Flame as FlameIcon } from "lucide-react";
+
 
 const PODIUM_COLORS = [
   { ring: "ring-yellow-400", bg: "bg-yellow-400/10", text: "text-yellow-500", bar: "bg-gradient-to-t from-yellow-500/80 to-yellow-300/60" },
@@ -279,7 +279,7 @@ const Leaderboard = () => {
                     </div>
                     {(entry.current_streak || 0) > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] text-orange-500 mt-0.5">
-                        <FlameIcon className="h-2.5 w-2.5" />{entry.current_streak}d
+                        <Flame className="h-2.5 w-2.5" />{entry.current_streak}d
                       </span>
                     )}
                     {/* Podium bar */}
