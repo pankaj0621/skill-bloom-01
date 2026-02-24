@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { lovable } from "@/integrations/lovable/index";
-import { SITE_URL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -21,7 +20,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: SITE_URL,
+        redirect_uri: window.location.origin,
         extraParams: { prompt: "select_account" },
       });
       if (error) {
