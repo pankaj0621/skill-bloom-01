@@ -30,21 +30,43 @@ const ResetPassword = () => {
       }
     });
 
-    // Check hash and query params for recovery indicators
+    // Check hash for recovery indicators (implicit flow)
     const hash = window.location.hash;
-    const params = new URLSearchParams(window.location.search);
-    if (hash.includes("type=recovery") || params.get("type") === "recovery") {
+    if (hash.includes("type=recovery")) {
       settled = true;
       setIsRecovery(true);
       setChecking(false);
     }
 
-    // Give Supabase client time to process the tokens before showing "invalid"
+    // Handle PKCE flow: exchange code for session
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (!error) {
+          settled = true;
+          setIsRecovery(true);
+          setChecking(false);
+        } else {
+          console.error("Code exchange failed:", error.message);
+          setChecking(false);
+        }
+      });
+    }
+
+    // Fallback: also check query param type
+    if (params.get("type") === "recovery") {
+      settled = true;
+      setIsRecovery(true);
+      setChecking(false);
+    }
+
+    // Give auth client time to process tokens
     const timeout = setTimeout(() => {
       if (!settled) {
         setChecking(false);
       }
-    }, 3000);
+    }, 4000);
 
     return () => {
       subscription.unsubscribe();
