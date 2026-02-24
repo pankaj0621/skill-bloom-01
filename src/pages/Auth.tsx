@@ -33,6 +33,7 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
 
     try {
@@ -40,7 +41,7 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        // Navigation handled by AuthContext + ProtectedRoute
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -257,12 +258,19 @@ const Auth = () => {
                 className="w-full flex items-center gap-2"
                 disabled={loading}
                 onClick={async () => {
+                  if (loading) return;
                   setLoading(true);
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    toast.error(error.message || "Google sign-in failed");
+                  try {
+                    const { error } = await lovable.auth.signInWithOAuth("google", {
+                      redirect_uri: window.location.origin,
+                      extraParams: { prompt: "select_account" },
+                    });
+                    if (error) {
+                      toast.error(error.message || "Google sign-in failed");
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Google sign-in failed");
+                  } finally {
                     setLoading(false);
                   }
                 }}
