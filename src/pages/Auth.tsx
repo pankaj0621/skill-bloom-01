@@ -14,6 +14,7 @@ import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Wand2, Loader2 } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
+import PasswordStrength from "@/components/PasswordStrength";
 
 const Auth = () => {
   const { user } = useAuth();
@@ -168,6 +169,7 @@ const Auth = () => {
                       required
                       minLength={6}
                     />
+                    {!isLogin && <PasswordStrength password={password} />}
                   </div>
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button type="submit" className="w-full" disabled={loading}>
