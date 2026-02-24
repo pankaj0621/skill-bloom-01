@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { lovable } from "@/integrations/lovable/index";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -10,10 +10,6 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 
-const isLovableHost = () => {
-  const host = window.location.hostname;
-  return host.includes("lovable.app") || host.includes("lovableproject.com");
-};
 
 const Auth = () => {
   const { user } = useAuth();
@@ -25,27 +21,12 @@ const Auth = () => {
     if (loading) return;
     setLoading(true);
     try {
-      if (isLovableHost()) {
-        // Use Lovable Cloud OAuth (has /~oauth/ endpoint)
-        const { error } = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-          extraParams: { prompt: "select_account" },
-        });
-        if (error) {
-          toast.error(error.message || "Google sign-in failed");
-        }
-      } else {
-        // External hosting (Vercel etc.) — use Supabase OAuth directly
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: window.location.origin,
-            queryParams: { prompt: "select_account" },
-          },
-        });
-        if (error) {
-          toast.error(error.message || "Google sign-in failed");
-        }
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+      if (error) {
+        toast.error(error.message || "Google sign-in failed");
       }
     } catch (err: any) {
       toast.error(err.message || "Google sign-in failed");
