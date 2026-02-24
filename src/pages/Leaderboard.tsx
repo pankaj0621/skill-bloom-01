@@ -148,7 +148,7 @@ const Leaderboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-3xl font-bold">Leaderboard 🏆</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard 🏆</h1>
           <p className="text-muted-foreground">Top students ranked by skills completed</p>
         </motion.div>
 
