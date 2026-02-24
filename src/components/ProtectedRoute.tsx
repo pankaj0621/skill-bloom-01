@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, role, stream")
         .eq("id", user!.id)
         .maybeSingle();
       return data;
@@ -32,9 +32,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // If user hasn't completed onboarding (no username), redirect to onboarding
-  // But don't redirect if already on onboarding page
-  if (!profile?.username && location.pathname !== "/onboarding") {
+  // If user hasn't completed onboarding, redirect to onboarding
+  // Check username OR (role + stream) for backward compatibility with older users
+  const hasCompletedOnboarding = profile?.username || (profile?.role && profile?.stream);
+  if (!hasCompletedOnboarding && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
