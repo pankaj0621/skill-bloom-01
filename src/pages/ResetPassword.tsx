@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Loader2, KeyRound } from "lucide-react";
 import PasswordStrength from "@/components/PasswordStrength";
+import PasswordInput from "@/components/PasswordInput";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -98,9 +99,8 @@ const ResetPassword = () => {
             <form onSubmit={handleReset} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
-                <Input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -111,9 +111,8 @@ const ResetPassword = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
