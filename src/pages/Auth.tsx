@@ -57,7 +57,12 @@ const Auth = () => {
         toast.success("Check your email to confirm your account!");
       }
     } catch (error: any) {
-      toast.error(error.message);
+      const msg = error?.message || "Something went wrong";
+      if (msg.includes("weak_password") || msg.includes("weak") || msg.includes("pwned")) {
+        toast.error("Password is too weak. Please choose a stronger password with mix of letters, numbers & symbols.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
