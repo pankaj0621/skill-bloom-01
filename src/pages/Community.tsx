@@ -29,7 +29,7 @@ const Community = () => {
     queryKey: ["user_search", searchQuery],
     queryFn: async () => {
       if (!searchQuery.trim()) return [];
-      const q = searchQuery.trim().toLowerCase();
+      const q = searchQuery.trim().toLowerCase().replace(/[%_\\]/g, '');
       const { data, error } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url, computed_level, stream, college, username")

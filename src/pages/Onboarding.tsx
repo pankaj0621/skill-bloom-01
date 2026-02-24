@@ -34,7 +34,9 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(
+    user?.user_metadata?.full_name || user?.user_metadata?.display_name || ""
+  );
   const [role, setRole] = useState<string>("junior");
   const [stream, setStream] = useState<string>("");
   const [primaryGoal, setPrimaryGoal] = useState<string>("");
