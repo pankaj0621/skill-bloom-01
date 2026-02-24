@@ -197,7 +197,7 @@ const Roadmap = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-3xl font-bold">Skill Roadmap 🗺️</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Skill Roadmap 🗺️</h1>
           <p className="text-muted-foreground">Track your learning journey</p>
         </motion.div>
 
@@ -254,8 +254,8 @@ const Roadmap = () => {
                           transition={{ duration: 0.3, delay: idx * 0.04 }}
                         >
                           <Card className="hover:shadow-sm transition-shadow">
-                            <CardContent className="p-4 flex items-center justify-between">
-                              <div className="flex items-center gap-3 flex-1">
+                            <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                 <motion.button
                                   onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
                                   className={`${config.color}`}
@@ -265,9 +265,9 @@ const Roadmap = () => {
                                 >
                                   <Icon className="h-5 w-5" />
                                 </motion.button>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">{p.skills?.name}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                    <span className="font-medium text-sm sm:text-base truncate">{p.skills?.name}</span>
                                     {p.skills?.difficulty_level && (
                                       <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
                                         {p.skills.difficulty_level}
