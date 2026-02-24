@@ -28,6 +28,8 @@ const Auth = () => {
   const [magicEmail, setMagicEmail] = useState("");
   const [magicLoading, setMagicLoading] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -170,7 +172,16 @@ const Auth = () => {
                   </motion.div>
                 </form>
 
-                <div className="mt-4 text-center">
+                <div className="mt-4 text-center space-y-1">
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(true)}
+                      className="block w-full text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setIsLogin(!isLogin)}
@@ -179,6 +190,51 @@ const Auth = () => {
                     {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
                   </button>
                 </div>
+
+                {/* Forgot Password Inline */}
+                {forgotMode && (
+                  <motion.div
+                    className="mt-4 p-4 rounded-lg border bg-muted/30 space-y-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                  >
+                    <p className="text-sm font-medium">Reset your password</p>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={forgotLoading || !email}
+                        onClick={async () => {
+                          setForgotLoading(true);
+                          try {
+                            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                              redirectTo: `${window.location.origin}/reset-password`,
+                            });
+                            if (error) throw error;
+                            toast.success("Password reset link sent! Check your email.");
+                            setForgotMode(false);
+                          } catch (err: any) {
+                            toast.error(err.message);
+                          } finally {
+                            setForgotLoading(false);
+                          }
+                        }}
+                      >
+                        {forgotLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                        Send Reset Link
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setForgotMode(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
               </TabsContent>
 
               {/* Magic Link Tab */}
