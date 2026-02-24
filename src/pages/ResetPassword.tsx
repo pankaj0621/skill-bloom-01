@@ -17,22 +17,39 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the magic link
+    let settled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
+        settled = true;
         setIsRecovery(true);
+        setChecking(false);
       }
     });
 
-    // Also check hash for type=recovery (in case event already fired)
+    // Check hash and query params for recovery indicators
     const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
+    const params = new URLSearchParams(window.location.search);
+    if (hash.includes("type=recovery") || params.get("type") === "recovery") {
+      settled = true;
       setIsRecovery(true);
+      setChecking(false);
     }
 
-    return () => subscription.unsubscribe();
+    // Give Supabase client time to process the tokens before showing "invalid"
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        setChecking(false);
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -60,6 +77,14 @@ const ResetPassword = () => {
       setLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!isRecovery) {
     return (
