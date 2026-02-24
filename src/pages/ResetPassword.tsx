@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Loader2, KeyRound } from "lucide-react";
+import PasswordStrength from "@/components/PasswordStrength";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ const ResetPassword = () => {
                   required
                   minLength={6}
                 />
+                <PasswordStrength password={password} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
