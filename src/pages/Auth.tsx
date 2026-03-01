@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { lovable } from "@/integrations/lovable/index";
-
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -21,12 +21,35 @@ const Auth = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      if (error) {
-        toast.error(error.message || "Google sign-in failed");
+      const isLovableHost =
+        window.location.hostname.includes("lovable.app") ||
+        window.location.hostname.includes("lovableproject.com");
+
+      if (isLovableHost) {
+        const { error } = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+        if (error) {
+          toast.error(error.message || "Google sign-in failed");
+        }
+      } else {
+        // Custom domain (Vercel etc.) — bypass auth-bridge
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/dashboard`,
+            skipBrowserRedirect: true,
+            queryParams: { prompt: "select_account" },
+          },
+        });
+        if (error) {
+          toast.error(error.message || "Google sign-in failed");
+          return;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
+        }
       }
     } catch (err: any) {
       toast.error(err.message || "Google sign-in failed");
