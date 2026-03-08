@@ -111,7 +111,7 @@ const Navbar = () => {
       </header>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
         <div className="flex h-12 items-center justify-between px-3">
           <Link to="/dashboard" className="font-bold text-base flex items-center gap-1.5">
             <img src={appIcon} alt="SPCT" className="w-6 h-6 rounded-md" loading="lazy" decoding="async" />
