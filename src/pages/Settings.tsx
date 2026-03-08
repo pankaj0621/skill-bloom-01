@@ -106,9 +106,12 @@ const Settings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings_profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("Profile updated!");
+      feedback.saved("Profile");
     },
-    onError: () => toast.error("Failed to update profile"),
+    onError: () => feedback.error("Failed to update profile", {
+      description: "Your changes couldn't be saved. Please try again.",
+      retry: () => saveProfile.mutate(),
+    }),
   });
 
   // Update setting
