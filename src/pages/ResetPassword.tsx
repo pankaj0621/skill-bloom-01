@@ -88,14 +88,14 @@ const ResetPassword = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <CardTitle>Invalid Link</CardTitle>
-            <CardDescription>Ye password reset link valid nahi hai ya expire ho chuka hai.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate("/auth", { replace: true })}>
-              Login pe jaao
-            </Button>
+           <CardHeader className="text-center">
+             <CardTitle>Invalid Link</CardTitle>
+             <CardDescription>This password reset link is invalid or has expired.</CardDescription>
+           </CardHeader>
+           <CardContent>
+             <Button className="w-full" onClick={() => navigate("/auth", { replace: true })}>
+               Go to Login
+             </Button>
           </CardContent>
         </Card>
       </div>
