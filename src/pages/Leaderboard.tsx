@@ -400,8 +400,13 @@ const Leaderboard = () => {
                           )}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="font-semibold text-sm sm:text-base">{entry.completedSkills}</p>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground">skills</p>
+                          <div className="flex items-center gap-1 justify-end">
+                            <Zap className="h-3.5 w-3.5 text-amber-500" />
+                            <p className="font-semibold text-sm sm:text-base">
+                              {filter === "weekly" ? (entry as any).weekly_xp || 0 : (entry as any).xp || 0}
+                            </p>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{entry.completedSkills} skills</p>
                         </div>
                       </motion.div>
                     );
