@@ -13,6 +13,8 @@ import AdminRoute from "@/components/AdminRoute";
 import PageTransition from "@/components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import NetworkStatus from "@/components/NetworkStatus";
+import useServiceWorkerUpdate from "@/hooks/useServiceWorkerUpdate";
 import Navbar from "@/components/Navbar";
 
 const Auth = lazy(() => import("./pages/Auth"));
@@ -108,6 +110,11 @@ const AnimatedRoutes = () => {
   );
 };
 
+const ServiceWorkerUpdater = () => {
+  useServiceWorkerUpdate();
+  return null;
+};
+
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashComplete = useCallback(() => {
@@ -122,6 +129,8 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <NetworkStatus />
+            <ServiceWorkerUpdater />
             {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
             <PwaInstallPrompt />
             <BrowserRouter>
