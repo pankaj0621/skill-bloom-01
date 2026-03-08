@@ -14,7 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { feedback } from "@/components/SuccessToast";
 import { motion } from "framer-motion";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import {
   Sun, Moon, Monitor, Bell, BellOff, Shield, UserCircle,
   Save, ArrowLeft, MessageCircle, Trophy, TrendingUp, Users,
@@ -33,7 +35,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
 
   // Profile data
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ["settings_profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,7 +50,7 @@ const Settings = () => {
   });
 
   // Settings data
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError, refetch: refetchSettings } = useQuery({
     queryKey: ["user_settings", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -57,7 +59,6 @@ const Settings = () => {
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      // Auto-create if doesn't exist
       if (!data) {
         const { data: created, error: createErr } = await supabase
           .from("user_settings")
@@ -105,9 +106,12 @@ const Settings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings_profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("Profile updated!");
+      feedback.saved("Profile");
     },
-    onError: () => toast.error("Failed to update profile"),
+    onError: () => feedback.error("Failed to update profile", {
+      description: "Your changes couldn't be saved. Please try again.",
+      retry: () => saveProfile.mutate(),
+    }),
   });
 
   // Update setting
@@ -121,9 +125,12 @@ const Settings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user_settings"] });
-      toast.success("Setting updated");
+      feedback.saved("Setting");
     },
-    onError: () => toast.error("Failed to update setting"),
+    onError: (_, variables) => feedback.error("Failed to update setting", {
+      description: "The setting couldn't be changed. Please try again.",
+      retry: () => updateSetting.mutate(variables),
+    }),
   });
 
   const toggleSetting = (key: string, value: boolean) => {
@@ -131,6 +138,26 @@ const Settings = () => {
   };
 
   const isLoading = profileLoading || settingsLoading;
+  const hasError = profileError || settingsError;
+
+  if (hasError && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold">Settings ⚙️</h1>
+          </div>
+          <ErrorAlert
+            {...getQueryErrorProps(profileError || settingsError)}
+            onRetry={() => { refetchProfile(); refetchSettings(); }}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   if (isLoading) {
     return (

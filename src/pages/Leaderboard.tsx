@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { Trophy, Medal, Award, User, BarChart3, Flame, Zap } from "lucide-react";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import EmptyState from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -70,7 +71,7 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<TimeFilter>("all");
 
-  const { data: leaderboard, isLoading } = useQuery({
+  const { data: leaderboard, isLoading, error, refetch } = useQuery({
     queryKey: ["leaderboard", filter],
     queryFn: async () => {
       // Get all profiles with streak info
@@ -144,6 +145,19 @@ const Leaderboard = () => {
     }
     if (myRank < 0 || myRank >= 3) confettiFired.current = false;
   }, [myRank]);
+
+
+  if (error && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard 🏆</h1>
+          <ErrorAlert {...getQueryErrorProps(error)} onRetry={() => refetch()} />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">

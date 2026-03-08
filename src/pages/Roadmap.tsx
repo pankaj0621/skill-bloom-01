@@ -13,10 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { feedback } from "@/components/SuccessToast";
 import Layout from "@/components/Layout";
 import LevelUpToast from "@/components/LevelUpToast";
 import useBadgePopup from "@/components/BadgePopup";
 import { CheckCircle, Circle, Clock, Plus, Map } from "lucide-react";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,7 +42,7 @@ const Roadmap = () => {
   const { triggerLevelUp, LevelUpAnimation } = LevelUpToast();
   const { showBadgePopup, BadgePopup } = useBadgePopup();
 
-  const { data: progress, isLoading: progressLoading } = useQuery({
+  const { data: progress, isLoading: progressLoading, error: progressError, refetch: refetchProgress } = useQuery({
     queryKey: ["user_progress_full", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -101,6 +103,10 @@ const Roadmap = () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["user_badges"] });
     },
+    onError: (_, variables) => feedback.error("Failed to update skill status", {
+      description: "Your progress couldn't be saved. Please try again.",
+      retry: () => updateStatus.mutate(variables),
+    }),
   });
 
   const addCustomSkill = useMutation({
@@ -117,8 +123,12 @@ const Roadmap = () => {
       queryClient.invalidateQueries({ queryKey: ["custom_skills"] });
       setNewSkillName("");
       setAddingToTrack(null);
-      toast.success("Custom skill added!");
+      feedback.success("Custom skill added!", "You can now track its progress.");
     },
+    onError: (_, variables) => feedback.error("Failed to add skill", {
+      description: "The skill couldn't be created. Please try again.",
+      retry: () => addCustomSkill.mutate(variables),
+    }),
   });
 
   const updateCustomStatus = useMutation({
@@ -127,6 +137,9 @@ const Roadmap = () => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
+    onError: (_, variables) => feedback.error("Failed to update skill", {
+      retry: () => updateCustomStatus.mutate(variables),
+    }),
   });
 
   const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: any[] }>, p: any) => {
@@ -144,6 +157,17 @@ const Roadmap = () => {
     if (current === "in_progress") return "completed";
     return "not_started";
   };
+
+  if (progressError && !progressLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Skill Roadmap 🗺️</h1>
+          <ErrorAlert {...getQueryErrorProps(progressError)} onRetry={() => refetchProgress()} />
+        </div>
+      </Layout>
+    );
+  }
 
   if (progressLoading) {
     return (

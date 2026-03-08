@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import ActivityFeed from "@/components/ActivityFeed";
 import XpCard from "@/components/XpCard";
 import XpMilestoneToast, { getXpMilestone } from "@/components/XpMilestoneToast";
@@ -33,7 +34,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
@@ -43,7 +44,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: progress, isLoading: progressLoading } = useQuery({
+  const { data: progress, isLoading: progressLoading, error: progressError, refetch: refetchProgress } = useQuery({
     queryKey: ["user_progress", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +57,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: earnedBadges, isLoading: badgesLoading } = useQuery({
+  const { data: earnedBadges, isLoading: badgesLoading, error: badgesError, refetch: refetchBadges } = useQuery({
     queryKey: ["user_badges", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -89,6 +90,25 @@ const Dashboard = () => {
   const level = getLevel(totalCompleted, totalSkills);
 
   const isLoading = profileLoading || progressLoading || badgesLoading;
+  const hasError = profileError || progressError || badgesError;
+  const firstError = profileError || progressError || badgesError;
+
+  if (hasError && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Here's your skill progress overview</p>
+          </div>
+          <ErrorAlert
+            {...getQueryErrorProps(firstError)}
+            onRetry={() => { refetchProfile(); refetchProgress(); refetchBadges(); }}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   if (isLoading) {
     return (
