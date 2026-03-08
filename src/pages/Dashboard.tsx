@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import ActivityFeed from "@/components/ActivityFeed";
 import XpCard from "@/components/XpCard";
 import XpMilestoneToast, { getXpMilestone } from "@/components/XpMilestoneToast";
