@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import PageTransition from "@/components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
