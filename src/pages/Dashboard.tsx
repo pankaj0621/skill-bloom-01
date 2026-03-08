@@ -90,6 +90,25 @@ const Dashboard = () => {
   const level = getLevel(totalCompleted, totalSkills);
 
   const isLoading = profileLoading || progressLoading || badgesLoading;
+  const hasError = profileError || progressError || badgesError;
+  const firstError = profileError || progressError || badgesError;
+
+  if (hasError && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Here's your skill progress overview</p>
+          </div>
+          <ErrorAlert
+            {...getQueryErrorProps(firstError)}
+            onRetry={() => { refetchProfile(); refetchProgress(); refetchBadges(); }}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   if (isLoading) {
     return (
