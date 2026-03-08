@@ -5,12 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PageTransition from "@/components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import Navbar from "@/components/Navbar";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -59,26 +60,34 @@ const RouteLoadingFallback = () => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const showNavbar = user && !['/auth', '/onboarding'].includes(location.pathname);
+
   return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-          <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
-          <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
-          <Route path="/peers" element={<Navigate to="/leaderboard" replace />} />
-          <Route path="/leaderboard" element={<ProtectedRoute><PageTransition><Leaderboard /></PageTransition></ProtectedRoute>} />
-          <Route path="/community" element={<ProtectedRoute><PageTransition><Community /></PageTransition></ProtectedRoute>} />
-          <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><PageTransition><Analytics /></PageTransition></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-        </Routes>
-      </AnimatePresence>
-    </Suspense>
+    <div className="min-h-screen bg-background">
+      {/* Navbar outside of page transitions - always fixed */}
+      {showNavbar && <Navbar />}
+      
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+            <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+            <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
+            <Route path="/peers" element={<Navigate to="/leaderboard" replace />} />
+            <Route path="/leaderboard" element={<ProtectedRoute><PageTransition><Leaderboard /></PageTransition></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><PageTransition><Community /></PageTransition></ProtectedRoute>} />
+            <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><PageTransition><Analytics /></PageTransition></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+          </Routes>
+        </AnimatePresence>
+      </Suspense>
+    </div>
   );
 };
 
