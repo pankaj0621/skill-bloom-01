@@ -31,16 +31,16 @@ const Auth = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          toast.error("Email verify nahi hua hai. Apna inbox check karo.");
-        } else if (error.message.includes("Invalid login credentials")) {
-          toast.error("Email ya password galat hai.");
-        } else {
-          toast.error(error.message);
-        }
-      }
+       const { error } = await supabase.auth.signInWithPassword({ email, password });
+       if (error) {
+         if (error.message.includes("Email not confirmed")) {
+           toast.error("Please verify your email. Check your inbox.");
+         } else if (error.message.includes("Invalid login credentials")) {
+           toast.error("Invalid email or password.");
+         } else {
+           toast.error(error.message);
+         }
+       }
     } catch (err: any) {
       toast.error(err.message || "Login failed");
     } finally {
@@ -52,13 +52,13 @@ const Auth = () => {
     e.preventDefault();
     if (loading) return;
     if (password.length < 6) {
-      toast.error("Password kam se kam 6 characters ka hona chahiye.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords match nahi kar rahe.");
-      return;
-    }
+       toast.error("Password must be at least 6 characters long.");
+       return;
+     }
+     if (password !== confirmPassword) {
+       toast.error("Passwords do not match.");
+       return;
+     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -68,12 +68,12 @@ const Auth = () => {
           emailRedirectTo: window.location.origin,
         },
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setEmailSent(true);
-        toast.success("Verification email bhej diya gaya hai!");
-      }
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setEmailSent(true);
+         toast.success("Verification email sent successfully!");
+       }
     } catch (err: any) {
       toast.error(err.message || "Signup failed");
     } finally {
@@ -84,21 +84,21 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (!email) {
-      toast.error("Email enter karo.");
-      return;
-    }
+     if (!email) {
+       toast.error("Please enter your email.");
+       return;
+     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setEmailSent(true);
-        toast.success("Password reset link bhej diya gaya hai!");
-      }
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setEmailSent(true);
+         toast.success("Password reset link sent successfully!");
+       }
     } catch (err: any) {
       toast.error(err.message || "Failed to send reset email");
     } finally {
@@ -126,30 +126,30 @@ const Auth = () => {
           <Card>
             <CardHeader className="text-center pb-2">
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Mail className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-xl font-bold">Email Check Karo!</CardTitle>
-              </motion.div>
-              <CardDescription className="pt-2">
-                {mode === "forgot"
-                  ? `Password reset link ${email} pe bhej diya gaya hai.`
-                  : `Verification link ${email} pe bhej diya gaya hai. Link pe click karke apna account verify karo.`}
-              </CardDescription>
+                 initial={{ scale: 0 }}
+                 animate={{ scale: 1 }}
+                 transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+               >
+                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                   <Mail className="h-8 w-8 text-primary" />
+                 </div>
+                 <CardTitle className="text-xl font-bold">Check Your Email</CardTitle>
+               </motion.div>
+               <CardDescription className="pt-2">
+                 {mode === "forgot"
+                   ? `Password reset link has been sent to ${email}.`
+                   : `Verification link has been sent to ${email}. Click the link to verify your account.`}
+               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => resetForm("login")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Login pe wapas jaao
-              </Button>
+               <Button
+                 variant="outline"
+                 className="w-full"
+                 onClick={() => resetForm("login")}
+               >
+                 <ArrowLeft className="h-4 w-4 mr-2" />
+                 Back to Login
+               </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -173,14 +173,14 @@ const Auth = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
-              <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
-            </motion.div>
-            <CardDescription>
-              {mode === "login" && "Apne account mein login karo"}
-              {mode === "signup" && "Naya account banao"}
-              {mode === "forgot" && "Password reset karo"}
-            </CardDescription>
+               <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
+               <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
+             </motion.div>
+             <CardDescription>
+               {mode === "login" && "Sign in to your account"}
+               {mode === "signup" && "Create a new account"}
+               {mode === "forgot" && "Reset your password"}
+             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword} className="space-y-4">
@@ -229,57 +229,57 @@ const Auth = () => {
               )}
 
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button type="submit" className="w-full h-11" disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  {mode === "login" && (loading ? "Logging in..." : "Login")}
-                  {mode === "signup" && (loading ? "Signing up..." : "Sign Up")}
-                  {mode === "forgot" && (loading ? "Sending..." : "Reset Link Bhejo")}
-                </Button>
+                 <Button type="submit" className="w-full h-11" disabled={loading}>
+                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                   {mode === "login" && (loading ? "Logging in..." : "Login")}
+                   {mode === "signup" && (loading ? "Signing up..." : "Sign Up")}
+                   {mode === "forgot" && (loading ? "Sending..." : "Send Reset Link")}
+                 </Button>
               </motion.div>
             </form>
 
-            {mode === "login" && (
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline w-full text-right mt-2 min-h-0"
-                data-small-target
-                onClick={() => resetForm("forgot")}
-              >
-                Password bhool gaye?
-              </button>
-            )}
+             {mode === "login" && (
+               <button
+                 type="button"
+                 className="text-xs text-primary hover:underline w-full text-right mt-2 min-h-0"
+                 data-small-target
+                 onClick={() => resetForm("forgot")}
+               >
+                 Forgot password?
+               </button>
+             )}
 
-            <div className="text-center mt-4">
-              {mode === "login" ? (
-                <p className="text-sm text-muted-foreground">
-                  Account nahi hai?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline font-medium min-h-0"
-                    data-small-target
-                    onClick={() => resetForm("signup")}
-                  >
-                    Sign Up karo
-                  </button>
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Pehle se account hai?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline font-medium min-h-0"
-                    data-small-target
-                    onClick={() => resetForm("login")}
-                  >
-                    Login karo
-                  </button>
-                </p>
-              )}
-            </div>
+             <div className="text-center mt-4">
+               {mode === "login" ? (
+                 <p className="text-sm text-muted-foreground">
+                   Don't have an account?{" "}
+                   <button
+                     type="button"
+                     className="text-primary hover:underline font-medium min-h-0"
+                     data-small-target
+                     onClick={() => resetForm("signup")}
+                   >
+                     Sign up
+                   </button>
+                 </p>
+               ) : (
+                 <p className="text-sm text-muted-foreground">
+                   Already have an account?{" "}
+                   <button
+                     type="button"
+                     className="text-primary hover:underline font-medium min-h-0"
+                     data-small-target
+                     onClick={() => resetForm("login")}
+                   >
+                     Login
+                   </button>
+                 </p>
+               )}
+             </div>
 
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              Sign in karke, aap hamare terms of service se agree karte ho
-            </p>
+             <p className="text-xs text-muted-foreground text-center mt-4">
+               By signing in, you agree to our terms of service
+             </p>
           </CardContent>
         </Card>
       </motion.div>

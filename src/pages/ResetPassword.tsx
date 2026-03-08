@@ -38,23 +38,23 @@ const ResetPassword = () => {
     e.preventDefault();
     if (loading) return;
     if (password.length < 6) {
-      toast.error("Password kam se kam 6 characters ka hona chahiye.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords match nahi kar rahe.");
-      return;
-    }
+       toast.error("Password must be at least 6 characters long.");
+       return;
+     }
+     if (password !== confirmPassword) {
+       toast.error("Passwords do not match.");
+       return;
+     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setSuccess(true);
-        toast.success("Password successfully update ho gaya!");
-        setTimeout(() => navigate("/dashboard", { replace: true }), 2000);
-      }
+       const { error } = await supabase.auth.updateUser({ password });
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setSuccess(true);
+         toast.success("Password updated successfully!");
+         setTimeout(() => navigate("/dashboard", { replace: true }), 2000);
+       }
     } catch (err: any) {
       toast.error(err.message || "Password update failed");
     } finally {
@@ -75,8 +75,8 @@ const ResetPassword = () => {
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle className="h-8 w-8 text-success" />
               </div>
-              <CardTitle className="text-xl">Password Updated!</CardTitle>
-              <CardDescription>Dashboard pe redirect ho rahe ho...</CardDescription>
+               <CardTitle className="text-xl">Password Updated!</CardTitle>
+               <CardDescription>Redirecting to dashboard...</CardDescription>
             </CardHeader>
           </Card>
         </motion.div>
@@ -88,14 +88,14 @@ const ResetPassword = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <CardTitle>Invalid Link</CardTitle>
-            <CardDescription>Ye password reset link valid nahi hai ya expire ho chuka hai.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate("/auth", { replace: true })}>
-              Login pe jaao
-            </Button>
+           <CardHeader className="text-center">
+             <CardTitle>Invalid Link</CardTitle>
+             <CardDescription>This password reset link is invalid or has expired.</CardDescription>
+           </CardHeader>
+           <CardContent>
+             <Button className="w-full" onClick={() => navigate("/auth", { replace: true })}>
+               Go to Login
+             </Button>
           </CardContent>
         </Card>
       </div>
@@ -111,16 +111,16 @@ const ResetPassword = () => {
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <Card>
-          <CardHeader className="text-center pb-2">
-            <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
-            <CardTitle className="text-xl font-bold">Naya Password Set Karo</CardTitle>
-            <CardDescription>Apna naya password enter karo</CardDescription>
-          </CardHeader>
+           <CardHeader className="text-center pb-2">
+             <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
+             <CardTitle className="text-xl font-bold">Set New Password</CardTitle>
+             <CardDescription>Enter your new password</CardDescription>
+           </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={handleReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Naya Password</Label>
-                <PasswordInput
+               <div className="space-y-2">
+                 <Label htmlFor="password">New Password</Label>
+                 <PasswordInput
                   id="password"
                   placeholder="••••••••"
                   value={password}
@@ -143,10 +143,10 @@ const ResetPassword = () => {
                   minLength={6}
                 />
               </div>
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {loading ? "Updating..." : "Password Update Karo"}
-              </Button>
+               <Button type="submit" className="w-full h-11" disabled={loading}>
+                 {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                 {loading ? "Updating..." : "Update Password"}
+               </Button>
             </form>
           </CardContent>
         </Card>
