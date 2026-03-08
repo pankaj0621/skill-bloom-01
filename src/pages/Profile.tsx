@@ -622,6 +622,208 @@ const Profile = () => {
           </Card>
         </motion.div>
 
+        {/* Stats Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" /> Skills Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <motion.div
+                  className="rounded-xl border bg-muted/30 p-3 text-center"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p className="text-2xl font-bold text-foreground">{skillStats.total}</p>
+                  <p className="text-xs text-muted-foreground">Total Skills</p>
+                </motion.div>
+                <motion.div
+                  className="rounded-xl border bg-emerald-500/10 p-3 text-center"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  <p className="text-2xl font-bold text-emerald-600">{skillStats.completed}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </motion.div>
+                <motion.div
+                  className="rounded-xl border bg-blue-500/10 p-3 text-center"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <p className="text-2xl font-bold text-blue-600">{skillStats.inProgress}</p>
+                  <p className="text-xs text-muted-foreground">In Progress</p>
+                </motion.div>
+                <motion.div
+                  className="rounded-xl border bg-amber-500/10 p-3 text-center"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <p className="text-2xl font-bold text-amber-600">{skillStats.notStarted}</p>
+                  <p className="text-xs text-muted-foreground">Not Started</p>
+                </motion.div>
+              </div>
+
+              {/* Overall progress bar */}
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-muted-foreground">Overall Progress</span>
+                  <span className="font-medium">{overallPct}%</span>
+                </div>
+                <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${overallPct}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Progress Charts */}
+        {chartData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" /> Track Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-[200px] sm:h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={100}
+                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                        formatter={(value: number, name: string) => [
+                          value,
+                          name === "completed" ? "Completed" : "Remaining",
+                        ]}
+                      />
+                      <Bar dataKey="completed" stackId="a" radius={[4, 0, 0, 4]} name="completed">
+                        {chartData.map((_, index) => (
+                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="remaining" stackId="a" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} name="remaining" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {chartData.map((track, i) => (
+                    <span key={i} className="text-xs text-muted-foreground">
+                      {track.name}: <span className="font-medium text-foreground">{track.pct}%</span>
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Badges & Achievements */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" /> Badges & Achievements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {earnedBadges.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                  {earnedBadges.map((badge, i) => {
+                    const Icon = badge.icon;
+                    return (
+                      <motion.div
+                        key={badge.key}
+                        className="flex items-center gap-3 p-3 rounded-xl border bg-primary/5"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.25, delay: i * 0.08 }}
+                      >
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{badge.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{badge.description}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2 mb-4">No badges earned yet. Keep going!</p>
+              )}
+
+              {/* Unearned badges preview */}
+              {unearnedBadges.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Locked</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {unearnedBadges.map((badge, i) => {
+                      const Icon = badge.icon;
+                      return (
+                        <motion.div
+                          key={badge.key}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-dashed opacity-50"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.5 }}
+                          transition={{ duration: 0.25, delay: i * 0.05 }}
+                        >
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{badge.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{badge.description}</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Skill Tracks Management */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
