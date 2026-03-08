@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Roadmap = lazy(() => import("./pages/Roadmap"));
 const Profile = lazy(() => import("./pages/Profile"));
