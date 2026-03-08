@@ -20,6 +20,7 @@ const navItems = [
   { to: "/roadmap", label: "Roadmap", icon: Map },
   { to: "/career-advisor", label: "AI Advisor", icon: Compass },
   { to: "/skill-gap", label: "Skill Gap", icon: SearchCheck },
+  { to: "/ai-mentor", label: "AI Mentor", icon: Bot },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/community", label: "Community", icon: UsersRound },
   { to: "/leaderboard", label: "Board", icon: Trophy },
