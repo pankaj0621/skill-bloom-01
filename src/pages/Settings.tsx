@@ -35,7 +35,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
 
   // Profile data
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ["settings_profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
