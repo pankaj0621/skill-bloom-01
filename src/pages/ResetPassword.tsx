@@ -118,9 +118,9 @@ const ResetPassword = () => {
            </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={handleReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Naya Password</Label>
-                <PasswordInput
+               <div className="space-y-2">
+                 <Label htmlFor="password">New Password</Label>
+                 <PasswordInput
                   id="password"
                   placeholder="••••••••"
                   value={password}
