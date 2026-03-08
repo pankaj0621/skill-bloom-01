@@ -93,12 +93,12 @@ const Auth = () => {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setEmailSent(true);
-        toast.success("Password reset link bhej diya gaya hai!");
-      }
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setEmailSent(true);
+         toast.success("Password reset link sent successfully!");
+       }
     } catch (err: any) {
       toast.error(err.message || "Failed to send reset email");
     } finally {
