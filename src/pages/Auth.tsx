@@ -31,16 +31,16 @@ const Auth = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          toast.error("Email verify nahi hua hai. Apna inbox check karo.");
-        } else if (error.message.includes("Invalid login credentials")) {
-          toast.error("Email ya password galat hai.");
-        } else {
-          toast.error(error.message);
-        }
-      }
+       const { error } = await supabase.auth.signInWithPassword({ email, password });
+       if (error) {
+         if (error.message.includes("Email not confirmed")) {
+           toast.error("Please verify your email. Check your inbox.");
+         } else if (error.message.includes("Invalid login credentials")) {
+           toast.error("Invalid email or password.");
+         } else {
+           toast.error(error.message);
+         }
+       }
     } catch (err: any) {
       toast.error(err.message || "Login failed");
     } finally {
