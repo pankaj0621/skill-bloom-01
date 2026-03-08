@@ -8,7 +8,7 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLevelColor, type Level } from "@/lib/levels";
-import { Trophy, Medal, Award, User, BarChart3, Flame } from "lucide-react";
+import { Trophy, Medal, Award, User, BarChart3, Flame, Zap } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -76,7 +76,7 @@ const Leaderboard = () => {
       // Get all profiles with streak info
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, college, current_streak");
+        .select("id, display_name, avatar_url, computed_level, college, current_streak, xp, weekly_xp");
       if (pErr) throw pErr;
 
       // Get completed skill counts per user (optionally filtered by date)
@@ -99,9 +99,13 @@ const Leaderboard = () => {
       });
 
       return (profiles || [])
-        .map((p) => ({ ...p, completedSkills: countMap[p.id] || 0 }))
-        .filter((p) => filter === "all" || p.completedSkills > 0)
-        .sort((a, b) => {
+        .map((p: any) => ({ ...p, completedSkills: countMap[p.id] || 0 }))
+        .filter((p: any) => filter === "all" || p.completedSkills > 0)
+        .sort((a: any, b: any) => {
+          // Primary: XP, Secondary: skills, Tertiary: streak
+          const aXp = filter === "weekly" ? (a.weekly_xp || 0) : (a.xp || 0);
+          const bXp = filter === "weekly" ? (b.weekly_xp || 0) : (b.xp || 0);
+          if (bXp !== aXp) return bXp - aXp;
           if (b.completedSkills !== a.completedSkills) return b.completedSkills - a.completedSkills;
           return (b.current_streak || 0) - (a.current_streak || 0);
         })
@@ -149,7 +153,7 @@ const Leaderboard = () => {
           transition={{ duration: 0.4 }}
         >
           <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard 🏆</h1>
-          <p className="text-muted-foreground">Top students ranked by skills completed</p>
+          <p className="text-muted-foreground">Top students ranked by XP</p>
         </motion.div>
 
         {/* Your rank card */}
@@ -170,9 +174,11 @@ const Leaderboard = () => {
                   <div className="flex-1">
                     <p className="font-semibold text-sm">Your Rank</p>
                     <p className="text-xs text-muted-foreground">
-                      {leaderboard[myRank].completedSkills} skills completed
+                      <Zap className="inline h-3 w-3 text-amber-500 mr-0.5" />
+                      {filter === "weekly" ? (leaderboard[myRank] as any).weekly_xp || 0 : (leaderboard[myRank] as any).xp || 0} XP
+                      {' · '}{leaderboard[myRank].completedSkills} skills
                       {leaderboard[myRank].current_streak > 0 && (
-                        <> · <Flame className="inline h-3 w-3 text-orange-500" /> {leaderboard[myRank].current_streak} day streak</>
+                        <> · <Flame className="inline h-3 w-3 text-orange-500" /> {leaderboard[myRank].current_streak}d</>
                       )}
                     </p>
                   </div>
@@ -274,8 +280,11 @@ const Leaderboard = () => {
                       {entry.display_name || "Student"}
                     </p>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <span className={cn("text-xs font-bold", color.text)}>{entry.completedSkills}</span>
-                      <span className="text-[10px] text-muted-foreground">skills</span>
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <span className={cn("text-xs font-bold", color.text)}>
+                        {filter === "weekly" ? (entry as any).weekly_xp || 0 : (entry as any).xp || 0}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">XP</span>
                     </div>
                     {(entry.current_streak || 0) > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] text-orange-500 mt-0.5">
@@ -391,8 +400,13 @@ const Leaderboard = () => {
                           )}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="font-semibold text-sm sm:text-base">{entry.completedSkills}</p>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground">skills</p>
+                          <div className="flex items-center gap-1 justify-end">
+                            <Zap className="h-3.5 w-3.5 text-amber-500" />
+                            <p className="font-semibold text-sm sm:text-base">
+                              {filter === "weekly" ? (entry as any).weekly_xp || 0 : (entry as any).xp || 0}
+                            </p>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{entry.completedSkills} skills</p>
                         </div>
                       </motion.div>
                     );

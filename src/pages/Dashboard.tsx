@@ -12,6 +12,8 @@ import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
 import ActivityFeed from "@/components/ActivityFeed";
+import XpCard from "@/components/XpCard";
+import XpMilestoneToast, { getXpMilestone } from "@/components/XpMilestoneToast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BADGES } from "@/lib/badges";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -210,6 +212,12 @@ const Dashboard = () => {
             </Card>
           </motion.div>
         </motion.div>
+
+        {/* XP Card */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <XpCard xp={(profile as any)?.xp ?? 0} weeklyXp={(profile as any)?.weekly_xp ?? 0} />
+        </motion.div>
+        <XpMilestoneToast xp={(profile as any)?.xp ?? 0} milestone={getXpMilestone((profile as any)?.xp ?? 0)} />
 
         {/* Badges */}
         {(() => {
