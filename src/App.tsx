@@ -63,9 +63,12 @@ const RouteLoadingFallback = () => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  const showNavbar = user && !['/auth', '/onboarding'].includes(location.pathname);
+  const { user, isSuspended } = useAuth();
+  const showNavbar = user && !isSuspended && !['/auth', '/onboarding'].includes(location.pathname);
 
+  if (user && isSuspended) {
+    return <SuspendedScreen />;
+  }
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar outside of page transitions - always fixed */}
