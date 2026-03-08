@@ -24,23 +24,46 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Optimized QueryClient with aggressive caching for mobile networks
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,        // 2 min stale time - reduces refetches
+      gcTime: 1000 * 60 * 10,           // 10 min garbage collection
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      refetchOnWindowFocus: false,       // Don't refetch on every tab switch
+      refetchOnReconnect: true,          // Do refetch when coming back online
+    },
+  },
+});
 
+// Prefetch critical routes on idle
+const prefetchRoutes = () => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      import("./pages/Dashboard");
+      import("./pages/Roadmap");
+    });
+  }
+};
 
-const queryClient = new QueryClient();
+const RouteLoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="space-y-4 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+      <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>
+    </div>
+  </div>
+);
 
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    }>
+    <Suspense fallback={<RouteLoadingFallback />}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-          
-          
           <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
           <Route path="/roadmap" element={<ProtectedRoute><PageTransition><Roadmap /></PageTransition></ProtectedRoute>} />
@@ -61,7 +84,10 @@ const AnimatedRoutes = () => {
 
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
-  const handleSplashComplete = useCallback(() => setSplashDone(true), []);
+  const handleSplashComplete = useCallback(() => {
+    setSplashDone(true);
+    prefetchRoutes();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
