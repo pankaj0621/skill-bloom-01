@@ -84,10 +84,10 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (!email) {
-      toast.error("Email enter karo.");
-      return;
-    }
+     if (!email) {
+       toast.error("Please enter your email.");
+       return;
+     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
