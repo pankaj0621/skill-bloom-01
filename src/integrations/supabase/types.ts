@@ -132,12 +132,17 @@ export type Database = {
           current_streak: number
           display_name: string | null
           id: string
+          is_suspended: boolean
           last_activity_date: string | null
           last_weekly_reset: string | null
           longest_streak: number
           primary_goal: string | null
           role: string | null
           stream: string | null
+          suspend_reason: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_until: string | null
           updated_at: string
           username: string | null
           username_changes: number
@@ -154,12 +159,17 @@ export type Database = {
           current_streak?: number
           display_name?: string | null
           id: string
+          is_suspended?: boolean
           last_activity_date?: string | null
           last_weekly_reset?: string | null
           longest_streak?: number
           primary_goal?: string | null
           role?: string | null
           stream?: string | null
+          suspend_reason?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_until?: string | null
           updated_at?: string
           username?: string | null
           username_changes?: number
@@ -176,12 +186,17 @@ export type Database = {
           current_streak?: number
           display_name?: string | null
           id?: string
+          is_suspended?: boolean
           last_activity_date?: string | null
           last_weekly_reset?: string | null
           longest_streak?: number
           primary_goal?: string | null
           role?: string | null
           stream?: string | null
+          suspend_reason?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_until?: string | null
           updated_at?: string
           username?: string | null
           username_changes?: number
