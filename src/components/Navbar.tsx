@@ -11,6 +11,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversations } from "@/hooks/useMessages";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatPopup from "@/components/ChatPopup";
+import NotificationBell from "@/components/NotificationBell";
 import appIcon from "@/assets/app-icon-512.png";
 
 const navItems = [
