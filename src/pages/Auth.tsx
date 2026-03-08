@@ -173,14 +173,14 @@ const Auth = () => {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
-              <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
-            </motion.div>
-            <CardDescription>
-              {mode === "login" && "Apne account mein login karo"}
-              {mode === "signup" && "Naya account banao"}
-              {mode === "forgot" && "Password reset karo"}
-            </CardDescription>
+               <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
+               <CardTitle className="text-2xl font-bold">SkillTracker</CardTitle>
+             </motion.div>
+             <CardDescription>
+               {mode === "login" && "Sign in to your account"}
+               {mode === "signup" && "Create a new account"}
+               {mode === "forgot" && "Reset your password"}
+             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword} className="space-y-4">
