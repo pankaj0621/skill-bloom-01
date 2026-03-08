@@ -41,7 +41,7 @@ const Roadmap = () => {
   const { triggerLevelUp, LevelUpAnimation } = LevelUpToast();
   const { showBadgePopup, BadgePopup } = useBadgePopup();
 
-  const { data: progress, isLoading: progressLoading } = useQuery({
+  const { data: progress, isLoading: progressLoading, error: progressError, refetch: refetchProgress } = useQuery({
     queryKey: ["user_progress_full", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
