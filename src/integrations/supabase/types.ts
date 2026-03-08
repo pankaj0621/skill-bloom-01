@@ -133,6 +133,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_activity_date: string | null
+          last_weekly_reset: string | null
           longest_streak: number
           primary_goal: string | null
           role: string | null
@@ -140,6 +141,8 @@ export type Database = {
           updated_at: string
           username: string | null
           username_changes: number
+          weekly_xp: number
+          xp: number
           year: number | null
         }
         Insert: {
@@ -152,6 +155,7 @@ export type Database = {
           display_name?: string | null
           id: string
           last_activity_date?: string | null
+          last_weekly_reset?: string | null
           longest_streak?: number
           primary_goal?: string | null
           role?: string | null
@@ -159,6 +163,8 @@ export type Database = {
           updated_at?: string
           username?: string | null
           username_changes?: number
+          weekly_xp?: number
+          xp?: number
           year?: number | null
         }
         Update: {
@@ -171,6 +177,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_activity_date?: string | null
+          last_weekly_reset?: string | null
           longest_streak?: number
           primary_goal?: string | null
           role?: string | null
@@ -178,6 +185,8 @@ export type Database = {
           updated_at?: string
           username?: string | null
           username_changes?: number
+          weekly_xp?: number
+          xp?: number
           year?: number | null
         }
         Relationships: []
