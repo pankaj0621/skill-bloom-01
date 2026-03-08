@@ -17,6 +17,7 @@ import Layout from "@/components/Layout";
 import LevelUpToast from "@/components/LevelUpToast";
 import useBadgePopup from "@/components/BadgePopup";
 import { CheckCircle, Circle, Clock, Plus, Map } from "lucide-react";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
