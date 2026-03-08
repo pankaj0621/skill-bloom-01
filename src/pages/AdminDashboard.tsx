@@ -14,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format, subDays, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import UserManagement from "@/components/admin/UserManagement";
+import FeedbackManagement from "@/components/admin/FeedbackManagement";
 
 const CHART_COLORS = [
   "hsl(217, 91%, 50%)",
@@ -140,7 +141,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="reports" className="relative">
@@ -151,6 +152,7 @@ const AdminDashboard = () => {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
@@ -230,6 +232,11 @@ const AdminDashboard = () => {
           {/* Reports Tab */}
           <TabsContent value="reports" className="space-y-4">
             <ReportsSection reports={reports} profiles={profiles} updateReport={updateReport} />
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-4">
+            <FeedbackManagement profiles={profiles} />
           </TabsContent>
 
           {/* Activity Tab */}

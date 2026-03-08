@@ -27,6 +27,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const FeedbackPage = lazy(() => import("./pages/Feedback"));
 
 // Optimized QueryClient with aggressive caching for mobile networks
 const queryClient = new QueryClient({
@@ -89,6 +90,7 @@ const AnimatedRoutes = () => {
             <Route path="/analytics" element={<ProtectedRoute><PageTransition><Analytics /></PageTransition></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute></ProtectedRoute>} />
+            <Route path="/feedback" element={<ProtectedRoute><PageTransition><FeedbackPage /></PageTransition></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>

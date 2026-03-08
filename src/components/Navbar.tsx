@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield, MessageSquarePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
@@ -104,6 +104,11 @@ const Navbar = () => {
               </Button>
             </Link>
           )}
+          <Link to="/feedback">
+            <Button variant="ghost" size="icon" title="Feedback">
+              <MessageSquarePlus className="h-4 w-4" />
+            </Button>
+          </Link>
           <Link to="/settings">
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
@@ -139,6 +144,11 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
+            <Link to="/feedback">
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Feedback">
+                <MessageSquarePlus className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/settings">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
