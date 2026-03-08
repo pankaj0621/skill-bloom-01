@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield, MessageSquarePlus, Compass, SearchCheck, Bot } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield, MessageSquarePlus, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
@@ -18,9 +18,7 @@ import appIcon from "@/assets/app-icon-512.png";
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
-  { to: "/career-advisor", label: "AI Advisor", icon: Compass },
-  { to: "/skill-gap", label: "Skill Gap", icon: SearchCheck },
-  { to: "/ai-mentor", label: "AI Mentor", icon: Bot },
+  { to: "/ai-hub", label: "AI Tools", icon: Brain },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/community", label: "Community", icon: UsersRound },
   { to: "/leaderboard", label: "Board", icon: Trophy },
