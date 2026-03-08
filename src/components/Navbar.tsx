@@ -46,6 +46,7 @@ const Navbar = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const { pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
   const { totalUnread } = useConversations(user?.id);
+  const { isAdmin } = useIsAdmin();
   const [chatOpen, setChatOpen] = useState(false);
 
   useRealtimeNotifications(user?.id);
