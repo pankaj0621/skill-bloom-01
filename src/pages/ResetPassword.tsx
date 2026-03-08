@@ -47,14 +47,14 @@ const ResetPassword = () => {
      }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setSuccess(true);
-        toast.success("Password successfully update ho gaya!");
-        setTimeout(() => navigate("/dashboard", { replace: true }), 2000);
-      }
+       const { error } = await supabase.auth.updateUser({ password });
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setSuccess(true);
+         toast.success("Password updated successfully!");
+         setTimeout(() => navigate("/dashboard", { replace: true }), 2000);
+       }
     } catch (err: any) {
       toast.error(err.message || "Password update failed");
     } finally {
