@@ -174,9 +174,11 @@ const Leaderboard = () => {
                   <div className="flex-1">
                     <p className="font-semibold text-sm">Your Rank</p>
                     <p className="text-xs text-muted-foreground">
-                      {leaderboard[myRank].completedSkills} skills completed
+                      <Zap className="inline h-3 w-3 text-amber-500 mr-0.5" />
+                      {filter === "weekly" ? (leaderboard[myRank] as any).weekly_xp || 0 : (leaderboard[myRank] as any).xp || 0} XP
+                      {' · '}{leaderboard[myRank].completedSkills} skills
                       {leaderboard[myRank].current_streak > 0 && (
-                        <> · <Flame className="inline h-3 w-3 text-orange-500" /> {leaderboard[myRank].current_streak} day streak</>
+                        <> · <Flame className="inline h-3 w-3 text-orange-500" /> {leaderboard[myRank].current_streak}d</>
                       )}
                     </p>
                   </div>
