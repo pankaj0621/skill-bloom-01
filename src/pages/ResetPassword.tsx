@@ -75,8 +75,8 @@ const ResetPassword = () => {
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle className="h-8 w-8 text-success" />
               </div>
-              <CardTitle className="text-xl">Password Updated!</CardTitle>
-              <CardDescription>Dashboard pe redirect ho rahe ho...</CardDescription>
+               <CardTitle className="text-xl">Password Updated!</CardTitle>
+               <CardDescription>Redirecting to dashboard...</CardDescription>
             </CardHeader>
           </Card>
         </motion.div>
