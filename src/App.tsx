@@ -21,6 +21,7 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Community = lazy(() => import("./pages/Community"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 
