@@ -14,7 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { feedback } from "@/components/SuccessToast";
 import { motion } from "framer-motion";
+import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import {
   Sun, Moon, Monitor, Bell, BellOff, Shield, UserCircle,
   Save, ArrowLeft, MessageCircle, Trophy, TrendingUp, Users,
