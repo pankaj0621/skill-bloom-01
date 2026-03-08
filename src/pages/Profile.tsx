@@ -220,7 +220,21 @@ const Profile = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_skill_progress")
-        .select("*, skills(skill_tracks(id, name))")
+        .select("*, skills(name, skill_tracks(id, name))")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch earned badges
+  const { data: userBadges } = useQuery({
+    queryKey: ["user_badges", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_badges")
+        .select("*")
         .eq("user_id", user!.id);
       if (error) throw error;
       return data;
