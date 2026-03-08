@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2020",
     cssMinify: true,
+    modulePreload: {
+      polyfill: true,
+    },
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
