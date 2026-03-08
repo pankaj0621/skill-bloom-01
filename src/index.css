@@ -143,3 +143,94 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 }
+
+/* ============================================
+   MICRO-INTERACTIONS & POLISH
+   ============================================ */
+
+@layer utilities {
+  /* Hover lift effect for cards */
+  .hover-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .hover-lift:hover {
+    @apply -translate-y-0.5 shadow-md;
+  }
+
+  /* Subtle scale on hover */
+  .hover-scale {
+    @apply transition-transform duration-200 ease-out;
+  }
+  .hover-scale:hover {
+    @apply scale-[1.02];
+  }
+
+  /* Interactive card styling */
+  .interactive-card {
+    @apply transition-all duration-200 ease-out cursor-pointer;
+  }
+  .interactive-card:hover {
+    @apply -translate-y-0.5 shadow-lg border-primary/20;
+  }
+  .interactive-card:active {
+    @apply scale-[0.99] shadow-sm;
+  }
+
+  /* Button press feedback */
+  .btn-press {
+    @apply transition-transform duration-100 ease-out;
+  }
+  .btn-press:active {
+    @apply scale-[0.97];
+  }
+
+  /* Underline link animation */
+  .link-underline {
+    @apply relative;
+  }
+  .link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0.5 bg-primary scale-x-0 origin-right transition-transform duration-200 ease-out;
+  }
+  .link-underline:hover::after {
+    @apply scale-x-100 origin-left;
+  }
+
+  /* Fade in animation utility */
+  .animate-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  /* Stagger children animation */
+  .stagger-children > * {
+    @apply opacity-0 animate-fade-in;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* Focus ring style */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Smooth appearance */
+  .appear {
+    @apply opacity-0 translate-y-2;
+    animation: fade-in 0.3s ease-out forwards;
+  }
+}
