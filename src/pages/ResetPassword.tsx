@@ -111,11 +111,11 @@ const ResetPassword = () => {
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <Card>
-          <CardHeader className="text-center pb-2">
-            <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
-            <CardTitle className="text-xl font-bold">Naya Password Set Karo</CardTitle>
-            <CardDescription>Apna naya password enter karo</CardDescription>
-          </CardHeader>
+           <CardHeader className="text-center pb-2">
+             <img src={appIcon} alt="SkillTracker" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
+             <CardTitle className="text-xl font-bold">Set New Password</CardTitle>
+             <CardDescription>Enter your new password</CardDescription>
+           </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={handleReset} className="space-y-4">
               <div className="space-y-2">
