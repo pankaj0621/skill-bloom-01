@@ -229,12 +229,12 @@ const Auth = () => {
               )}
 
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button type="submit" className="w-full h-11" disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  {mode === "login" && (loading ? "Logging in..." : "Login")}
-                  {mode === "signup" && (loading ? "Signing up..." : "Sign Up")}
-                  {mode === "forgot" && (loading ? "Sending..." : "Reset Link Bhejo")}
-                </Button>
+                 <Button type="submit" className="w-full h-11" disabled={loading}>
+                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                   {mode === "login" && (loading ? "Logging in..." : "Login")}
+                   {mode === "signup" && (loading ? "Signing up..." : "Sign Up")}
+                   {mode === "forgot" && (loading ? "Sending..." : "Send Reset Link")}
+                 </Button>
               </motion.div>
             </form>
 
