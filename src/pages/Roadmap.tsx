@@ -103,6 +103,10 @@ const Roadmap = () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["user_badges"] });
     },
+    onError: (_, variables) => feedback.error("Failed to update skill status", {
+      description: "Your progress couldn't be saved. Please try again.",
+      retry: () => updateStatus.mutate(variables),
+    }),
   });
 
   const addCustomSkill = useMutation({
