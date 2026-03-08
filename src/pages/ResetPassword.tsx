@@ -38,13 +38,13 @@ const ResetPassword = () => {
     e.preventDefault();
     if (loading) return;
     if (password.length < 6) {
-      toast.error("Password kam se kam 6 characters ka hona chahiye.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords match nahi kar rahe.");
-      return;
-    }
+       toast.error("Password must be at least 6 characters long.");
+       return;
+     }
+     if (password !== confirmPassword) {
+       toast.error("Passwords do not match.");
+       return;
+     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
