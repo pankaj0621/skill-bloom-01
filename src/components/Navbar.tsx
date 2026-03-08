@@ -132,6 +132,13 @@ const Navbar = () => {
               <MessageCircle className="h-4 w-4" />
               {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
             </Button>
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                  <Shield className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <Link to="/settings">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
