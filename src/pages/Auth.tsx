@@ -249,37 +249,37 @@ const Auth = () => {
                </button>
              )}
 
-            <div className="text-center mt-4">
-              {mode === "login" ? (
-                <p className="text-sm text-muted-foreground">
-                  Account nahi hai?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline font-medium min-h-0"
-                    data-small-target
-                    onClick={() => resetForm("signup")}
-                  >
-                    Sign Up karo
-                  </button>
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Pehle se account hai?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline font-medium min-h-0"
-                    data-small-target
-                    onClick={() => resetForm("login")}
-                  >
-                    Login karo
-                  </button>
-                </p>
-              )}
-            </div>
+             <div className="text-center mt-4">
+               {mode === "login" ? (
+                 <p className="text-sm text-muted-foreground">
+                   Don't have an account?{" "}
+                   <button
+                     type="button"
+                     className="text-primary hover:underline font-medium min-h-0"
+                     data-small-target
+                     onClick={() => resetForm("signup")}
+                   >
+                     Sign up
+                   </button>
+                 </p>
+               ) : (
+                 <p className="text-sm text-muted-foreground">
+                   Already have an account?{" "}
+                   <button
+                     type="button"
+                     className="text-primary hover:underline font-medium min-h-0"
+                     data-small-target
+                     onClick={() => resetForm("login")}
+                   >
+                     Login
+                   </button>
+                 </p>
+               )}
+             </div>
 
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              Sign in karke, aap hamare terms of service se agree karte ho
-            </p>
+             <p className="text-xs text-muted-foreground text-center mt-4">
+               By signing in, you agree to our terms of service
+             </p>
           </CardContent>
         </Card>
       </motion.div>
