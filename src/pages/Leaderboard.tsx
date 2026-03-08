@@ -99,9 +99,13 @@ const Leaderboard = () => {
       });
 
       return (profiles || [])
-        .map((p) => ({ ...p, completedSkills: countMap[p.id] || 0 }))
-        .filter((p) => filter === "all" || p.completedSkills > 0)
-        .sort((a, b) => {
+        .map((p: any) => ({ ...p, completedSkills: countMap[p.id] || 0 }))
+        .filter((p: any) => filter === "all" || p.completedSkills > 0)
+        .sort((a: any, b: any) => {
+          // Primary: XP, Secondary: skills, Tertiary: streak
+          const aXp = filter === "weekly" ? (a.weekly_xp || 0) : (a.xp || 0);
+          const bXp = filter === "weekly" ? (b.weekly_xp || 0) : (b.xp || 0);
+          if (bXp !== aXp) return bXp - aXp;
           if (b.completedSkills !== a.completedSkills) return b.completedSkills - a.completedSkills;
           return (b.current_streak || 0) - (a.current_streak || 0);
         })
