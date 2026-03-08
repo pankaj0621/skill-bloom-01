@@ -137,6 +137,9 @@ const Roadmap = () => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
+    onError: (_, variables) => feedback.error("Failed to update skill", {
+      retry: () => updateCustomStatus.mutate(variables),
+    }),
   });
 
   const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: any[] }>, p: any) => {
