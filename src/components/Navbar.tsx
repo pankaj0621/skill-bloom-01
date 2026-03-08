@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
@@ -95,6 +95,11 @@ const Navbar = () => {
             <MessageCircle className="h-4 w-4" />
             {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
           </Button>
+          <Link to="/settings">
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
             {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -118,6 +123,11 @@ const Navbar = () => {
               <MessageCircle className="h-4 w-4" />
               {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
             </Button>
+            <Link to="/settings">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
               {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>

@@ -318,6 +318,51 @@ export type Database = {
           },
         ]
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          notify_badges: boolean
+          notify_friend_requests: boolean
+          notify_level_up: boolean
+          notify_messages: boolean
+          privacy_show_on_leaderboard: boolean
+          privacy_show_profile: boolean
+          privacy_show_progress: boolean
+          privacy_show_streak: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_badges?: boolean
+          notify_friend_requests?: boolean
+          notify_level_up?: boolean
+          notify_messages?: boolean
+          privacy_show_on_leaderboard?: boolean
+          privacy_show_profile?: boolean
+          privacy_show_progress?: boolean
+          privacy_show_streak?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_badges?: boolean
+          notify_friend_requests?: boolean
+          notify_level_up?: boolean
+          notify_messages?: boolean
+          privacy_show_on_leaderboard?: boolean
+          privacy_show_profile?: boolean
+          privacy_show_progress?: boolean
+          privacy_show_streak?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_skill_progress: {
         Row: {
           completed_at: string | null
