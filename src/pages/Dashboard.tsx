@@ -12,6 +12,8 @@ import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
 import ActivityFeed from "@/components/ActivityFeed";
+import XpCard from "@/components/XpCard";
+import XpMilestoneToast, { getXpMilestone } from "@/components/XpMilestoneToast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BADGES } from "@/lib/badges";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
