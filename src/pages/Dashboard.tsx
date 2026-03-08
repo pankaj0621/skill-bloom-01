@@ -292,6 +292,11 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Friend Activity Feed */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <ActivityFeed />
+        </motion.div>
+
         {/* Priority Skills & Smart Recommendations */}
         {progress && progress.length > 0 && (() => {
           const userStream = (profile as any)?.stream || "";
