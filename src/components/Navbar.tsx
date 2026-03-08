@@ -59,7 +59,7 @@ const Navbar = () => {
   return (
     <>
       {/* Desktop top navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
+      <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background backdrop-blur-sm hidden md:block">
         <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
           <Link to="/dashboard" className="font-bold text-lg mr-8 flex items-center gap-2">
             <img src={appIcon} alt="SPCT" className="w-7 h-7 rounded-md" loading="lazy" decoding="async" />
