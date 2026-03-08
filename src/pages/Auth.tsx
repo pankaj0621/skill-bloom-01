@@ -238,16 +238,16 @@ const Auth = () => {
               </motion.div>
             </form>
 
-            {mode === "login" && (
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline w-full text-right mt-2 min-h-0"
-                data-small-target
-                onClick={() => resetForm("forgot")}
-              >
-                Password bhool gaye?
-              </button>
-            )}
+             {mode === "login" && (
+               <button
+                 type="button"
+                 className="text-xs text-primary hover:underline w-full text-right mt-2 min-h-0"
+                 data-small-target
+                 onClick={() => resetForm("forgot")}
+               >
+                 Forgot password?
+               </button>
+             )}
 
             <div className="text-center mt-4">
               {mode === "login" ? (
