@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { getLevel, getLevelColor } from "@/lib/levels";
 import Layout from "@/components/Layout";
 import { AlertTriangle, Lightbulb, ArrowRight, BookOpen, Users, Info, Flame } from "lucide-react";
+import ActivityFeed from "@/components/ActivityFeed";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BADGES } from "@/lib/badges";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -290,6 +291,11 @@ const Dashboard = () => {
             </motion.div>
           </div>
         )}
+
+        {/* Friend Activity Feed */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <ActivityFeed />
+        </motion.div>
 
         {/* Priority Skills & Smart Recommendations */}
         {progress && progress.length > 0 && (() => {
