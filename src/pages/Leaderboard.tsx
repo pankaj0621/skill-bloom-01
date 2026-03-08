@@ -145,6 +145,19 @@ const Leaderboard = () => {
     }
     if (myRank < 0 || myRank >= 3) confettiFired.current = false;
   }, [myRank]);
+
+
+  if (error && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard 🏆</h1>
+          <ErrorAlert {...getQueryErrorProps(error)} onRetry={() => refetch()} />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
