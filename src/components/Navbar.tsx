@@ -18,6 +18,7 @@ import appIcon from "@/assets/app-icon-512.png";
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/roadmap", label: "Roadmap", icon: Map },
+  { to: "/career-advisor", label: "AI Advisor", icon: Compass },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/community", label: "Community", icon: UsersRound },
   { to: "/leaderboard", label: "Board", icon: Trophy },
