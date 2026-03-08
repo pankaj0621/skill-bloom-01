@@ -28,6 +28,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FeedbackPage = lazy(() => import("./pages/Feedback"));
+const CareerAdvisor = lazy(() => import("./pages/CareerAdvisor"));
 
 // Optimized QueryClient with aggressive caching for mobile networks
 const queryClient = new QueryClient({
