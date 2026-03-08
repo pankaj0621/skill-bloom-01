@@ -31,6 +31,7 @@ const FeedbackPage = lazy(() => import("./pages/Feedback"));
 const CareerAdvisor = lazy(() => import("./pages/CareerAdvisor"));
 const SkillGapAnalyzer = lazy(() => import("./pages/SkillGapAnalyzer"));
 const AIMentor = lazy(() => import("./pages/AIMentor"));
+const AIHub = lazy(() => import("./pages/AIHub"));
 
 // Optimized QueryClient with aggressive caching for mobile networks
 const queryClient = new QueryClient({
