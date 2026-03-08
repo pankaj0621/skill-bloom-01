@@ -125,9 +125,12 @@ const Settings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user_settings"] });
-      toast.success("Setting updated");
+      feedback.saved("Setting");
     },
-    onError: () => toast.error("Failed to update setting"),
+    onError: (_, variables) => feedback.error("Failed to update setting", {
+      description: "The setting couldn't be changed. Please try again.",
+      retry: () => updateSetting.mutate(variables),
+    }),
   });
 
   const toggleSetting = (key: string, value: boolean) => {
