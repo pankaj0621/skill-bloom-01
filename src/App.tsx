@@ -94,6 +94,7 @@ const AnimatedRoutes = () => {
             <Route path="/admin" element={<ProtectedRoute><AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute></ProtectedRoute>} />
             <Route path="/feedback" element={<ProtectedRoute><PageTransition><FeedbackPage /></PageTransition></ProtectedRoute>} />
             <Route path="/career-advisor" element={<ProtectedRoute><PageTransition><CareerAdvisor /></PageTransition></ProtectedRoute>} />
+            <Route path="/skill-gap" element={<ProtectedRoute><PageTransition><SkillGapAnalyzer /></PageTransition></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
