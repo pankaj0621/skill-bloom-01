@@ -144,6 +144,11 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
+            <Link to="/feedback">
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Feedback">
+                <MessageSquarePlus className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/settings">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
