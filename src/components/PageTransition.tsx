@@ -18,7 +18,7 @@ const pageTransition = prefersReducedMotion
   ? { duration: 0 }
   : {
       duration: 0.25,
-      ease: [0.25, 0.1, 0.25, 1], // cubic-bezier for smooth feel
+      ease: [0.25, 0.1, 0.25, 1] as const,
     };
 
 const PageTransition = memo(({ children }: { children: ReactNode }) => {
