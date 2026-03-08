@@ -142,14 +142,14 @@ const Auth = () => {
                </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => resetForm("login")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Login pe wapas jaao
-              </Button>
+               <Button
+                 variant="outline"
+                 className="w-full"
+                 onClick={() => resetForm("login")}
+               >
+                 <ArrowLeft className="h-4 w-4 mr-2" />
+                 Back to Login
+               </Button>
             </CardContent>
           </Card>
         </motion.div>
