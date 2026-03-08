@@ -126,20 +126,20 @@ const Auth = () => {
           <Card>
             <CardHeader className="text-center pb-2">
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Mail className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-xl font-bold">Email Check Karo!</CardTitle>
-              </motion.div>
-              <CardDescription className="pt-2">
-                {mode === "forgot"
-                  ? `Password reset link ${email} pe bhej diya gaya hai.`
-                  : `Verification link ${email} pe bhej diya gaya hai. Link pe click karke apna account verify karo.`}
-              </CardDescription>
+                 initial={{ scale: 0 }}
+                 animate={{ scale: 1 }}
+                 transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+               >
+                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                   <Mail className="h-8 w-8 text-primary" />
+                 </div>
+                 <CardTitle className="text-xl font-bold">Check Your Email</CardTitle>
+               </motion.div>
+               <CardDescription className="pt-2">
+                 {mode === "forgot"
+                   ? `Password reset link has been sent to ${email}.`
+                   : `Verification link has been sent to ${email}. Click the link to verify your account.`}
+               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
               <Button
