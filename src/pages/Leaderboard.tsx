@@ -280,8 +280,11 @@ const Leaderboard = () => {
                       {entry.display_name || "Student"}
                     </p>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <span className={cn("text-xs font-bold", color.text)}>{entry.completedSkills}</span>
-                      <span className="text-[10px] text-muted-foreground">skills</span>
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <span className={cn("text-xs font-bold", color.text)}>
+                        {filter === "weekly" ? (entry as any).weekly_xp || 0 : (entry as any).xp || 0}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">XP</span>
                     </div>
                     {(entry.current_streak || 0) > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] text-orange-500 mt-0.5">
