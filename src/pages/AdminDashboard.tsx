@@ -7,13 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Activity, Flag, TrendingUp, UserCheck, Zap, Calendar, Shield } from "lucide-react";
+import { Users, Activity, Flag, TrendingUp, UserCheck, Zap, Calendar, Shield, UserX } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { format, subDays, startOfDay } from "date-fns";
 import { toast } from "sonner";
+import UserManagement from "@/components/admin/UserManagement";
 
 const CHART_COLORS = [
   "hsl(217, 91%, 50%)",
@@ -26,41 +26,32 @@ const CHART_COLORS = [
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
-  // Fetch all profiles for stats
   const { data: profiles = [] } = useQuery({
     queryKey: ["admin-profiles"],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, username, avatar_url, xp, computed_level, current_streak, created_at, last_activity_date, role, stream, college, weekly_xp");
+        .select("id, display_name, username, avatar_url, xp, computed_level, current_streak, created_at, last_activity_date, role, stream, college, weekly_xp, bio, is_suspended, suspend_reason, suspended_until");
       return data || [];
     },
   });
 
-  // Fetch reports
   const { data: reports = [] } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("reports").select("*").order("created_at", { ascending: false });
       return data || [];
     },
   });
 
-  // Fetch skill progress for analytics
   const { data: skillProgress = [] } = useQuery({
     queryKey: ["admin-skill-progress"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("user_skill_progress")
-        .select("status, completed_at, created_at");
+      const { data } = await supabase.from("user_skill_progress").select("status, completed_at, created_at");
       return data || [];
     },
   });
 
-  // Fetch activity feed (recent skill completions)
   const { data: recentActivity = [] } = useQuery({
     queryKey: ["admin-recent-activity"],
     queryFn: async () => {
@@ -73,7 +64,6 @@ const AdminDashboard = () => {
     },
   });
 
-  // Update report mutation
   const updateReport = useMutation({
     mutationFn: async ({ id, status, admin_notes }: { id: string; status: string; admin_notes?: string }) => {
       const { error } = await supabase
@@ -88,7 +78,7 @@ const AdminDashboard = () => {
     },
   });
 
-  // Computed stats
+  // Stats
   const totalUsers = profiles.length;
   const today = startOfDay(new Date());
   const activeToday = profiles.filter(p => p.last_activity_date && new Date(p.last_activity_date) >= today).length;
@@ -96,8 +86,9 @@ const AdminDashboard = () => {
   const totalXP = profiles.reduce((sum, p) => sum + (p.xp || 0), 0);
   const avgXP = totalUsers > 0 ? Math.round(totalXP / totalUsers) : 0;
   const pendingReports = reports.filter(r => r.status === "pending").length;
+  const suspendedCount = profiles.filter(p => p.is_suspended).length;
 
-  // Signup trend (last 14 days)
+  // Signup trend
   const signupTrend = Array.from({ length: 14 }, (_, i) => {
     const day = subDays(new Date(), 13 - i);
     const dayStr = format(day, "yyyy-MM-dd");
@@ -107,19 +98,16 @@ const AdminDashboard = () => {
 
   // Level distribution
   const levelCounts: Record<string, number> = {};
-  profiles.forEach(p => {
-    const lvl = p.computed_level || "Beginner";
-    levelCounts[lvl] = (levelCounts[lvl] || 0) + 1;
-  });
+  profiles.forEach(p => { const lvl = p.computed_level || "Beginner"; levelCounts[lvl] = (levelCounts[lvl] || 0) + 1; });
   const levelData = Object.entries(levelCounts).map(([name, value]) => ({ name, value }));
 
-  // XP distribution buckets
+  // XP distribution
   const xpBuckets = [
     { range: "0-100", min: 0, max: 100 },
     { range: "101-500", min: 101, max: 500 },
-    { range: "501-1000", min: 501, max: 1000 },
-    { range: "1001-5000", min: 1001, max: 5000 },
-    { range: "5000+", min: 5001, max: Infinity },
+    { range: "501-1K", min: 501, max: 1000 },
+    { range: "1K-5K", min: 1001, max: 5000 },
+    { range: "5K+", min: 5001, max: Infinity },
   ];
   const xpDistribution = xpBuckets.map(b => ({
     range: b.range,
@@ -128,10 +116,7 @@ const AdminDashboard = () => {
 
   // Stream distribution
   const streamCounts: Record<string, number> = {};
-  profiles.forEach(p => {
-    const s = p.stream || "Unset";
-    streamCounts[s] = (streamCounts[s] || 0) + 1;
-  });
+  profiles.forEach(p => { const s = p.stream || "Unset"; streamCounts[s] = (streamCounts[s] || 0) + 1; });
   const streamData = Object.entries(streamCounts).map(([name, value]) => ({ name, value }));
 
   return (
@@ -141,20 +126,22 @@ const AdminDashboard = () => {
           <Shield className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Platform overview and management</p>
+            <p className="text-sm text-muted-foreground">Full platform control & management</p>
           </div>
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard icon={Users} label="Total Users" value={totalUsers} />
           <StatCard icon={UserCheck} label="Active Today" value={activeToday} />
           <StatCard icon={TrendingUp} label="New This Week" value={newThisWeek} />
           <StatCard icon={Zap} label="Avg XP" value={avgXP} />
+          <StatCard icon={UserX} label="Suspended" value={suspendedCount} variant="destructive" />
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="reports" className="relative">
               Reports
@@ -167,10 +154,14 @@ const AdminDashboard = () => {
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
+          {/* Users Tab */}
+          <TabsContent value="users">
+            <UserManagement profiles={profiles} />
+          </TabsContent>
+
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Signup Trend */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -191,18 +182,13 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Level Distribution */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Level Distribution</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Level Distribution</CardTitle></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
                       <Pie data={levelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`} fontSize={11}>
-                        {levelData.map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                        ))}
+                        {levelData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -210,11 +196,8 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* XP Distribution */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">XP Distribution</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">XP Distribution</CardTitle></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={xpDistribution}>
@@ -228,18 +211,13 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Stream Distribution */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Stream Distribution</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Stream Distribution</CardTitle></CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
                       <Pie data={streamData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`} fontSize={11}>
-                        {streamData.map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                        ))}
+                        {streamData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -247,55 +225,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Top Users Table */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Top Users by XP</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Level</TableHead>
-                      <TableHead className="text-right">XP</TableHead>
-                      <TableHead className="text-right">Streak</TableHead>
-                      <TableHead className="hidden md:table-cell">Joined</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {[...profiles]
-                      .sort((a, b) => (b.xp || 0) - (a.xp || 0))
-                      .slice(0, 10)
-                      .map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7">
-                                <AvatarImage src={p.avatar_url || ""} />
-                                <AvatarFallback className="text-xs">{(p.display_name || "U")[0]}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium leading-none">{p.display_name || "Unknown"}</p>
-                                {p.username && <p className="text-xs text-muted-foreground">@{p.username}</p>}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">{p.computed_level}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">{p.xp?.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{p.current_streak}🔥</TableCell>
-                          <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                            {format(new Date(p.created_at), "MMM dd, yyyy")}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Reports Tab */}
@@ -313,12 +242,11 @@ const AdminDashboard = () => {
   );
 };
 
-// Stat Card
-const StatCard = ({ icon: Icon, label, value }: { icon: any; label: string; value: number }) => (
+const StatCard = ({ icon: Icon, label, value, variant }: { icon: any; label: string; value: number; variant?: string }) => (
   <Card>
     <CardContent className="p-4 flex items-center gap-3">
-      <div className="rounded-lg bg-primary/10 p-2.5">
-        <Icon className="h-5 w-5 text-primary" />
+      <div className={`rounded-lg p-2.5 ${variant === "destructive" ? "bg-destructive/10" : "bg-primary/10"}`}>
+        <Icon className={`h-5 w-5 ${variant === "destructive" ? "text-destructive" : "text-primary"}`} />
       </div>
       <div>
         <p className="text-2xl font-bold">{value.toLocaleString()}</p>
@@ -328,22 +256,16 @@ const StatCard = ({ icon: Icon, label, value }: { icon: any; label: string; valu
   </Card>
 );
 
-// Reports Section
 const ReportsSection = ({ reports, profiles, updateReport }: any) => {
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
-
-  const getReporterName = (id: string) => {
+  const getName = (id: string) => {
     const p = profiles.find((p: any) => p.id === id);
     return p?.display_name || p?.username || "Unknown";
   };
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "destructive";
-      case "reviewing": return "secondary";
-      case "resolved": return "default";
-      default: return "outline";
-    }
+  const statusColor = (s: string) => {
+    if (s === "pending") return "destructive";
+    if (s === "reviewing") return "secondary";
+    return "default";
   };
 
   if (reports.length === 0) {
@@ -359,59 +281,40 @@ const ReportsSection = ({ reports, profiles, updateReport }: any) => {
 
   return (
     <div className="space-y-3">
-      {reports.map((report: any) => (
-        <Card key={report.id}>
+      {reports.map((r: any) => (
+        <Card key={r.id}>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={statusColor(report.status) as any}>{report.status}</Badge>
-                  <Badge variant="outline">{report.report_type}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(report.created_at), "MMM dd, yyyy HH:mm")}
-                  </span>
+                  <Badge variant={statusColor(r.status) as any}>{r.status}</Badge>
+                  <Badge variant="outline">{r.report_type}</Badge>
+                  <span className="text-xs text-muted-foreground">{format(new Date(r.created_at), "MMM dd, yyyy HH:mm")}</span>
                 </div>
-                <p className="font-medium mt-1.5">{report.reason}</p>
-                {report.description && <p className="text-sm text-muted-foreground mt-1">{report.description}</p>}
+                <p className="font-medium mt-1.5">{r.reason}</p>
+                {r.description && <p className="text-sm text-muted-foreground mt-1">{r.description}</p>}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reported by: {getReporterName(report.reporter_id)}
-                  {report.reported_user_id && ` → ${getReporterName(report.reported_user_id)}`}
+                  Reported by: {getName(r.reporter_id)}
+                  {r.reported_user_id && ` → ${getName(r.reported_user_id)}`}
                 </p>
               </div>
             </div>
-
-            {report.status !== "resolved" && (
+            {r.status !== "resolved" && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <Textarea
                   placeholder="Admin notes..."
-                  value={adminNotes[report.id] || report.admin_notes || ""}
-                  onChange={(e) => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
+                  value={adminNotes[r.id] || r.admin_notes || ""}
+                  onChange={(e) => setAdminNotes(prev => ({ ...prev, [r.id]: e.target.value }))}
                   className="text-sm min-h-[60px]"
                 />
                 <div className="flex sm:flex-col gap-2 sm:min-w-[100px]">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="flex-1"
-                    onClick={() => updateReport.mutate({ id: report.id, status: "reviewing", admin_notes: adminNotes[report.id] })}
-                  >
-                    Review
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => updateReport.mutate({ id: report.id, status: "resolved", admin_notes: adminNotes[report.id] })}
-                  >
-                    Resolve
-                  </Button>
+                  <Button size="sm" variant="secondary" className="flex-1" onClick={() => updateReport.mutate({ id: r.id, status: "reviewing", admin_notes: adminNotes[r.id] })}>Review</Button>
+                  <Button size="sm" className="flex-1" onClick={() => updateReport.mutate({ id: r.id, status: "resolved", admin_notes: adminNotes[r.id] })}>Resolve</Button>
                 </div>
               </div>
             )}
-
-            {report.status === "resolved" && report.admin_notes && (
-              <p className="text-sm bg-muted p-2 rounded-md">
-                <span className="font-medium">Admin Notes:</span> {report.admin_notes}
-              </p>
+            {r.status === "resolved" && r.admin_notes && (
+              <p className="text-sm bg-muted p-2 rounded-md"><span className="font-medium">Admin Notes:</span> {r.admin_notes}</p>
             )}
           </CardContent>
         </Card>
@@ -420,19 +323,15 @@ const ReportsSection = ({ reports, profiles, updateReport }: any) => {
   );
 };
 
-// Activity Section
 const ActivitySection = ({ profiles, recentActivity }: any) => {
-  const getUserName = (id: string) => {
+  const getName = (id: string) => {
     const p = profiles.find((p: any) => p.id === id);
     return p?.display_name || p?.username || "Unknown";
   };
-
-  const getUserAvatar = (id: string) => {
+  const getAvatar = (id: string) => {
     const p = profiles.find((p: any) => p.id === id);
     return p?.avatar_url || "";
   };
-
-  // Daily activity (last 7 days)
   const dailyActivity = Array.from({ length: 7 }, (_, i) => {
     const day = subDays(new Date(), 6 - i);
     const dayStr = format(day, "yyyy-MM-dd");
@@ -444,10 +343,7 @@ const ActivitySection = ({ profiles, recentActivity }: any) => {
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Activity className="h-4 w-4 text-muted-foreground" />
-            Daily Activity (Last 7 Days)
-          </CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4 text-muted-foreground" /> Daily Activity (Last 7 Days)</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>
@@ -461,7 +357,6 @@ const ActivitySection = ({ profiles, recentActivity }: any) => {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Recent Activity</CardTitle>
@@ -469,24 +364,20 @@ const ActivitySection = ({ profiles, recentActivity }: any) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {recentActivity.slice(0, 20).map((activity: any, i: number) => (
+            {recentActivity.slice(0, 20).map((a: any, i: number) => (
               <div key={i} className="flex items-center gap-3 text-sm">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={getUserAvatar(activity.user_id)} />
-                  <AvatarFallback className="text-xs">{getUserName(activity.user_id)[0]}</AvatarFallback>
+                  <AvatarImage src={getAvatar(a.user_id)} />
+                  <AvatarFallback className="text-xs">{getName(a.user_id)[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium">{getUserName(activity.user_id)}</span>
-                  <span className="text-muted-foreground"> — {activity.status}</span>
+                  <span className="font-medium">{getName(a.user_id)}</span>
+                  <span className="text-muted-foreground"> — {a.status}</span>
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {format(new Date(activity.created_at), "MMM dd, HH:mm")}
-                </span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(a.created_at), "MMM dd, HH:mm")}</span>
               </div>
             ))}
-            {recentActivity.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No recent activity</p>
-            )}
+            {recentActivity.length === 0 && <p className="text-center text-muted-foreground py-8">No recent activity</p>}
           </div>
         </CardContent>
       </Card>
