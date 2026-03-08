@@ -68,12 +68,12 @@ const Auth = () => {
           emailRedirectTo: window.location.origin,
         },
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        setEmailSent(true);
-        toast.success("Verification email bhej diya gaya hai!");
-      }
+       if (error) {
+         toast.error(error.message);
+       } else {
+         setEmailSent(true);
+         toast.success("Verification email sent successfully!");
+       }
     } catch (err: any) {
       toast.error(err.message || "Signup failed");
     } finally {
