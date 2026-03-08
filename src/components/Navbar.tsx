@@ -112,6 +112,7 @@ const Navbar = () => {
             SPCT
           </Link>
           <div className="flex items-center gap-1">
+            <NotificationBell className="h-8 w-8" />
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setChatOpen(true)}>
               <MessageCircle className="h-4 w-4" />
               {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
