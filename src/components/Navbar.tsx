@@ -3,10 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
+import { useIsAdmin } from "@/hooks/useAdmin";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversations } from "@/hooks/useMessages";
 import { AnimatePresence, motion } from "framer-motion";
@@ -45,6 +46,7 @@ const Navbar = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const { pendingRequestCount, navProfile } = useNavbarBadges(user?.id);
   const { totalUnread } = useConversations(user?.id);
+  const { isAdmin } = useIsAdmin();
   const [chatOpen, setChatOpen] = useState(false);
 
   useRealtimeNotifications(user?.id);
@@ -95,6 +97,13 @@ const Navbar = () => {
             <MessageCircle className="h-4 w-4" />
             {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
           </Button>
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="ghost" size="icon" className="text-primary">
+                <Shield className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
           <Link to="/settings">
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
@@ -123,6 +132,13 @@ const Navbar = () => {
               <MessageCircle className="h-4 w-4" />
               {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
             </Button>
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                  <Shield className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <Link to="/settings">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
