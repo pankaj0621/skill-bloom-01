@@ -342,6 +342,35 @@ const Profile = () => {
   const activeTrackIds = new Set(trackStats.map((t) => t.id));
   const inactiveTracks = availableTracks?.filter((t) => !activeTrackIds.has(t.id)) || [];
 
+  // Compute skill summary stats
+  const skillStats = useMemo(() => {
+    if (!progress) return { total: 0, completed: 0, inProgress: 0, notStarted: 0 };
+    const total = progress.length;
+    const completed = progress.filter((p: any) => p.status === "completed").length;
+    const inProgress = progress.filter((p: any) => p.status === "in_progress").length;
+    const notStarted = total - completed - inProgress;
+    return { total, completed, inProgress, notStarted };
+  }, [progress]);
+
+  const overallLevel = getLevel(skillStats.completed, skillStats.total);
+  const overallPct = skillStats.total > 0 ? Math.round((skillStats.completed / skillStats.total) * 100) : 0;
+
+  // Earned badges
+  const earnedBadgeKeys = new Set(userBadges?.map((b) => b.badge_key) || []);
+  const earnedBadges = BADGES.filter((b) => earnedBadgeKeys.has(b.key));
+  const unearnedBadges = BADGES.filter((b) => !earnedBadgeKeys.has(b.key));
+
+  // Chart data for track progress
+  const chartData = trackStats.map((t) => ({
+    name: t.name.length > 12 ? t.name.slice(0, 12) + "…" : t.name,
+    completed: t.completed,
+    remaining: t.total - t.completed,
+    total: t.total,
+    pct: t.total > 0 ? Math.round((t.completed / t.total) * 100) : 0,
+  }));
+
+  const CHART_COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+
   if (profileLoading || progressLoading) {
     return (
       <Layout>
