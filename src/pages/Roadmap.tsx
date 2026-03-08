@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { feedback } from "@/components/SuccessToast";
 import Layout from "@/components/Layout";
 import LevelUpToast from "@/components/LevelUpToast";
 import useBadgePopup from "@/components/BadgePopup";
