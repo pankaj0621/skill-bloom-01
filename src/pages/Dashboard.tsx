@@ -34,7 +34,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
@@ -44,7 +44,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: progress, isLoading: progressLoading } = useQuery({
+  const { data: progress, isLoading: progressLoading, error: progressError, refetch: refetchProgress } = useQuery({
     queryKey: ["user_progress", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -57,7 +57,7 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const { data: earnedBadges, isLoading: badgesLoading } = useQuery({
+  const { data: earnedBadges, isLoading: badgesLoading, error: badgesError, refetch: refetchBadges } = useQuery({
     queryKey: ["user_badges", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
