@@ -138,6 +138,26 @@ const Settings = () => {
   };
 
   const isLoading = profileLoading || settingsLoading;
+  const hasError = profileError || settingsError;
+
+  if (hasError && !isLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold">Settings ⚙️</h1>
+          </div>
+          <ErrorAlert
+            {...getQueryErrorProps(profileError || settingsError)}
+            onRetry={() => { refetchProfile(); refetchSettings(); }}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   if (isLoading) {
     return (
