@@ -50,7 +50,7 @@ const Settings = () => {
   });
 
   // Settings data
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError, refetch: refetchSettings } = useQuery({
     queryKey: ["user_settings", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -59,7 +59,6 @@ const Settings = () => {
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      // Auto-create if doesn't exist
       if (!data) {
         const { data: created, error: createErr } = await supabase
           .from("user_settings")
