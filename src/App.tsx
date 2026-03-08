@@ -29,6 +29,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FeedbackPage = lazy(() => import("./pages/Feedback"));
 const CareerAdvisor = lazy(() => import("./pages/CareerAdvisor"));
+const SkillGapAnalyzer = lazy(() => import("./pages/SkillGapAnalyzer"));
 
 // Optimized QueryClient with aggressive caching for mobile networks
 const queryClient = new QueryClient({
@@ -93,6 +94,7 @@ const AnimatedRoutes = () => {
             <Route path="/admin" element={<ProtectedRoute><AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute></ProtectedRoute>} />
             <Route path="/feedback" element={<ProtectedRoute><PageTransition><FeedbackPage /></PageTransition></ProtectedRoute>} />
             <Route path="/career-advisor" element={<ProtectedRoute><PageTransition><CareerAdvisor /></PageTransition></ProtectedRoute>} />
+            <Route path="/skill-gap" element={<ProtectedRoute><PageTransition><SkillGapAnalyzer /></PageTransition></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
