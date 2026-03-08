@@ -213,6 +213,12 @@ const Dashboard = () => {
           </motion.div>
         </motion.div>
 
+        {/* XP Card */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <XpCard xp={(profile as any)?.xp ?? 0} weeklyXp={(profile as any)?.weekly_xp ?? 0} />
+        </motion.div>
+        <XpMilestoneToast xp={(profile as any)?.xp ?? 0} milestone={getXpMilestone((profile as any)?.xp ?? 0)} />
+
         {/* Badges */}
         {(() => {
           const earnedKeys = new Set(earnedBadges?.map((b) => b.badge_key) || []);
