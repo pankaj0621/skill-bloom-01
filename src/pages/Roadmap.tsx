@@ -146,6 +146,17 @@ const Roadmap = () => {
     return "not_started";
   };
 
+  if (progressError && !progressLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Skill Roadmap 🗺️</h1>
+          <ErrorAlert {...getQueryErrorProps(progressError)} onRetry={() => refetchProgress()} />
+        </div>
+      </Layout>
+    );
+  }
+
   if (progressLoading) {
     return (
       <Layout>
