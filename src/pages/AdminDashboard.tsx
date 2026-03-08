@@ -234,6 +234,11 @@ const AdminDashboard = () => {
             <ReportsSection reports={reports} profiles={profiles} updateReport={updateReport} />
           </TabsContent>
 
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-4">
+            <FeedbackManagement profiles={profiles} />
+          </TabsContent>
+
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-4">
             <ActivitySection profiles={profiles} recentActivity={recentActivity} />
