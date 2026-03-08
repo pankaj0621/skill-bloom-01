@@ -76,7 +76,7 @@ const Leaderboard = () => {
       // Get all profiles with streak info
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, college, current_streak");
+        .select("id, display_name, avatar_url, computed_level, college, current_streak, xp, weekly_xp");
       if (pErr) throw pErr;
 
       // Get completed skill counts per user (optionally filtered by date)
