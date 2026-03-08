@@ -4,42 +4,61 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getLevelColor, type Level } from "@/lib/levels";
-import { User, Search, UserPlus, UserCheck, Users, Bell } from "lucide-react";
+import { Search, UserPlus, Users, Bell } from "lucide-react";
 import { useFriendRequests, useFriendsList } from "@/hooks/useFriendship";
 import { motion, AnimatePresence } from "framer-motion";
+import UserProfileCard from "@/components/community/UserProfileCard";
+import SearchFilters from "@/components/community/SearchFilters";
+import SearchSuggestions from "@/components/community/SearchSuggestions";
 
 const Community = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("discover");
+  const [selectedStream, setSelectedStream] = useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: friendRequests } = useFriendRequests(user?.id);
   const { data: friends } = useFriendsList(user?.id);
 
+  const hasSearch = searchQuery.trim().length >= 2;
+  const hasFilters = !!selectedStream || !!selectedLevel;
+  const isSearchActive = hasSearch || hasFilters;
+
   const { data: searchResults, isLoading: searching } = useQuery({
-    queryKey: ["user_search", searchQuery],
+    queryKey: ["user_search", searchQuery, selectedStream, selectedLevel],
     queryFn: async () => {
-      if (!searchQuery.trim()) return [];
-      const q = searchQuery.trim().toLowerCase().replace(/[%_\\]/g, '');
-      const { data, error } = await supabase
+      const q = searchQuery.trim().toLowerCase().replace(/[%_\\]/g, "");
+
+      let query = supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, stream, college, username")
-        .neq("id", user!.id)
-        .or(`display_name.ilike.%${q}%,username.ilike.%${q}%,stream.ilike.%${q}%,college.ilike.%${q}%,computed_level.ilike.%${q}%`)
-        .limit(20);
+        .select("id, display_name, avatar_url, computed_level, stream, college, username, bio")
+        .neq("id", user!.id);
+
+      if (q.length >= 2) {
+        query = query.or(
+          `display_name.ilike.%${q}%,username.ilike.%${q}%,stream.ilike.%${q}%,college.ilike.%${q}%,computed_level.ilike.%${q}%`
+        );
+      }
+
+      if (selectedStream) {
+        query = query.ilike("stream", `%${selectedStream}%`);
+      }
+      if (selectedLevel) {
+        query = query.eq("computed_level", selectedLevel);
+      }
+
+      const { data, error } = await query.limit(20);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && searchQuery.trim().length >= 2,
+    enabled: !!user && isSearchActive,
   });
 
   const pendingCount = friendRequests?.length || 0;
@@ -61,6 +80,7 @@ const Community = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
+          className="space-y-3"
         >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -71,54 +91,82 @@ const Community = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          <SearchFilters
+            selectedStream={selectedStream}
+            selectedLevel={selectedLevel}
+            onStreamChange={setSelectedStream}
+            onLevelChange={setSelectedLevel}
+            showFilters={showFilters}
+            onToggleFilters={() => setShowFilters(!showFilters)}
+          />
+
+          <SearchSuggestions
+            onSuggestionClick={(s) => setSearchQuery(s)}
+            visible={!hasSearch && !hasFilters}
+          />
         </motion.div>
 
         {/* Search Results */}
         <AnimatePresence>
-          {searchQuery.trim().length >= 2 && (
+          {isSearchActive && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
+              className="space-y-2"
             >
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Search Results</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                  {searching ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-3 p-2.5">
-                        <Skeleton className="h-9 w-9 rounded-full" />
-                        <div className="flex-1 space-y-1">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-20" />
+              <p className="text-xs text-muted-foreground">
+                {searching
+                  ? "Searching..."
+                  : `${searchResults?.length || 0} user${(searchResults?.length || 0) !== 1 ? "s" : ""} found`}
+              </p>
+
+              {searching ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
                         </div>
-                      </div>
-                    ))
-                  ) : !searchResults || searchResults.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
-                  ) : (
-                    searchResults.map((u, i) => (
-                      <motion.div
-                        key={u.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: i * 0.04 }}
-                      >
-                        <UserRow user={u} onClick={() => navigate(`/user/${u.id}`)} />
-                      </motion.div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : !searchResults || searchResults.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="text-center space-y-1">
+                      <Search className="h-8 w-8 text-muted-foreground mx-auto" />
+                      <p className="text-sm font-medium">No users found</p>
+                      <p className="text-xs text-muted-foreground">Try different keywords or filters</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((u, i) => (
+                    <UserProfileCard
+                      key={u.id}
+                      user={u}
+                      onClick={() => navigate(`/user/${u.id}`)}
+                      index={i}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Tabs: Friends / Requests */}
-        {searchQuery.trim().length < 2 && (
+        {!isSearchActive && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,68 +192,66 @@ const Community = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="discover" className="mt-3">
-                <Card>
-                  <CardContent className="p-3 space-y-1">
-                    {!friends || friends.length === 0 ? (
-                      <div className="text-center py-8 space-y-2">
+              <TabsContent value="discover" className="mt-3 space-y-2">
+                {!friends || friends.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-8">
+                      <div className="text-center space-y-2">
                         <UserPlus className="h-10 w-10 text-muted-foreground mx-auto" />
                         <p className="text-sm font-medium">No friends yet</p>
-                        <p className="text-xs text-muted-foreground">Search for users or visit profiles from the leaderboard to add friends!</p>
+                        <p className="text-xs text-muted-foreground">
+                          Search for users or visit profiles from the leaderboard to add friends!
+                        </p>
                       </div>
-                    ) : (
-                      friends.map((f: any, i: number) => (
-                        <motion.div
-                          key={f.id}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: i * 0.04 }}
-                        >
-                          <UserRow user={f} onClick={() => navigate(`/user/${f.id}`)} showBadge />
-                        </motion.div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  friends.map((f: any, i: number) => (
+                    <UserProfileCard
+                      key={f.id}
+                      user={f}
+                      onClick={() => navigate(`/user/${f.id}`)}
+                      showBadge
+                      index={i}
+                    />
+                  ))
+                )}
               </TabsContent>
 
-              <TabsContent value="requests" className="mt-3">
-                <Card>
-                  <CardContent className="p-3 space-y-1">
-                    {pendingCount === 0 ? (
-                      <div className="text-center py-8 space-y-2">
+              <TabsContent value="requests" className="mt-3 space-y-2">
+                {pendingCount === 0 ? (
+                  <Card>
+                    <CardContent className="py-8">
+                      <div className="text-center space-y-2">
                         <Bell className="h-10 w-10 text-muted-foreground mx-auto" />
                         <p className="text-sm font-medium">No pending requests</p>
-                        <p className="text-xs text-muted-foreground">Friend requests you receive will appear here</p>
+                        <p className="text-xs text-muted-foreground">
+                          Friend requests you receive will appear here
+                        </p>
                       </div>
-                    ) : (
-                      (friendRequests || []).map((req: any, i: number) => {
-                        const profile = req.profiles || {};
-                        return (
-                          <motion.div
-                            key={req.id}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2, delay: i * 0.04 }}
-                          >
-                            <UserRow
-                              user={{
-                                id: req.requester_id,
-                                display_name: profile.display_name || "Student",
-                                avatar_url: profile.avatar_url,
-                                computed_level: profile.computed_level || "Beginner",
-                                stream: profile.stream,
-                                college: profile.college,
-                              }}
-                              onClick={() => navigate(`/user/${req.requester_id}`)}
-                              isRequest
-                            />
-                          </motion.div>
-                        );
-                      })
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  (friendRequests || []).map((req: any, i: number) => {
+                    const profile = req.profiles || {};
+                    return (
+                      <UserProfileCard
+                        key={req.id}
+                        user={{
+                          id: req.requester_id,
+                          display_name: profile.display_name || "Student",
+                          avatar_url: profile.avatar_url,
+                          computed_level: profile.computed_level || "Beginner",
+                          stream: profile.stream,
+                          college: profile.college,
+                        }}
+                        onClick={() => navigate(`/user/${req.requester_id}`)}
+                        isRequest
+                        index={i}
+                      />
+                    );
+                  })
+                )}
               </TabsContent>
             </Tabs>
           </motion.div>
@@ -214,50 +260,5 @@ const Community = () => {
     </Layout>
   );
 };
-
-interface UserRowProps {
-  user: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    computed_level: string;
-    stream?: string | null;
-    college?: string | null;
-    username?: string | null;
-  };
-  onClick: () => void;
-  showBadge?: boolean;
-  isRequest?: boolean;
-}
-
-const UserRow = ({ user, onClick, showBadge, isRequest }: UserRowProps) => (
-  <div
-    className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.98]"
-    onClick={onClick}
-  >
-    <Avatar className="h-9 w-9 flex-shrink-0">
-      {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.display_name || "User"} /> : null}
-      <AvatarFallback className="bg-muted">
-        <User className="h-4 w-4 text-muted-foreground" />
-      </AvatarFallback>
-    </Avatar>
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-1.5">
-      <p className="text-sm font-medium truncate">{user.display_name || "Student"}</p>
-        {user.username && <span className="text-[11px] text-muted-foreground">@{user.username}</span>}
-        <Badge variant="outline" className={`text-[10px] ${getLevelColor(user.computed_level as Level)}`}>
-          {user.computed_level}
-        </Badge>
-      </div>
-      {(user.stream || user.college) && (
-        <p className="text-[11px] text-muted-foreground truncate">
-          {[user.stream, user.college].filter(Boolean).join(" · ")}
-        </p>
-      )}
-    </div>
-    {showBadge && <UserCheck className="h-4 w-4 text-primary flex-shrink-0" />}
-    {isRequest && <UserPlus className="h-4 w-4 text-primary flex-shrink-0" />}
-  </div>
-);
 
 export default Community;
