@@ -110,6 +110,11 @@ const AnimatedRoutes = () => {
   );
 };
 
+const ServiceWorkerUpdater = () => {
+  useServiceWorkerUpdate();
+  return null;
+};
+
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashComplete = useCallback(() => {
@@ -124,6 +129,8 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <NetworkStatus />
+            <ServiceWorkerUpdater />
             {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
             <PwaInstallPrompt />
             <BrowserRouter>
