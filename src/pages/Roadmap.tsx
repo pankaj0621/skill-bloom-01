@@ -123,8 +123,12 @@ const Roadmap = () => {
       queryClient.invalidateQueries({ queryKey: ["custom_skills"] });
       setNewSkillName("");
       setAddingToTrack(null);
-      toast.success("Custom skill added!");
+      feedback.success("Custom skill added!", "You can now track its progress.");
     },
+    onError: (_, variables) => feedback.error("Failed to add skill", {
+      description: "The skill couldn't be created. Please try again.",
+      retry: () => addCustomSkill.mutate(variables),
+    }),
   });
 
   const updateCustomStatus = useMutation({
