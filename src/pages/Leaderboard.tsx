@@ -71,7 +71,7 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<TimeFilter>("all");
 
-  const { data: leaderboard, isLoading } = useQuery({
+  const { data: leaderboard, isLoading, error, refetch } = useQuery({
     queryKey: ["leaderboard", filter],
     queryFn: async () => {
       // Get all profiles with streak info
