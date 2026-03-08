@@ -89,6 +89,7 @@ const Navbar = () => {
               </Link>
             ))}
           </nav>
+          <NotificationBell />
           <Button variant="ghost" size="icon" className="relative mr-1" onClick={() => setChatOpen(true)}>
             <MessageCircle className="h-4 w-4" />
             {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
