@@ -153,7 +153,7 @@ const Leaderboard = () => {
           transition={{ duration: 0.4 }}
         >
           <h1 className="text-2xl sm:text-3xl font-bold">Leaderboard 🏆</h1>
-          <p className="text-muted-foreground">Top students ranked by skills completed</p>
+          <p className="text-muted-foreground">Top students ranked by XP</p>
         </motion.div>
 
         {/* Your rank card */}
