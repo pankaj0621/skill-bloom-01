@@ -477,12 +477,22 @@ const Profile = () => {
                     onChange={handleFileSelect}
                   />
                 </motion.div>
-                <div>
-                  <CardTitle>{profile?.display_name || "Student"}</CardTitle>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle>{profile?.display_name || "Student"}</CardTitle>
+                    <Badge className={getLevelColor(overallLevel)}>{overallLevel}</Badge>
+                  </div>
                   {(profile as any)?.username && (
                     <p className="text-sm text-muted-foreground">@{(profile as any).username}</p>
                   )}
-                  <p className="text-xs text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-xs text-muted-foreground capitalize">{profile?.role || "No role set"}</p>
+                    {(profile?.current_streak ?? 0) > 0 && (
+                      <span className="text-xs flex items-center gap-1 text-orange-500 font-medium">
+                        <Flame className="h-3 w-3" /> {profile?.current_streak} day streak
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
