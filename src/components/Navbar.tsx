@@ -95,6 +95,11 @@ const Navbar = () => {
             <MessageCircle className="h-4 w-4" />
             {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
           </Button>
+          <Link to="/settings">
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
             {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
