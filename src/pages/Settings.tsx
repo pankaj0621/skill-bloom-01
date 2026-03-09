@@ -90,10 +90,6 @@ const Settings = () => {
     }
   }, [profile]);
 
-
-
-  }, [user, queryClient]);
-
   // Save profile
   const saveProfile = useMutation({
     mutationFn: async () => {
