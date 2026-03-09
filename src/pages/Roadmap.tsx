@@ -231,9 +231,9 @@ const Roadmap = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <TabsList className="flex-wrap h-auto">
+            <TabsList className="flex-wrap h-auto gap-1 overflow-x-auto max-w-full scrollbar-hide">
               {trackList.map((track) => (
-                <TabsTrigger key={track.trackId} value={track.trackId}>
+                <TabsTrigger key={track.trackId} value={track.trackId} className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 whitespace-nowrap">
                   {track.name}
                 </TabsTrigger>
               ))}

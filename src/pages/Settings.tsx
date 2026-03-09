@@ -90,30 +90,6 @@ const Settings = () => {
     }
   }, [profile]);
 
-  // Realtime subscription: auto-refresh profile & settings on any change
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel('settings-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["settings_profile", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["profile"] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${user.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["user_settings", user.id] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
-
   // Save profile
   const saveProfile = useMutation({
     mutationFn: async () => {

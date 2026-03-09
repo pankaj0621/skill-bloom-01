@@ -172,22 +172,8 @@ const Profile = () => {
     enabled: !!user,
   });
 
-  // Realtime subscription: auto-refresh profile on any change
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel('profile-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["settings_profile"] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
+
+
   const checkUsername = useCallback(async (value: string) => {
     const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setNewUsername(clean);
