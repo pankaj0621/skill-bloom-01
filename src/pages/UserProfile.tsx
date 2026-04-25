@@ -102,7 +102,7 @@ const UserProfile = () => {
   // Derive track stats
   const trackStats = skillProgress
     ? Object.values(
-        skillProgress.reduce((acc: Record<string, { id: string; name: string; total: number; completed: number }>, p: any) => {
+        skillProgress.reduce((acc: Record<string, { id: string; name: string; total: number; completed: number }>, p: { status: string; skills?: { skill_tracks?: { id?: string; name?: string } | null } | null }) => {
           const trackId = p.skills?.skill_tracks?.id || "unknown";
           const name = p.skills?.skill_tracks?.name || "Unknown";
           if (!acc[trackId]) acc[trackId] = { id: trackId, name, total: 0, completed: 0 };

@@ -55,12 +55,13 @@ const CareerAdvisor = () => {
 
   useEffect(() => {
     if (profile?.stream && !stream) setStream(profile.stream);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   useEffect(() => {
     if (userSkills && userSkills.length > 0 && !existingSkills) {
       const skillNames = userSkills
-        .map((s: any) => s.skills?.name)
+        .map((s: { skills?: { name?: string } | null }) => s.skills?.name)
         .filter(Boolean)
         .join(", ");
       if (skillNames) setExistingSkills(skillNames);
@@ -85,11 +86,15 @@ const CareerAdvisor = () => {
     setHasResult(true);
 
     try {
+      // FIX: Use user's session JWT, not the anon key
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           stream: stream.trim(),
@@ -164,8 +169,8 @@ const CareerAdvisor = () => {
           } catch { /* ignore */ }
         }
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to get career advice");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to get career advice");
       if (!response) setHasResult(false);
     } finally {
       setIsLoading(false);

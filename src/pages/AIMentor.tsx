@@ -52,7 +52,7 @@ const AIMentor = () => {
         .select("skills(name)")
         .eq("user_id", user!.id)
         .eq("status", "completed");
-      return data?.map((s: any) => s.skills?.name).filter(Boolean).join(", ") || "";
+      return data?.map((s: { skills?: { name: string } | null }) => s.skills?.name).filter(Boolean).join(", ") || "";
     },
     enabled: !!user,
   });
@@ -76,11 +76,15 @@ const AIMentor = () => {
         }
       : undefined;
 
+    // FIX: Use user's session JWT, not the anon key, for authenticated edge function calls
+    const { data: { session } } = await supabase.auth.getSession();
+    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
     const resp = await fetch(MENTOR_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
@@ -172,8 +176,9 @@ const AIMentor = () => {
 
     try {
       await streamResponse(updatedMessages);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to get response");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to get response";
+      toast.error(msg);
       // Remove the stuck assistant message if any
       setMessages((prev) => {
         const last = prev[prev.length - 1];

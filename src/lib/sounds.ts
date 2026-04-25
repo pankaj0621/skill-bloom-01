@@ -9,7 +9,9 @@ export function playMessageSound() {
     gain.gain.value = 0.15;
     osc.start();
     osc.stop(ctx.currentTime + 0.15);
-  } catch {}
+  } catch {
+    // Audio is non-critical — silently ignore if browser blocks AudioContext
+  }
 }
 
 export function playFriendRequestSound() {
@@ -33,5 +35,7 @@ export function playFriendRequestSound() {
       osc2.start();
       osc2.stop(ctx.currentTime + 0.12);
     }, 130);
-  } catch {}
+  } catch {
+    // Audio is non-critical — silently ignore if browser blocks AudioContext
+  }
 }

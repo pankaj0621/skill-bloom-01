@@ -158,12 +158,12 @@ const Peers = () => {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("peers-realtime")
+      .channel(`peers-realtime-${user.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "peer_messages" },
         (payload) => {
-          const msg = payload.new as any;
+          const msg = payload.new as { from_user_id: string; to_user_id: string };
           if (msg.from_user_id === user.id || msg.to_user_id === user.id) {
             queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
             if (selectedPeer && (msg.from_user_id === selectedPeer || msg.to_user_id === selectedPeer)) {
@@ -208,7 +208,7 @@ const Peers = () => {
       setMessageText("");
       queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const selectedProfile = peerProfiles?.find((p) => p.id === selectedPeer) ||

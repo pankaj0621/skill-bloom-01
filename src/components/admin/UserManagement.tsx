@@ -92,12 +92,12 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
       toast.success(vars.suspend ? "User suspended" : "User unsuspended");
       setSuspendDialogOpen(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   // Edit profile mutation
   const editMutation = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
+    mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, unknown> }) => {
       const { error } = await supabase.from("profiles").update(updates).eq("id", userId);
       if (error) throw error;
     },
@@ -106,7 +106,7 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
       toast.success("Profile updated");
       setEditDialogOpen(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   // Delete user mutation
@@ -123,7 +123,7 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
       toast.success("User deleted");
       setDeleteDialogOpen(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   // Role mutation
@@ -141,7 +141,7 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
         // Upsert role
         const { error } = await supabase
           .from("user_roles")
-          .upsert({ user_id: userId, role: role as any }, { onConflict: "user_id,role" });
+          .upsert({ user_id: userId, role: role as "admin" | "moderator" }, { onConflict: "user_id,role" });
         if (error) throw error;
       }
     },
@@ -150,7 +150,7 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
       toast.success("Role updated");
       setRoleDialogOpen(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const openEdit = (p: Profile) => {
@@ -158,7 +158,7 @@ const UserManagement = ({ profiles }: UserManagementProps) => {
     setEditForm({
       display_name: p.display_name || "",
       username: p.username || "",
-      bio: (p as any).bio || "",
+      bio: p.bio || "",
       stream: p.stream || "",
       college: p.college || "",
     });

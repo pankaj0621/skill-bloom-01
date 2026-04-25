@@ -10,14 +10,15 @@ export function useRealtimeNotifications(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
+    // Use userId-scoped channel name to avoid collisions on user switch
     const channel = supabase
-      .channel("global-realtime")
+      .channel(`global-realtime-${userId}`)
       // Friendships
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "friendships" },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as { addressee_id: string; status: string };
           if (row.addressee_id === userId && row.status === "pending") {
             playFriendRequestSound();
             toast("New friend request", {
@@ -67,7 +68,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "peer_messages" },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as { to_user_id: string };
           if (row.to_user_id === userId) {
             queryClient.invalidateQueries({ queryKey: ["conversations"] });
             queryClient.invalidateQueries({ queryKey: ["messages"] });

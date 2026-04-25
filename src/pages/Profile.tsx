@@ -125,8 +125,8 @@ const Profile = () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Profile picture updated!");
       setCropDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload avatar.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload avatar.");
     } finally {
       setUploadingAvatar(false);
       if (cropImage) URL.revokeObjectURL(cropImage);
@@ -147,8 +147,8 @@ const Profile = () => {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Profile picture removed.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove avatar.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove avatar.");
     } finally {
       setRemovingAvatar(false);
     }
@@ -215,7 +215,7 @@ const Profile = () => {
       setUsernameDialogOpen(false);
       toast.success("Username updated!");
     },
-    onError: (e: any) => toast.error(e.message || "Failed to update username"),
+    onError: (e: Error) => toast.error(e.message || "Failed to update username"),
   });
 
   const { data: progress, isLoading: progressLoading } = useQuery({
@@ -331,7 +331,7 @@ const Profile = () => {
   // Derive track stats and active track IDs
   const trackStats = progress
     ? Object.values(
-        progress.reduce((acc: Record<string, { id: string; name: string; total: number; completed: number }>, p: any) => {
+        progress.reduce((acc: Record<string, { id: string; name: string; total: number; completed: number }>, p: { status: string; skills?: { skill_tracks?: { id?: string; name?: string } | null } | null }) => {
           const trackId = p.skills?.skill_tracks?.id || "unknown";
           const name = p.skills?.skill_tracks?.name || "Unknown";
           if (!acc[trackId]) acc[trackId] = { id: trackId, name, total: 0, completed: 0 };
@@ -349,8 +349,8 @@ const Profile = () => {
   const skillStats = useMemo(() => {
     if (!progress) return { total: 0, completed: 0, inProgress: 0, notStarted: 0 };
     const total = progress.length;
-    const completed = progress.filter((p: any) => p.status === "completed").length;
-    const inProgress = progress.filter((p: any) => p.status === "in_progress").length;
+    const completed = progress.filter((p: { status: string }) => p.status === "completed").length;
+    const inProgress = progress.filter((p: { status: string }) => p.status === "in_progress").length;
     const notStarted = total - completed - inProgress;
     return { total, completed, inProgress, notStarted };
   }, [progress]);

@@ -70,9 +70,20 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
+  type DashboardProgressItem = {
+    status: string;
+    skills?: {
+      name?: string;
+      track_id?: string;
+      order?: number;
+      difficulty_level?: string;
+      skill_tracks?: { name?: string } | null;
+    } | null;
+  };
+
   const trackStats = progress
     ? Object.values(
-        progress.reduce((acc: Record<string, { name: string; total: number; completed: number; nextSkill?: string }>, p: any) => {
+        (progress as DashboardProgressItem[]).reduce((acc: Record<string, { name: string; total: number; completed: number; nextSkill?: string }>, p) => {
           const trackName = p.skills?.skill_tracks?.name || "Unknown";
           const trackId = p.skills?.track_id || "unknown";
           if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0 };
@@ -341,7 +352,7 @@ const Dashboard = () => {
           const boostKeywords = goalSkillBoost[userGoal] || [];
           const getGoalBoost = (name: string) => boostKeywords.some((kw) => name.toLowerCase().includes(kw)) ? 25 : 0;
 
-          const trackMap = progress.reduce((acc: Record<string, { name: string; total: number; completed: number; incompleteSkills: { name: string; status: string; difficulty: string; order: number }[] }>, p: any) => {
+          const trackMap = (progress as DashboardProgressItem[]).reduce((acc: Record<string, { name: string; total: number; completed: number; incompleteSkills: { name: string; status: string; difficulty: string; order: number }[] }>, p) => {
             const trackId = p.skills?.track_id || "unknown";
             const trackName = p.skills?.skill_tracks?.name || "Unknown";
             if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0, incompleteSkills: [] };

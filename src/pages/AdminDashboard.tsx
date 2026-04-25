@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -249,7 +250,32 @@ const AdminDashboard = () => {
   );
 };
 
-const StatCard = ({ icon: Icon, label, value, variant }: { icon: any; label: string; value: number; variant?: string }) => (
+
+interface AdminProfile {
+  id: string;
+  display_name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+}
+
+interface Report {
+  id: string;
+  reporter_id: string;
+  reported_id: string;
+  type: string;
+  reason: string;
+  status: string;
+  admin_notes?: string | null;
+  created_at: string;
+}
+
+interface ActivityItem {
+  user_id: string;
+  status: string;
+  created_at: string;
+}
+
+const StatCard = ({ icon: Icon, label, value, variant }: { icon: LucideIcon; label: string; value: number; variant?: string }) => (
   <Card>
     <CardContent className="p-4 flex items-center gap-3">
       <div className={`rounded-lg p-2.5 ${variant === "destructive" ? "bg-destructive/10" : "bg-primary/10"}`}>
@@ -263,10 +289,10 @@ const StatCard = ({ icon: Icon, label, value, variant }: { icon: any; label: str
   </Card>
 );
 
-const ReportsSection = ({ reports, profiles, updateReport }: any) => {
+const ReportsSection = ({ reports, profiles, updateReport }: { reports: Report[]; profiles: AdminProfile[]; updateReport: (id: string, updates: Record<string, string>) => void }) => {
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const getName = (id: string) => {
-    const p = profiles.find((p: any) => p.id === id);
+    const p = profiles.find((p) => p.id === id);
     return p?.display_name || p?.username || "Unknown";
   };
   const statusColor = (s: string) => {
@@ -288,7 +314,7 @@ const ReportsSection = ({ reports, profiles, updateReport }: any) => {
 
   return (
     <div className="space-y-3">
-      {reports.map((r: any) => (
+      {reports.map((r) => (
         <Card key={r.id}>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
@@ -330,19 +356,19 @@ const ReportsSection = ({ reports, profiles, updateReport }: any) => {
   );
 };
 
-const ActivitySection = ({ profiles, recentActivity }: any) => {
+const ActivitySection = ({ profiles, recentActivity }: { profiles: AdminProfile[]; recentActivity: ActivityItem[] }) => {
   const getName = (id: string) => {
-    const p = profiles.find((p: any) => p.id === id);
+    const p = profiles.find((p) => p.id === id);
     return p?.display_name || p?.username || "Unknown";
   };
   const getAvatar = (id: string) => {
-    const p = profiles.find((p: any) => p.id === id);
+    const p = profiles.find((p) => p.id === id);
     return p?.avatar_url || "";
   };
   const dailyActivity = Array.from({ length: 7 }, (_, i) => {
     const day = subDays(new Date(), 6 - i);
     const dayStr = format(day, "yyyy-MM-dd");
-    const count = recentActivity.filter((a: any) => format(new Date(a.created_at), "yyyy-MM-dd") === dayStr).length;
+    const count = recentActivity.filter((a) => format(new Date(a.created_at), "yyyy-MM-dd") === dayStr).length;
     return { date: format(day, "EEE"), actions: count };
   });
 
@@ -371,7 +397,7 @@ const ActivitySection = ({ profiles, recentActivity }: any) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {recentActivity.slice(0, 20).map((a: any, i: number) => (
+            {recentActivity.slice(0, 20).map((a, i) => (
               <div key={i} className="flex items-center gap-3 text-sm">
                 <Avatar className="h-7 w-7">
                   <AvatarImage src={getAvatar(a.user_id)} />

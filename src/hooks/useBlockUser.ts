@@ -43,7 +43,7 @@ export function useBlockUser(userId: string | undefined, targetId: string | unde
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
       toast.success("User blocked");
     },
-    onError: (e: any) => toast.error(e.message || "Failed to block user"),
+    onError: (e: Error) => toast.error(e.message || "Failed to block user"),
   });
 
   const unblockUser = useMutation({
@@ -59,7 +59,7 @@ export function useBlockUser(userId: string | undefined, targetId: string | unde
       queryClient.invalidateQueries({ queryKey: ["blocked_user"] });
       toast.success("User unblocked");
     },
-    onError: (e: any) => toast.error(e.message || "Failed to unblock user"),
+    onError: (e: Error) => toast.error(e.message || "Failed to unblock user"),
   });
 
   return {

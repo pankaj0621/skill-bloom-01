@@ -57,14 +57,14 @@ const SkillGapAnalyzer = () => {
 
   useEffect(() => {
     if (userSkills && userSkills.length > 0 && !existingSkills) {
-      const completed = userSkills.filter((s: any) => s.status === "completed");
-      const inProgress = userSkills.filter((s: any) => s.status === "in_progress");
+      const completed = userSkills.filter((s: { status: string; skills?: { name?: string } | null }) => s.status === "completed");
+      const inProgress = userSkills.filter((s: { status: string; skills?: { name?: string } | null }) => s.status === "in_progress");
       const parts: string[] = [];
       if (completed.length) {
-        parts.push(completed.map((s: any) => s.skills?.name).filter(Boolean).join(", "));
+        parts.push(completed.map((s) => s.skills?.name).filter(Boolean).join(", "));
       }
       if (inProgress.length) {
-        parts.push(inProgress.map((s: any) => `${s.skills?.name} (learning)`).filter(Boolean).join(", "));
+        parts.push(inProgress.map((s) => `${s.skills?.name} (learning)`).filter(Boolean).join(", "));
       }
       if (parts.join(", ")) setExistingSkills(parts.join(", "));
     }
@@ -87,11 +87,15 @@ const SkillGapAnalyzer = () => {
     setHasResult(true);
 
     try {
+      // FIX: Use user's session JWT, not the anon key
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const resp = await fetch(ANALYZER_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           stream: stream.trim(),
@@ -156,7 +160,7 @@ const SkillGapAnalyzer = () => {
           } catch { /* ignore */ }
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.message || "Failed to analyze skill gap");
       if (!response) setHasResult(false);
     } finally {

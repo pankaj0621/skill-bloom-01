@@ -62,7 +62,7 @@ const Settings = () => {
       if (!data) {
         const { data: created, error: createErr } = await supabase
           .from("user_settings")
-          .insert({ user_id: user!.id } as any)
+          .insert({ user_id: user!.id })
           .select()
           .single();
         if (createErr) throw createErr;
@@ -119,7 +119,7 @@ const Settings = () => {
     mutationFn: async (updates: Record<string, boolean>) => {
       const { error } = await supabase
         .from("user_settings")
-        .update(updates as any)
+        .update(updates)
         .eq("user_id", user!.id);
       if (error) throw error;
     },
@@ -176,7 +176,8 @@ const Settings = () => {
     );
   }
 
-  const s = settings as any;
+  type UserSettingsRow = typeof settings;
+  const s = settings as NonNullable<UserSettingsRow>;
 
   return (
     <Layout>

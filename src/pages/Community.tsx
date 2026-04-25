@@ -206,7 +206,7 @@ const Community = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  friends.map((f: any, i: number) => (
+                  friends.map((f: { id: string; display_name: string | null; avatar_url: string | null; computed_level: string; stream?: string | null; college?: string | null; username?: string | null }, i: number) => (
                     <UserProfileCard
                       key={f.id}
                       user={f}
@@ -232,7 +232,7 @@ const Community = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  (friendRequests || []).map((req: any, i: number) => {
+                  (friendRequests || []).map((req: { id: string; requester_id: string; profiles?: { display_name?: string | null; avatar_url?: string | null; computed_level?: string; stream?: string | null } | null }, i: number) => {
                     const profile = req.profiles || {};
                     return (
                       <UserProfileCard

@@ -55,7 +55,7 @@ export async function checkAndAwardBadges(userId: string) {
 
     if (progress) {
       const tracks: Record<string, { total: number; completed: number }> = {};
-      for (const p of progress as any[]) {
+      for (const p of progress as { skills?: { track_id?: string } | null; status?: string }[]) {
         const tid = p.skills?.track_id;
         if (!tid) continue;
         if (!tracks[tid]) tracks[tid] = { total: 0, completed: 0 };

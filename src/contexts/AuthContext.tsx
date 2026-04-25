@@ -60,25 +60,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // onAuthStateChange fires immediately with INITIAL_SESSION on mount,
+    // so we don't need a separate getSession() call (which would cause a
+    // double state update race condition on initial load).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.user) {
-        // Defer to avoid Supabase deadlock
+        // Defer to avoid Supabase client deadlock on synchronous auth callbacks
         setTimeout(() => checkSuspension(session.user.id), 0);
       } else {
         setIsSuspended(false);
         setSuspendReason(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (session?.user) {
-        checkSuspension(session.user.id);
       }
     });
 

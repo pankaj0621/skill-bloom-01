@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
-const BadgeCount = ({ count, className, ...rest }: { count: number; className?: string; [key: string]: any }) => (
+const BadgeCount = ({ count, className, ...rest }: { count: number; className?: string } & React.HTMLAttributes<HTMLSpanElement>) => (
   <AnimatePresence mode="wait">
     <motion.span
       key={count}

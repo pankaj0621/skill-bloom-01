@@ -15,7 +15,7 @@ export interface FeedItem {
 
 export function useActivityFeed(userId: string | undefined) {
   const { data: friends } = useFriendsList(userId);
-  const friendIds = friends?.map((f: any) => f.id) || [];
+  const friendIds = friends?.map((f: { id: string }) => f.id) || [];
 
   return useQuery<FeedItem[]>({
     queryKey: ["activity_feed", userId, friendIds.join(",")],
@@ -68,7 +68,7 @@ export function useActivityFeed(userId: string | undefined) {
       });
 
       // Skill completion events
-      (completions || []).forEach((c: any) => {
+      (completions || []).forEach((c: { id: string; user_id: string; completed_at: string; skills?: { name: string } | null }) => {
         const p = profileMap.get(c.user_id);
         items.push({
           id: `skill-${c.id}`,

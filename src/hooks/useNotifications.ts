@@ -8,7 +8,7 @@ export interface Notification {
   type: string;
   title: string;
   body: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   read: boolean;
   created_at: string;
 }
@@ -37,7 +37,7 @@ export function useNotifications(userId: string | undefined) {
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
         .from("notifications")
-        .update({ read: true } as any)
+        .update({ read: true } as { read: boolean })
         .eq("id", notificationId);
       if (error) throw error;
     },
@@ -50,7 +50,7 @@ export function useNotifications(userId: string | undefined) {
     mutationFn: async () => {
       const { error } = await supabase
         .from("notifications")
-        .update({ read: true } as any)
+        .update({ read: true } as { read: boolean })
         .eq("user_id", userId!)
         .eq("read", false);
       if (error) throw error;
@@ -77,7 +77,7 @@ export function useNotifications(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel("user-notifications")
+      .channel(`user-notifications-${userId}`)
       .on(
         "postgres_changes",
         {

@@ -66,9 +66,10 @@ const Onboarding = () => {
   const { data: tracks } = useQuery({
     queryKey: ["skill_tracks", stream],
     queryFn: async () => {
-      const query = supabase.from("skill_tracks").select("*").eq("is_default", true);
+      // FIX: .eq() returns a new object — must reassign, otherwise the filter is discarded
+      let query = supabase.from("skill_tracks").select("*").eq("is_default", true);
       if (stream) {
-        query.eq("stream", stream);
+        query = query.eq("stream", stream);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -122,8 +123,8 @@ const Onboarding = () => {
 
       toast.success("You're all set! Let's start tracking.");
       navigate("/dashboard");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
     } finally {
       setLoading(false);
     }

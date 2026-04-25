@@ -53,7 +53,7 @@ export function useFriendship(userId: string | undefined, targetId: string | und
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
       toast.success("Friend request sent!");
     },
-    onError: (e: any) => toast.error(e.message || "Failed to send request"),
+    onError: (e: Error) => toast.error(e.message || "Failed to send request"),
   });
 
   const acceptRequest = useMutation({
@@ -70,7 +70,7 @@ export function useFriendship(userId: string | undefined, targetId: string | und
       queryClient.invalidateQueries({ queryKey: ["friends_list"] });
       toast.success("Friend request accepted!");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const rejectRequest = useMutation({
@@ -101,7 +101,7 @@ export function useFriendship(userId: string | undefined, targetId: string | und
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
       toast.success("Friend removed.");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return {

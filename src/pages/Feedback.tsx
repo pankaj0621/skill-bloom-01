@@ -103,7 +103,7 @@ const Feedback = () => {
       setDialogOpen(false);
       setForm({ title: "", description: "" });
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   // Vote mutation
@@ -127,7 +127,7 @@ const Feedback = () => {
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
       queryClient.invalidateQueries({ queryKey: ["feedback-votes"] });
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const handleSubmit = () => {
@@ -257,7 +257,7 @@ const Feedback = () => {
 
 const FeedbackCard = ({ feedback, profile, hasVoted, onVote, statusIcon, statusBadge }: {
   feedback: Feedback;
-  profile: any;
+  profile: { id: string; display_name: string | null; avatar_url: string | null } | undefined;
   hasVoted: boolean;
   onVote: (remove: boolean) => void;
   statusIcon: (s: string) => React.ReactNode;

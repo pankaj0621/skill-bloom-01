@@ -34,6 +34,26 @@ const difficultyColors: Record<string, string> = {
   advanced: "bg-amber-100 text-amber-700",
 };
 
+
+interface SkillProgress {
+  id: string;
+  status: string;
+  skills: {
+    id: string;
+    name: string;
+    order?: number;
+    track_id?: string;
+    skill_tracks?: { id?: string; name?: string } | null;
+  } | null;
+}
+
+interface CustomSkill {
+  id: string;
+  name: string;
+  track_id?: string;
+  status?: string;
+}
+
 const Roadmap = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -51,7 +71,7 @@ const Roadmap = () => {
         .eq("user_id", user!.id)
         .order("skills(order)");
       if (error) throw error;
-      return data as any[];
+      return data as SkillProgress[];
     },
     enabled: !!user,
   });
@@ -142,7 +162,7 @@ const Roadmap = () => {
     }),
   });
 
-  const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: any[] }>, p: any) => {
+  const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: SkillProgress[] }>, p: SkillProgress) => {
     const trackId = p.skills?.track_id;
     const trackName = p.skills?.skill_tracks?.name || "Unknown";
     if (!acc[trackId]) acc[trackId] = { name: trackName, trackId, skills: [] };
@@ -150,7 +170,7 @@ const Roadmap = () => {
     return acc;
   }, {}) || {};
 
-  const trackList: { name: string; trackId: string; skills: any[] }[] = Object.values(tracks);
+  const trackList: { name: string; trackId: string; skills: SkillProgress[] }[] = Object.values(tracks ?? {});
 
   const cycleStatus = (current: string) => {
     if (current === "not_started") return "in_progress";
@@ -241,12 +261,12 @@ const Roadmap = () => {
           </motion.div>
 
           {trackList.map((track) => {
-            const trackCustom = customSkills?.filter((cs: any) => cs.track_id === track.trackId) || [];
+            const trackCustom = (customSkills as CustomSkill[] | undefined)?.filter((cs) => cs.track_id === track.trackId) || [];
             
             // Group skills by category
-            const sorted = track.skills.sort((a: any, b: any) => (a.skills?.order || 0) - (b.skills?.order || 0));
+            const sorted = track.skills.sort((a, b) => (a.skills?.order || 0) - (b.skills?.order || 0));
             const categories: Record<string, any[]> = {};
-            sorted.forEach((p: any) => {
+            sorted.forEach((p) => {
               const cat = p.skills?.category || "General";
               if (!categories[cat]) categories[cat] = [];
               categories[cat].push(p);
@@ -266,7 +286,7 @@ const Roadmap = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">{category}</h3>
-                    {skills.map((p: any) => {
+                    {skills.map((p) => {
                       const config = statusConfig[p.status as keyof typeof statusConfig];
                       const Icon = config.icon;
                       const idx = globalIndex++;
@@ -316,7 +336,7 @@ const Roadmap = () => {
                 {trackCustom.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">Custom</h3>
-                    {trackCustom.map((cs: any, i: number) => {
+                    {trackCustom.map((cs, i) => {
                       const config = statusConfig[cs.status as keyof typeof statusConfig];
                       const Icon = config.icon;
                       return (

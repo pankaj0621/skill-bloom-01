@@ -93,12 +93,12 @@ export function useConversations(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel("chat-realtime")
+      .channel(`chat-realtime-${userId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "peer_messages" },
         (payload) => {
-          const msg = payload.new as any;
+          const msg = payload.new as { from_user_id: string; to_user_id: string };
           if (msg.from_user_id === userId || msg.to_user_id === userId) {
             if (msg.to_user_id === userId) {
               playMessageSound();
@@ -112,7 +112,7 @@ export function useConversations(userId: string | undefined) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "peer_messages" },
         (payload) => {
-          const msg = payload.new as any;
+          const msg = payload.new as { from_user_id: string; to_user_id: string };
           if (msg.from_user_id === userId || msg.to_user_id === userId) {
             queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
             queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
@@ -184,7 +184,7 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
       queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return { messageText, setMessageText, sendMessage };

@@ -14,8 +14,26 @@ import { MessageSquare, Trash2, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+interface FeedbackItem {
+  id: string;
+  user_id: string;
+  type: string;
+  status: string;
+  title: string;
+  description?: string | null;
+  admin_response?: string | null;
+  votes_count: number;
+  created_at: string;
+}
+
+interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 interface FeedbackManagementProps {
-  profiles: any[];
+  profiles: Profile[];
 }
 
 const FeedbackManagement = ({ profiles }: FeedbackManagementProps) => {
@@ -37,7 +55,7 @@ const FeedbackManagement = ({ profiles }: FeedbackManagementProps) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, unknown> }) => {
       const { error } = await supabase.from("feedback").update(updates).eq("id", id);
       if (error) throw error;
     },
@@ -48,7 +66,7 @@ const FeedbackManagement = ({ profiles }: FeedbackManagementProps) => {
       setRespondDialog(null);
       setResponse("");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const deleteMutation = useMutation({
@@ -60,18 +78,18 @@ const FeedbackManagement = ({ profiles }: FeedbackManagementProps) => {
       queryClient.invalidateQueries({ queryKey: ["admin-feedback"] });
       toast.success("Feedback deleted");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const getProfile = (id: string) => profiles.find(p => p.id === id);
 
-  const filtered = feedbackList.filter((f: any) => {
+  const filtered = (feedbackList as FeedbackItem[]).filter((f) => {
     if (filterType !== "all" && f.type !== filterType) return false;
     if (filterStatus !== "all" && f.status !== filterStatus) return false;
     return true;
   });
 
-  const openRespond = (f: any) => {
+  const openRespond = (f: FeedbackItem) => {
     setRespondDialog(f.id);
     setResponse(f.admin_response || "");
   };
@@ -105,7 +123,7 @@ const FeedbackManagement = ({ profiles }: FeedbackManagementProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filtered.map((f: any) => {
+            {filtered.map((f) => {
               const profile = getProfile(f.user_id);
               return (
                 <div key={f.id} className="border rounded-lg p-4 space-y-2">

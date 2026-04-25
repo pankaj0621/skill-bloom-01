@@ -71,10 +71,16 @@ const Analytics = () => {
     );
   }
 
-  const allItems = progress || [];
+  type ProgressItem = {
+    status: string;
+    completed_at?: string | null;
+    skills?: { skill_tracks?: { name?: string } | null; track_id?: string } | null;
+  };
+
+  const allItems = (progress || []) as ProgressItem[];
   const total = allItems.length;
-  const completed = allItems.filter((p: any) => p.status === "completed").length;
-  const inProgress = allItems.filter((p: any) => p.status === "in_progress").length;
+  const completed = allItems.filter((p) => p.status === "completed").length;
+  const inProgress = allItems.filter((p) => p.status === "in_progress").length;
   const notStarted = total - completed - inProgress;
   const overallPct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const level = getLevel(completed, total);
@@ -84,7 +90,7 @@ const Analytics = () => {
   const weeklyData = Array.from({ length: 8 }).map((_, i) => {
     const weekEnd = subDays(now, i * 7);
     const weekStart = subDays(weekEnd, 6);
-    const count = allItems.filter((p: any) => {
+    const count = allItems.filter((p) => {
       if (p.status !== "completed" || !p.completed_at) return false;
       const d = parseISO(p.completed_at);
       return isWithinInterval(d, { start: weekStart, end: weekEnd });
@@ -98,7 +104,7 @@ const Analytics = () => {
   // Daily completions (last 14 days)
   const days = eachDayOfInterval({ start: subDays(now, 13), end: now });
   const dailyData = days.map((day) => {
-    const count = allItems.filter((p: any) => {
+    const count = allItems.filter((p) => {
       if (p.status !== "completed" || !p.completed_at) return false;
       return format(parseISO(p.completed_at), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
     }).length;
@@ -106,7 +112,7 @@ const Analytics = () => {
   });
 
   // Track breakdown
-  const trackMap = allItems.reduce((acc: Record<string, { name: string; total: number; completed: number }>, p: any) => {
+  const trackMap = allItems.reduce((acc: Record<string, { name: string; total: number; completed: number }>, p) => {
     const trackName = p.skills?.skill_tracks?.name || "Unknown";
     const trackId = p.skills?.track_id || "unknown";
     if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0 };

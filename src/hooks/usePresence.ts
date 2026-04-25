@@ -18,12 +18,23 @@ export function usePresence(userId: string | undefined) {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    if (!userId) return;
-
     const rerender = () => forceUpdate((n) => n + 1);
     onlineUsersState.listeners.add(rerender);
 
-    // Only create one global presence channel
+    if (!userId) {
+      // User logged out — tear down the presence channel
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+        onlineUsersState.current = new Set();
+        notifyListeners();
+      }
+      return () => {
+        onlineUsersState.listeners.delete(rerender);
+      };
+    }
+
+    // Only create one global presence channel, but re-create if userId changed
     if (!presenceChannelRef.current) {
       const channel = supabase.channel("online-users", {
         config: { presence: { key: userId } },
@@ -45,7 +56,7 @@ export function usePresence(userId: string | undefined) {
 
       presenceChannelRef.current = channel;
     } else {
-      // Already subscribed, just track this user
+      // Already subscribed, re-track with current userId (handles login swap)
       presenceChannelRef.current.track({ user_id: userId, online_at: new Date().toISOString() });
     }
 

@@ -16,6 +16,15 @@ import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, Mo
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 
+
+interface FriendProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  computed_level: string;
+  username?: string | null;
+}
+
 interface ChatPopupProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -85,7 +94,7 @@ function ConversationList({
   isOnline,
 }: {
   conversations: { peerId: string; peerName: string; peerAvatarUrl: string | null; peerUsername: string | null; lastMessage: string; lastMessageTime: string; unreadCount: number }[];
-  friends: any[];
+  friends: FriendProfile[];
   onSelect: (peerId: string) => void;
   isOnline: (id: string) => boolean;
 }) {
@@ -141,7 +150,7 @@ function ConversationList({
           <div className="px-3 py-2 border-b border-border/50">
             <p className="text-xs font-medium text-muted-foreground">Friends</p>
           </div>
-          {friendsWithoutConvo.map((friend: any) => (
+          {friendsWithoutConvo.map((friend) => (
             <button
               key={friend.id}
               onClick={() => onSelect(friend.id)}
@@ -180,7 +189,7 @@ function ChatView({
 }: {
   userId: string;
   peerId: string;
-  peerProfile: any;
+  peerProfile: FriendProfile | null | undefined;
   onBack: () => void;
   onNavigateProfile: () => void;
   isOnline: boolean;
@@ -354,7 +363,7 @@ function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, 
   }, [initialPeerId]);
 
   const selectedProfile = peerProfiles?.find((p) => p.id === selectedPeer) ||
-    friends?.find((f: any) => f.id === selectedPeer);
+    friends?.find((f) => f.id === selectedPeer);
 
   if (selectedPeer && user) {
     return (
@@ -365,7 +374,7 @@ function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, 
         onBack={() => setSelectedPeer(null)}
         onNavigateProfile={() => {
           onOpenChange(false);
-          const username = (selectedProfile as any)?.username || selectedPeer;
+          const username = selectedProfile?.username || selectedPeer;
           navigate(`/user/${username}`);
         }}
         isOnline={isOnline(selectedPeer)}
