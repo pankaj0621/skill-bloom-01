@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Layout from "@/components/Layout";
+import ImmersiveLayout from "@/components/ImmersiveLayout";
 import ReactMarkdown from "react-markdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -203,8 +203,8 @@ const AIMentor = () => {
   };
 
   return (
-    <Layout>
-      <div className="flex flex-col max-w-3xl mx-auto" style={{ height: "calc(100vh - 8rem)" }}>
+    <ImmersiveLayout gradient maxWidth="max-w-3xl" className="px-3 sm:px-4 py-3 sm:py-4">
+      <div className="flex flex-col" style={{ height: "calc(100dvh - 2rem)" }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -340,7 +340,7 @@ const AIMentor = () => {
           </div>
         </Card>
       </div>
-    </Layout>
+    </ImmersiveLayout>
   );
 };
 
