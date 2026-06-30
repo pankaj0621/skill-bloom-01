@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
+import { scrollToElement } from "@/lib/scrollToElement";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,9 @@ const Feedback = () => {
       queryClient.setQueryData<string[]>(["feedback-votes", user?.id], (old) =>
         remove ? (old || []).filter((id) => id !== feedbackId) : [...(old || []), feedbackId]
       );
+
+      // Auto-scroll the voted card into view (list may re-sort by votes_count)
+      scrollToElement(`[data-feedback-id="${feedbackId}"]`, { block: "center" });
 
       return { prevFeedback, prevVotes };
     },
@@ -287,7 +291,7 @@ const FeedbackCard = ({ feedback, profile, hasVoted, onVote, statusIcon, statusB
   statusIcon: (s: string) => React.ReactNode;
   statusBadge: (s: string) => React.ReactNode;
 }) => (
-  <Card>
+  <Card data-feedback-id={feedback.id} className="scroll-mt-24">
     <CardContent className="p-4">
       <div className="flex gap-3">
         <div className="flex flex-col items-center gap-1">
