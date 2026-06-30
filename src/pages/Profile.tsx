@@ -122,7 +122,7 @@ const Profile = () => {
         .eq("id", user.id);
       if (updateError) throw updateError;
 
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       toast.success("Profile picture updated!");
       setCropDialogOpen(false);
     } catch (err: unknown) {
