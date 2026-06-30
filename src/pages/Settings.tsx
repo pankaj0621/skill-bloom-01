@@ -23,6 +23,8 @@ import {
   Eye, EyeOff, BarChart3, Flame, Pencil,
 } from "lucide-react";
 import SecuritySection from "@/components/SecuritySection";
+import ActiveSessionCard from "@/components/ActiveSessionCard";
+import TwoFactorSection from "@/components/TwoFactorSection";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
