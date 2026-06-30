@@ -142,6 +142,9 @@ const Feedback = () => {
         remove ? (old || []).filter((id) => id !== feedbackId) : [...(old || []), feedbackId]
       );
 
+      // Auto-scroll the voted card into view (list may re-sort by votes_count)
+      scrollToElement(`[data-feedback-id="${feedbackId}"]`, { block: "center" });
+
       return { prevFeedback, prevVotes };
     },
     onError: (err: Error, _v, ctx) => {
