@@ -393,14 +393,22 @@ const Leaderboard = () => {
                         >
                           <RankIcon rank={i} />
                         </motion.div>
-                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
-                          {entry.avatar_url ? (
-                            <AvatarImage src={entry.avatar_url} alt={entry.display_name || "Student"} />
-                          ) : null}
-                          <AvatarFallback className="bg-muted">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                            {entry.avatar_url ? (
+                              <AvatarImage src={entry.avatar_url} alt={entry.display_name || "Student"} />
+                            ) : null}
+                            <AvatarFallback className="bg-muted">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </AvatarFallback>
+                          </Avatar>
+                          {isOnline(entry.id) && (
+                            <span
+                              className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
+                              aria-label="Online"
+                            />
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <p className="font-medium text-sm sm:text-base">
