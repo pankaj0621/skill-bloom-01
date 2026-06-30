@@ -13,6 +13,18 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Space Grotesk"', 'Inter', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-glow)) 100%)',
+        'gradient-radial': 'radial-gradient(ellipse at top, hsl(var(--primary) / 0.15), transparent 60%)',
+      },
+      boxShadow: {
+        'glow': '0 0 40px -10px hsl(var(--primary) / 0.5)',
+        'soft': '0 4px 24px -8px hsl(0 0% 0% / 0.3)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

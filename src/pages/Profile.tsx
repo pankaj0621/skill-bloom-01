@@ -122,7 +122,7 @@ const Profile = () => {
         .eq("id", user.id);
       if (updateError) throw updateError;
 
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       toast.success("Profile picture updated!");
       setCropDialogOpen(false);
     } catch (err: unknown) {
@@ -145,7 +145,7 @@ const Profile = () => {
         .update({ avatar_url: null })
         .eq("id", user.id);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       toast.success("Profile picture removed.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to remove avatar.");
@@ -159,18 +159,25 @@ const Profile = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
       if (error) throw error;
-      setForm({
-        display_name: data.display_name || "",
-        bio: data.bio || "",
-        year: data.year?.toString() || "",
-        college: data.college || "",
-        stream: data.stream || "",
-        primary_goal: data.primary_goal || "",
-      });
       return data;
     },
     enabled: !!user,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
+
+  // Hydrate form from profile WITHOUT clobbering edits in progress
+  useEffect(() => {
+    if (!profile || editing) return;
+    setForm({
+      display_name: (profile as any).display_name || "",
+      bio: (profile as any).bio || "",
+      year: (profile as any).year?.toString() || "",
+      college: (profile as any).college || "",
+      stream: (profile as any).stream || "",
+      primary_goal: (profile as any).primary_goal || "",
+    });
+  }, [profile, editing]);
 
 
 
@@ -210,8 +217,8 @@ const Profile = () => {
         .eq("id", user!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       setUsernameDialogOpen(false);
       toast.success("Username updated!");
     },
@@ -274,12 +281,14 @@ const Profile = () => {
         .eq("id", user!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["available_tracks"] });
       setEditing(false);
       toast.success("Profile updated! Recommendations will refresh.");
     },
+    onError: (e: Error) => toast.error(e.message || "Failed to update profile"),
   });
 
   // Add a track: insert progress rows for all its skills
