@@ -40,16 +40,17 @@ const SkillGapAnalyzer = lazy(() => import("./pages/SkillGapAnalyzer"));
 const AIMentor = lazy(() => import("./pages/AIMentor"));
 const AIHub = lazy(() => import("./pages/AIHub"));
 
-// Optimized QueryClient with aggressive caching for mobile networks
+// QueryClient — cache for speed, but refetch on focus/mount so the UI feels live
+// without manual refreshes. Realtime subscriptions also invalidate keys on change.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,           // 5 min fresh — no refetch
+      staleTime: 1000 * 30,               // 30 s — quickly considered stale
       gcTime: 1000 * 60 * 60 * 24,        // 24 hr in memory/storage
       retry: 2,
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-      refetchOnWindowFocus: false,        // Don't refetch on tab switch
-      refetchOnMount: false,              // Use cache on remount
+      refetchOnWindowFocus: true,         // Refresh when user returns to tab
+      refetchOnMount: true,               // Refresh stale data on navigation
       refetchOnReconnect: true,           // Refetch when back online
     },
   },
