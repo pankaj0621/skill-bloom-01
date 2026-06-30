@@ -136,10 +136,10 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
     background-image: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.12), transparent 70%);
-    background-attachment: fixed;
+  h1, h2, h3 {
+    font-family: 'Space Grotesk', Inter, system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
-
-  h1, h2, h3, .font-display { @apply font-display tracking-tight; }
 
   /* Mobile-first: ensure minimum tap target size */
   button,
