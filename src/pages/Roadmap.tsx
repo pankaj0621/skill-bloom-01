@@ -100,7 +100,54 @@ const Roadmap = () => {
         .eq("id", progressId);
       if (error) throw error;
     },
+    // ── Optimistic: flip status + bump XP/level locally before server responds.
+    onMutate: async ({ progressId, status }) => {
+      const progressKey = ["user_progress_full", user?.id];
+      const profileKey = ["profile", user?.id];
+      await queryClient.cancelQueries({ queryKey: progressKey });
+      await queryClient.cancelQueries({ queryKey: profileKey });
+
+      const prevProgress = queryClient.getQueryData<SkillProgress[]>(progressKey);
+      const prevProfile = queryClient.getQueryData<{ xp?: number; weekly_xp?: number } | undefined>(profileKey);
+
+      // Find current status for XP delta estimate (server awards +25 on complete)
+      const current = prevProgress?.find((p) => p.id === progressId);
+      const wasCompleted = current?.status === "completed";
+      const willBeCompleted = status === "completed";
+      const xpDelta = willBeCompleted && !wasCompleted ? 25 : (!willBeCompleted && wasCompleted ? -25 : 0);
+
+      queryClient.setQueryData<SkillProgress[]>(progressKey, (old) =>
+        (old || []).map((p) =>
+          p.id === progressId
+            ? { ...p, status, completed_at: willBeCompleted ? new Date().toISOString() : null }
+            : p
+        )
+      );
+
+      if (xpDelta !== 0 && prevProfile) {
+        queryClient.setQueryData(profileKey, {
+          ...prevProfile,
+          xp: Math.max(0, (prevProfile.xp || 0) + xpDelta),
+          weekly_xp: Math.max(0, (prevProfile.weekly_xp || 0) + xpDelta),
+        });
+      }
+
+      // Scroll updated skill into view so user sees the change instantly
+      scrollToElement(`[data-skill-id="${progressId}"]`, { block: "center", offset: 80 });
+
+      return { prevProgress, prevProfile };
+    },
+    onError: (_, variables, ctx) => {
+      // Rollback optimistic cache
+      if (ctx?.prevProgress) queryClient.setQueryData(["user_progress_full", user?.id], ctx.prevProgress);
+      if (ctx?.prevProfile) queryClient.setQueryData(["profile", user?.id], ctx.prevProfile);
+      feedback.error("Failed to update skill status", {
+        description: "Your progress couldn't be saved. Please try again.",
+        retry: () => updateStatus.mutate(variables),
+      });
+    },
     onSuccess: async () => {
+      // Server-side: streak, level recompute, badge checks
       if (user) {
         await updateStreak(user.id);
         const { previousLevel, newLevel } = await syncUserLevel(user.id);
@@ -118,15 +165,14 @@ const Roadmap = () => {
           });
         }
       }
+    },
+    onSettled: () => {
+      // Reconcile with canonical server state
       queryClient.invalidateQueries({ queryKey: ["user_progress_full"] });
       queryClient.invalidateQueries({ queryKey: ["user_progress"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["user_badges"] });
     },
-    onError: (_, variables) => feedback.error("Failed to update skill status", {
-      description: "Your progress couldn't be saved. Please try again.",
-      retry: () => updateStatus.mutate(variables),
-    }),
   });
 
   const addCustomSkill = useMutation({
@@ -139,16 +185,34 @@ const Roadmap = () => {
       });
       if (error) throw error;
     },
+    onMutate: async ({ trackId, name }) => {
+      const key = ["custom_skills", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ id: string; track_id: string; name: string; status: string; user_id: string }[]>(key);
+      const tempRow = {
+        id: `temp-${Date.now()}`,
+        user_id: user!.id,
+        track_id: trackId,
+        name,
+        status: "not_started",
+        __optimistic: true as const,
+      };
+      queryClient.setQueryData(key, [...(previous || []), tempRow]);
+      return { previous };
+    },
+    onError: (_, variables, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["custom_skills", user?.id], ctx.previous);
+      feedback.error("Failed to add skill", {
+        description: "The skill couldn't be created. Please try again.",
+        retry: () => addCustomSkill.mutate(variables),
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["custom_skills"] });
       setNewSkillName("");
       setAddingToTrack(null);
       feedback.success("Custom skill added!", "You can now track its progress.");
     },
-    onError: (_, variables) => feedback.error("Failed to add skill", {
-      description: "The skill couldn't be created. Please try again.",
-      retry: () => addCustomSkill.mutate(variables),
-    }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
   });
 
   const updateCustomStatus = useMutation({
@@ -156,10 +220,23 @@ const Roadmap = () => {
       const { error } = await supabase.from("user_custom_skills").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
-    onError: (_, variables) => feedback.error("Failed to update skill", {
-      retry: () => updateCustomStatus.mutate(variables),
-    }),
+    onMutate: async ({ id, status }) => {
+      const key = ["custom_skills", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ id: string; status: string }[]>(key);
+      queryClient.setQueryData(key, (old: { id: string; status: string }[] | undefined) =>
+        (old || []).map((s) => (s.id === id ? { ...s, status } : s))
+      );
+      scrollToElement(`[data-custom-skill-id="${id}"]`, { block: "center", offset: 80 });
+      return { previous };
+    },
+    onError: (_, variables, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["custom_skills", user?.id], ctx.previous);
+      feedback.error("Failed to update skill", {
+        retry: () => updateCustomStatus.mutate(variables),
+      });
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
   });
 
   const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: SkillProgress[] }>, p: SkillProgress) => {
