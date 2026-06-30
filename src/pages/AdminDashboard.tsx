@@ -246,6 +246,11 @@ const AdminDashboard = () => {
           <TabsContent value="activity" className="space-y-4">
             <ActivitySection profiles={profiles} recentActivity={recentActivity} />
           </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit" className="space-y-4">
+            <AuditLogsSection profiles={profiles} />
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
