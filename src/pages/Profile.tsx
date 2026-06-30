@@ -159,18 +159,25 @@ const Profile = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
       if (error) throw error;
-      setForm({
-        display_name: data.display_name || "",
-        bio: data.bio || "",
-        year: data.year?.toString() || "",
-        college: data.college || "",
-        stream: data.stream || "",
-        primary_goal: data.primary_goal || "",
-      });
       return data;
     },
     enabled: !!user,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
+
+  // Hydrate form from profile WITHOUT clobbering edits in progress
+  useEffect(() => {
+    if (!profile || editing) return;
+    setForm({
+      display_name: (profile as any).display_name || "",
+      bio: (profile as any).bio || "",
+      year: (profile as any).year?.toString() || "",
+      college: (profile as any).college || "",
+      stream: (profile as any).stream || "",
+      primary_goal: (profile as any).primary_goal || "",
+    });
+  }, [profile, editing]);
 
 
 
