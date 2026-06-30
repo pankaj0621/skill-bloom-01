@@ -150,7 +150,7 @@ const Community = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-2">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {searchResults.map((u, i) => (
                     <UserProfileCard
                       key={u.id}
@@ -192,7 +192,7 @@ const Community = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="discover" className="mt-3 space-y-2">
+              <TabsContent value="discover" className="mt-3">
                 {!friends || friends.length === 0 ? (
                   <Card>
                     <CardContent className="py-8">
@@ -206,19 +206,21 @@ const Community = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  friends.map((f: { id: string; display_name: string | null; avatar_url: string | null; computed_level: string; stream?: string | null; college?: string | null; username?: string | null }, i: number) => (
-                    <UserProfileCard
-                      key={f.id}
-                      user={f}
-                      onClick={() => navigate(`/user/${f.id}`)}
-                      showBadge
-                      index={i}
-                    />
-                  ))
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {friends.map((f: { id: string; display_name: string | null; avatar_url: string | null; computed_level: string; stream?: string | null; college?: string | null; username?: string | null }, i: number) => (
+                      <UserProfileCard
+                        key={f.id}
+                        user={f}
+                        onClick={() => navigate(`/user/${f.id}`)}
+                        showBadge
+                        index={i}
+                      />
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="requests" className="mt-3 space-y-2">
+              <TabsContent value="requests" className="mt-3">
                 {pendingCount === 0 ? (
                   <Card>
                     <CardContent className="py-8">
@@ -232,25 +234,27 @@ const Community = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  (friendRequests || []).map((req: { id: string; requester_id: string; profiles?: { display_name?: string | null; avatar_url?: string | null; computed_level?: string; stream?: string | null } | null }, i: number) => {
-                    const profile = req.profiles || {};
-                    return (
-                      <UserProfileCard
-                        key={req.id}
-                        user={{
-                          id: req.requester_id,
-                          display_name: profile.display_name || "Student",
-                          avatar_url: profile.avatar_url,
-                          computed_level: profile.computed_level || "Beginner",
-                          stream: profile.stream,
-                          college: (profile as { college?: string }).college,
-                        }}
-                        onClick={() => navigate(`/user/${req.requester_id}`)}
-                        isRequest
-                        index={i}
-                      />
-                    );
-                  })
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {(friendRequests || []).map((req: { id: string; requester_id: string; profiles?: { display_name?: string | null; avatar_url?: string | null; computed_level?: string; stream?: string | null } | null }, i: number) => {
+                      const profile = req.profiles || {};
+                      return (
+                        <UserProfileCard
+                          key={req.id}
+                          user={{
+                            id: req.requester_id,
+                            display_name: profile.display_name || "Student",
+                            avatar_url: profile.avatar_url,
+                            computed_level: profile.computed_level || "Beginner",
+                            stream: profile.stream,
+                            college: (profile as { college?: string }).college,
+                          }}
+                          onClick={() => navigate(`/user/${req.requester_id}`)}
+                          isRequest
+                          index={i}
+                        />
+                      );
+                    })}
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
