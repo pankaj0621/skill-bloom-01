@@ -16,6 +16,7 @@ import { format, subDays, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import UserManagement from "@/components/admin/UserManagement";
 import FeedbackManagement from "@/components/admin/FeedbackManagement";
+import AuditLogsSection from "@/components/admin/AuditLogsSection";
 
 const CHART_COLORS = [
   "hsl(217, 91%, 50%)",
