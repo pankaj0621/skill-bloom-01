@@ -18,6 +18,8 @@ import useServiceWorkerUpdate from "@/hooks/useServiceWorkerUpdate";
 import Navbar from "@/components/Navbar";
 
 const Auth = lazy(() => import("./pages/Auth"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
