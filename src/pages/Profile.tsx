@@ -942,18 +942,27 @@ const Profile = () => {
             <DialogTitle>Profile Picture</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              className="justify-start gap-3 h-12"
-              onClick={() => {
-                setAvatarMenuOpen(false);
-                fileInputRef.current?.click();
-              }}
-              disabled={uploadingAvatar}
-            >
-              <Camera className="h-4 w-4" />
-              {profile?.avatar_url ? "Change Photo" : "Upload Photo"}
-            </Button>
+            {user && (
+              <AvatarUploader
+                mode="trigger"
+                userId={user.id}
+                currentUrl={profile?.avatar_url}
+                displayName={profile?.display_name}
+                onChange={() => setAvatarMenuOpen(false)}
+                className="w-full"
+              >
+                <Button
+                  variant="outline"
+                  className="justify-start gap-3 h-12 w-full"
+                  asChild
+                >
+                  <span>
+                    <Camera className="h-4 w-4" />
+                    {profile?.avatar_url ? "Change Photo" : "Upload Photo"}
+                  </span>
+                </Button>
+              </AvatarUploader>
+            )}
             {profile?.avatar_url && (
               <Button
                 variant="outline"
