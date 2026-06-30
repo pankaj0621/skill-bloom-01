@@ -921,56 +921,8 @@ const Profile = () => {
         </motion.div>
       </div>
 
-      {/* Crop Dialog */}
-      <Dialog open={cropDialogOpen} onOpenChange={(open) => {
-        if (!open && cropImage) {
-          URL.revokeObjectURL(cropImage);
-          setCropImage(null);
-        }
-        setCropDialogOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Crop Profile Picture</DialogTitle>
-          </DialogHeader>
-          <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
-            {cropImage && (
-              <Cropper
-                image={cropImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            )}
-          </div>
-          <div className="flex items-center gap-3 px-1">
-            <span className="text-xs text-muted-foreground">Zoom</span>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 accent-primary h-2"
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setCropDialogOpen(false)} disabled={uploadingAvatar}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropConfirm} disabled={uploadingAvatar}>
-              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Fullscreen Avatar Preview with pinch-to-zoom */}
       <AnimatePresence>
