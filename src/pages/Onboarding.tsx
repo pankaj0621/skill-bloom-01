@@ -176,7 +176,7 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <ImmersiveLayout center gradient className="p-4">
       <motion.div
         className="w-full max-w-lg"
         initial={{ opacity: 0, y: 24 }}
