@@ -25,6 +25,7 @@ import {
 import SecuritySection from "@/components/SecuritySection";
 import ActiveSessionCard from "@/components/ActiveSessionCard";
 import TwoFactorSection from "@/components/TwoFactorSection";
+import AvatarUploader from "@/components/AvatarUploader";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
