@@ -17,7 +17,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
-import { CheckCircle, Clock, Circle, TrendingUp, Sparkles, HelpCircle, MessageSquare, Trash2, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock, Circle, TrendingUp, Sparkles, HelpCircle, MessageSquare, Trash2, ArrowRight, BarChart3, Users, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface ProgressRow {
