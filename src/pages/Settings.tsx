@@ -23,6 +23,8 @@ import {
   Eye, EyeOff, BarChart3, Flame, Pencil,
 } from "lucide-react";
 import SecuritySection from "@/components/SecuritySection";
+import ActiveSessionCard from "@/components/ActiveSessionCard";
+import TwoFactorSection from "@/components/TwoFactorSection";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -234,6 +236,17 @@ const Settings = () => {
         <motion.div variants={itemVariants} initial="hidden" animate="show">
           <SecuritySection />
         </motion.div>
+
+        {/* Two-factor authentication */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <TwoFactorSection />
+        </motion.div>
+
+        {/* Active session */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <ActiveSessionCard />
+        </motion.div>
+
 
 
 

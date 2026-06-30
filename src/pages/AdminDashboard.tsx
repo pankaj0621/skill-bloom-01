@@ -16,6 +16,7 @@ import { format, subDays, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import UserManagement from "@/components/admin/UserManagement";
 import FeedbackManagement from "@/components/admin/FeedbackManagement";
+import AuditLogsSection from "@/components/admin/AuditLogsSection";
 
 const CHART_COLORS = [
   "hsl(217, 91%, 50%)",
@@ -142,7 +143,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="reports" className="relative">
@@ -155,6 +156,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -243,6 +245,11 @@ const AdminDashboard = () => {
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-4">
             <ActivitySection profiles={profiles} recentActivity={recentActivity} />
+          </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit" className="space-y-4">
+            <AuditLogsSection profiles={profiles} />
           </TabsContent>
         </Tabs>
       </div>
