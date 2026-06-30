@@ -409,6 +409,8 @@ const Roadmap = () => {
                       return (
                         <motion.div
                           key={p.id}
+                          data-skill-id={p.id}
+                          className="scroll-mt-24"
                           initial={{ opacity: 0, x: -16 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: idx * 0.04 }}
@@ -461,6 +463,8 @@ const Roadmap = () => {
                       return (
                         <motion.div
                           key={cs.id}
+                          data-custom-skill-id={cs.id}
+                          className="scroll-mt-24"
                           initial={{ opacity: 0, x: -16 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: (globalIndex + i) * 0.04 }}
