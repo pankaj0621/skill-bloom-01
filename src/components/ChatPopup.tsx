@@ -200,12 +200,15 @@ function ChatView({
   const { messageText, setMessageText, sendMessage } = useSendMessage(userId, peerId);
   const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to latest message whenever messages, typing state, or draft height changes.
+  // Uses both scrollTop and a sentinel scrollIntoView for reliability across mobile browsers.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, peerIsTyping]);
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages, peerIsTyping, messageText]);
 
   return (
     <div className="flex flex-col h-full">
@@ -279,8 +282,8 @@ function ChatView({
         </div>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
+      {/* Messages — extra bottom padding so the last bubble never hides behind the input */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 pb-6 space-y-2 overscroll-contain">
         {(!messages || messages.length === 0) ? (
           <p className="text-center text-muted-foreground py-12 text-sm">No messages yet. Say hello! 👋</p>
         ) : (
@@ -320,10 +323,16 @@ function ChatView({
         <AnimatePresence>
           {peerIsTyping && <TypingIndicator />}
         </AnimatePresence>
+
+        {/* Sentinel to anchor auto-scroll at the very bottom */}
+        <div ref={bottomRef} className="h-1" aria-hidden />
       </div>
 
-      {/* Input */}
-      <div className="border-t p-2 flex gap-2">
+      {/* Input — sticky-feel with safe-area padding so it never overlaps messages on mobile */}
+      <div
+        className="border-t p-2 flex gap-2 bg-background flex-shrink-0"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
+      >
         <Input
           placeholder="Type a message..."
           value={messageText}
