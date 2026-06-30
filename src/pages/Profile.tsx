@@ -145,7 +145,7 @@ const Profile = () => {
         .update({ avatar_url: null })
         .eq("id", user.id);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       toast.success("Profile picture removed.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to remove avatar.");
