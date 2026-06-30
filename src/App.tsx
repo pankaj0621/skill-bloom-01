@@ -3,7 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import SuspendedScreen from "@/components/SuspendedScreen";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -41,14 +43,22 @@ const AIHub = lazy(() => import("./pages/AIHub"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2,        // 2 min stale time - reduces refetches
-      gcTime: 1000 * 60 * 10,           // 10 min garbage collection
+      staleTime: 1000 * 60 * 5,           // 5 min fresh — no refetch
+      gcTime: 1000 * 60 * 60 * 24,        // 24 hr in memory/storage
       retry: 2,
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-      refetchOnWindowFocus: false,       // Don't refetch on every tab switch
-      refetchOnReconnect: true,          // Do refetch when coming back online
+      refetchOnWindowFocus: false,        // Don't refetch on tab switch
+      refetchOnMount: false,              // Use cache on remount
+      refetchOnReconnect: true,           // Refetch when back online
     },
   },
+});
+
+// Persist cache to localStorage so data survives page reloads
+const persister = createSyncStoragePersister({
+  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+  key: "spct-query-cache",
+  throttleTime: 1000,
 });
 
 // Prefetch critical routes on idle
@@ -127,7 +137,14 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24, // 24 hr
+        buster: "v1",
+      }}
+    >
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
           <TooltipProvider>
@@ -143,7 +160,7 @@ const App = () => {
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 };
 
