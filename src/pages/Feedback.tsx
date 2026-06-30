@@ -127,10 +127,10 @@ const Feedback = () => {
     onMutate: async ({ feedbackId, remove }) => {
       await queryClient.cancelQueries({ queryKey: ["feedback"] });
       await queryClient.cancelQueries({ queryKey: ["feedback-votes"] });
-      const prevFeedback = queryClient.getQueryData<FeedbackItem[]>(["feedback"]);
+      const prevFeedback = queryClient.getQueryData<Feedback[]>(["feedback"]);
       const prevVotes = queryClient.getQueryData<string[]>(["feedback-votes", user?.id]);
 
-      queryClient.setQueryData<FeedbackItem[]>(["feedback"], (old) =>
+      queryClient.setQueryData<Feedback[]>(["feedback"], (old) =>
         (old || []).map((f) =>
           f.id === feedbackId
             ? { ...f, votes_count: Math.max(0, f.votes_count + (remove ? -1 : 1)) }
