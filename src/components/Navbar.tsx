@@ -123,6 +123,18 @@ const Navbar = () => {
               <MessageSquarePlus className="h-4 w-4" />
             </Button>
           </Link>
+          {user && (
+            <AvatarUploader
+              mode="trigger"
+              userId={user.id}
+              currentUrl={navProfile?.avatar_url}
+              displayName={navProfile?.display_name}
+            >
+              <Button variant="ghost" size="icon" title="Change profile picture" asChild>
+                <span><Camera className="h-4 w-4" /></span>
+              </Button>
+            </AvatarUploader>
+          )}
           <Link to="/settings">
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
