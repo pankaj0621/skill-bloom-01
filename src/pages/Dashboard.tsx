@@ -19,6 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { BADGES } from "@/lib/badges";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
+import TodaysFocus from "@/components/TodaysFocus";
 
 const containerVariants = {
   hidden: {},
@@ -99,6 +100,18 @@ const Dashboard = () => {
   const totalCompleted = trackStats.reduce((s, t) => s + t.completed, 0);
   const overallPct = totalSkills > 0 ? Math.round((totalCompleted / totalSkills) * 100) : 0;
   const level = getLevel(totalCompleted, totalSkills);
+
+  // Today's focus = first non-completed skill, lowest difficulty first
+  const focusItem = progress
+    ? (progress as DashboardProgressItem[])
+        .filter((p) => p.status !== "completed" && p.skills?.name)
+        .sort((a, b) => {
+          const order = { easy: 0, medium: 1, hard: 2 } as Record<string, number>;
+          const da = order[a.skills?.difficulty_level ?? "medium"] ?? 1;
+          const db = order[b.skills?.difficulty_level ?? "medium"] ?? 1;
+          return da - db;
+        })[0]
+    : undefined;
 
   const isLoading = profileLoading || progressLoading || badgesLoading;
   const hasError = profileError || progressError || badgesError;
@@ -219,6 +232,15 @@ const Dashboard = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Today's Focus */}
+        <TodaysFocus
+          nextSkillName={focusItem?.skills?.name}
+          nextTrackName={focusItem?.skills?.skill_tracks?.name}
+          difficulty={focusItem?.skills?.difficulty_level}
+          completed={totalCompleted}
+          total={totalSkills}
+        />
 
         <motion.div
           className="grid gap-3 grid-cols-2 md:grid-cols-4"
