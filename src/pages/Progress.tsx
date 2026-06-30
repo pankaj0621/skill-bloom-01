@@ -247,7 +247,7 @@ const ProgressPage = () => {
             {isLoading ? (
               <Skeleton className="h-72 w-full" />
             ) : stats.total === 0 ? (
-              <EmptyState title="No data yet" description="Add skills from the Roadmap to see charts." />
+              <EmptyState icon={BarChart3} title="No data yet" description="Add skills from the Roadmap to see charts." />
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 <Card>
@@ -296,7 +296,7 @@ const ProgressPage = () => {
                 {isLoading ? (
                   <Skeleton className="h-32 w-full" />
                 ) : recommendations.length === 0 ? (
-                  <EmptyState title="All caught up!" description="No pending skills. Add new ones from the Roadmap." />
+                  <EmptyState icon={Target} title="All caught up!" description="No pending skills. Add new ones from the Roadmap." />
                 ) : (
                   recommendations.map(r => (
                     <div key={r.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card/50 hover:bg-accent/5 transition">
@@ -333,10 +333,13 @@ const ProgressPage = () => {
           <TabsContent value="peers" className="space-y-3">
             {(guidance || []).length === 0 ? (
               <EmptyState
+                icon={Users}
                 title="No guidance requests yet"
                 description="Be the first to ask the community for help."
-                action={<Button onClick={() => setAskOpen(true)}>Ask for guidance</Button>}
+                actionLabel="Ask for guidance"
+                onAction={() => setAskOpen(true)}
               />
+
             ) : (
               guidance!.map(g => {
                 const mine = g.user_id === user?.id;
