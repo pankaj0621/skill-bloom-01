@@ -281,12 +281,14 @@ const Profile = () => {
         .eq("id", user!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["available_tracks"] });
       setEditing(false);
       toast.success("Profile updated! Recommendations will refresh.");
     },
+    onError: (e: Error) => toast.error(e.message || "Failed to update profile"),
   });
 
   // Add a track: insert progress rows for all its skills
