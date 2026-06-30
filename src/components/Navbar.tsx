@@ -26,7 +26,7 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
-const BadgeCount = ({ count, className, ...rest }: { count: number; className?: string } & React.HTMLAttributes<HTMLSpanElement>) => (
+const BadgeCount = ({ count, className }: { count: number; className?: string }) => (
   <AnimatePresence mode="wait">
     <motion.span
       key={count}
@@ -35,7 +35,6 @@ const BadgeCount = ({ count, className, ...rest }: { count: number; className?: 
       exit={{ scale: 0, opacity: 0 }}
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
       className={cn("flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground", className)}
-      {...rest}
     >
       {count > 99 ? "99+" : count}
     </motion.span>

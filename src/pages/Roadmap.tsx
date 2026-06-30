@@ -267,7 +267,7 @@ const Roadmap = () => {
             const sorted = track.skills.sort((a, b) => (a.skills?.order || 0) - (b.skills?.order || 0));
             const categories: Record<string, any[]> = {};
             sorted.forEach((p) => {
-              const cat = p.skills?.category || "General";
+              const cat = (p.skills as { category?: string })?.category || "General";
               if (!categories[cat]) categories[cat] = [];
               categories[cat].push(p);
             });

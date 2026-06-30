@@ -261,9 +261,10 @@ interface AdminProfile {
 interface Report {
   id: string;
   reporter_id: string;
-  reported_id: string;
-  type: string;
+  reported_user_id?: string | null;
+  report_type: string;
   reason: string;
+  description?: string | null;
   status: string;
   admin_notes?: string | null;
   created_at: string;
@@ -289,7 +290,7 @@ const StatCard = ({ icon: Icon, label, value, variant }: { icon: LucideIcon; lab
   </Card>
 );
 
-const ReportsSection = ({ reports, profiles, updateReport }: { reports: Report[]; profiles: AdminProfile[]; updateReport: (id: string, updates: Record<string, string>) => void }) => {
+const ReportsSection = ({ reports, profiles, updateReport }: { reports: Report[]; profiles: AdminProfile[]; updateReport: { mutate: (vars: { id: string; status: string; admin_notes?: string }) => void } }) => {
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const getName = (id: string) => {
     const p = profiles.find((p) => p.id === id);

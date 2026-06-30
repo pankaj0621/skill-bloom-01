@@ -243,7 +243,7 @@ const Community = () => {
                           avatar_url: profile.avatar_url,
                           computed_level: profile.computed_level || "Beginner",
                           stream: profile.stream,
-                          college: profile.college,
+                          college: (profile as { college?: string }).college,
                         }}
                         onClick={() => navigate(`/user/${req.requester_id}`)}
                         isRequest

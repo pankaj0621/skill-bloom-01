@@ -374,7 +374,7 @@ function ChatPopupContent({ onOpenChange, initialPeerId }: Omit<ChatPopupProps, 
         onBack={() => setSelectedPeer(null)}
         onNavigateProfile={() => {
           onOpenChange(false);
-          const username = selectedProfile?.username || selectedPeer;
+          const username = (selectedProfile as { username?: string })?.username || selectedPeer;
           navigate(`/user/${username}`);
         }}
         isOnline={isOnline(selectedPeer)}
