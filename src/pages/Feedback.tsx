@@ -291,7 +291,7 @@ const FeedbackCard = ({ feedback, profile, hasVoted, onVote, statusIcon, statusB
               <AvatarImage src={profile?.avatar_url || ""} />
               <AvatarFallback className="text-[10px]">{(profile?.display_name || "U")[0]}</AvatarFallback>
             </Avatar>
-            <span>{profile?.display_name || profile?.username || "Unknown"}</span>
+            <span>{profile?.display_name || (profile as { username?: string })?.username || "Unknown"}</span>
             <span>•</span>
             <span>{format(new Date(feedback.created_at), "MMM dd, yyyy")}</span>
           </div>
