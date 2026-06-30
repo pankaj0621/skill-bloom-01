@@ -123,6 +123,8 @@ const Onboarding = () => {
       }
 
       toast.success("You're all set! Let's start tracking.");
+      await queryClient.invalidateQueries({ queryKey: ["profile-onboarding-check", user!.id] });
+      await queryClient.refetchQueries({ queryKey: ["profile-onboarding-check", user!.id] });
       navigate("/dashboard");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
