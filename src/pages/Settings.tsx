@@ -237,6 +237,17 @@ const Settings = () => {
           <SecuritySection />
         </motion.div>
 
+        {/* Two-factor authentication */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <TwoFactorSection />
+        </motion.div>
+
+        {/* Active session */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <ActiveSessionCard />
+        </motion.div>
+
+
 
 
         {/* Notifications */}
