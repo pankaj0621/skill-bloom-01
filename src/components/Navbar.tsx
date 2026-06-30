@@ -27,6 +27,17 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
+// Mobile shows 5 with AI as floating center action
+const mobileLeft = [
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/roadmap", label: "Path", icon: Map },
+];
+const mobileRight = [
+  { to: "/community", label: "Social", icon: UsersRound },
+  { to: "/profile", label: "Me", icon: UserCircle },
+];
+
+
 const BadgeCount = ({ count, className }: { count: number; className?: string }) => (
   <AnimatePresence mode="wait">
     <motion.span
