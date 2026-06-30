@@ -403,11 +403,10 @@ export const AvatarEditBadge = ({
 }) => (
   <AvatarUploader mode="trigger" userId={userId} currentUrl={currentUrl} displayName={displayName}>
     <span
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
       className={cn(
         "absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground",
         "flex items-center justify-center ring-2 ring-background shadow",
-        "opacity-0 group-hover:opacity-100 transition-opacity",
+        "opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none",
         className,
       )}
       aria-label="Quick change profile picture"
