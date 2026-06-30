@@ -389,32 +389,5 @@ const AvatarUploader = ({
   );
 };
 
-// Tiny helper: hover-revealed camera badge that opens an uploader (for navbar etc.)
-export const AvatarEditBadge = ({
-  userId,
-  currentUrl,
-  displayName,
-  className,
-}: {
-  userId: string;
-  currentUrl?: string | null;
-  displayName?: string | null;
-  className?: string;
-}) => (
-  <AvatarUploader mode="trigger" userId={userId} currentUrl={currentUrl} displayName={displayName}>
-    <span
-      className={cn(
-        "absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground",
-        "flex items-center justify-center ring-2 ring-background shadow",
-        "opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none",
-        className,
-      )}
-      aria-label="Quick change profile picture"
-    >
-      <Camera className="h-2.5 w-2.5" />
-    </span>
-  </AvatarUploader>
-);
-
-export { X as _X };
 export default AvatarUploader;
+
