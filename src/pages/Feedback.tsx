@@ -107,6 +107,7 @@ const Feedback = () => {
   });
 
   // Vote mutation
+  // Vote mutation — Instagram-style: bump count + toggle heart instantly, reconcile later
   const voteMutation = useMutation({
     mutationFn: async ({ feedbackId, remove }: { feedbackId: string; remove: boolean }) => {
       if (remove) {
@@ -123,11 +124,34 @@ const Feedback = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onMutate: async ({ feedbackId, remove }) => {
+      await queryClient.cancelQueries({ queryKey: ["feedback"] });
+      await queryClient.cancelQueries({ queryKey: ["feedback-votes"] });
+      const prevFeedback = queryClient.getQueryData<Feedback[]>(["feedback"]);
+      const prevVotes = queryClient.getQueryData<string[]>(["feedback-votes", user?.id]);
+
+      queryClient.setQueryData<Feedback[]>(["feedback"], (old) =>
+        (old || []).map((f) =>
+          f.id === feedbackId
+            ? { ...f, votes_count: Math.max(0, f.votes_count + (remove ? -1 : 1)) }
+            : f
+        )
+      );
+      queryClient.setQueryData<string[]>(["feedback-votes", user?.id], (old) =>
+        remove ? (old || []).filter((id) => id !== feedbackId) : [...(old || []), feedbackId]
+      );
+
+      return { prevFeedback, prevVotes };
+    },
+    onError: (err: Error, _v, ctx) => {
+      if (ctx?.prevFeedback) queryClient.setQueryData(["feedback"], ctx.prevFeedback);
+      if (ctx?.prevVotes) queryClient.setQueryData(["feedback-votes", user?.id], ctx.prevVotes);
+      toast.error(err.message);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
       queryClient.invalidateQueries({ queryKey: ["feedback-votes"] });
     },
-    onError: (err: Error) => toast.error(err.message),
   });
 
   const handleSubmit = () => {

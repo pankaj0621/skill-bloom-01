@@ -48,12 +48,30 @@ export function useFriendship(userId: string | undefined, targetId: string | und
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    // Optimistic: flip button to "Request sent" instantly
+    onMutate: async () => {
+      const key = ["friendship", userId, targetId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData(key);
+      queryClient.setQueryData(key, {
+        id: `temp-${Date.now()}`,
+        requester_id: userId,
+        addressee_id: targetId,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      return { previous };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.previous !== undefined) queryClient.setQueryData(["friendship", userId, targetId], ctx.previous);
+      toast.error(e.message || "Failed to send request");
+    },
+    onSuccess: () => toast.success("Friend request sent!"),
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["friendship", userId, targetId] });
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
-      toast.success("Friend request sent!");
     },
-    onError: (e: Error) => toast.error(e.message || "Failed to send request"),
   });
 
   const acceptRequest = useMutation({
@@ -64,13 +82,28 @@ export function useFriendship(userId: string | undefined, targetId: string | und
         .eq("id", friendship!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const key = ["friendship", userId, targetId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Friendship>(key);
+      if (previous) queryClient.setQueryData(key, { ...previous, status: "accepted" });
+      // Remove from pending list instantly
+      queryClient.setQueryData(["friend_requests", userId], (old: Friendship[] | undefined) =>
+        (old || []).filter((r) => r.id !== friendship?.id)
+      );
+      return { previous };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.previous !== undefined) queryClient.setQueryData(["friendship", userId, targetId], ctx.previous);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Friend request accepted!"),
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["friendship"] });
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
       queryClient.invalidateQueries({ queryKey: ["friends_list"] });
-      toast.success("Friend request accepted!");
+      queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const rejectRequest = useMutation({
@@ -81,9 +114,15 @@ export function useFriendship(userId: string | undefined, targetId: string | und
         .eq("id", friendship!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      queryClient.setQueryData(["friend_requests", userId], (old: Friendship[] | undefined) =>
+        (old || []).filter((r) => r.id !== friendship?.id)
+      );
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["friendship"] });
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending_friend_requests_count"] });
     },
   });
 
@@ -95,13 +134,26 @@ export function useFriendship(userId: string | undefined, targetId: string | und
         .eq("id", friendship!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const key = ["friendship", userId, targetId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData(key);
+      queryClient.setQueryData(key, null);
+      queryClient.setQueryData(["friends_list", userId], (old: { id: string }[] | undefined) =>
+        (old || []).filter((f) => f.id !== targetId)
+      );
+      return { previous };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.previous !== undefined) queryClient.setQueryData(["friendship", userId, targetId], ctx.previous);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Friend removed."),
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["friendship"] });
       queryClient.invalidateQueries({ queryKey: ["friends_list"] });
       queryClient.invalidateQueries({ queryKey: ["friend_requests"] });
-      toast.success("Friend removed.");
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   return {
