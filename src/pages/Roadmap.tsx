@@ -23,15 +23,15 @@ import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
 const statusConfig = {
-  not_started: { icon: Circle, label: "Not Started", color: "text-muted-foreground" },
-  in_progress: { icon: Clock, label: "In Progress", color: "text-blue-500" },
-  completed: { icon: CheckCircle, label: "Completed", color: "text-emerald-500" },
+  not_started: { icon: Circle, label: "Not Started", color: "text-muted-foreground", accent: "bg-muted-foreground/40" },
+  in_progress: { icon: Clock, label: "In Progress", color: "text-primary", accent: "bg-primary" },
+  completed: { icon: CheckCircle, label: "Completed", color: "text-accent", accent: "bg-accent" },
 } as const;
 
 const difficultyColors: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-blue-100 text-blue-700",
-  advanced: "bg-amber-100 text-amber-700",
+  beginner: "border-accent/40 bg-accent/10 text-accent-foreground/90",
+  intermediate: "border-primary/40 bg-primary/10 text-primary",
+  advanced: "border-warning/40 bg-warning/10 text-warning",
 };
 
 
