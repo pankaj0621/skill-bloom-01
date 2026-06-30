@@ -40,6 +40,11 @@ const Profile = () => {
   const didLongPress = useRef(false);
 
   // Username change state
+  const [usernameDialogOpen, setUsernameDialogOpen] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const handleRemoveAvatar = async () => {
