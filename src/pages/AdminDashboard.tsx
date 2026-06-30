@@ -261,9 +261,10 @@ interface AdminProfile {
 interface Report {
   id: string;
   reporter_id: string;
-  reported_id: string;
-  type: string;
+  reported_user_id?: string | null;
+  report_type: string;
   reason: string;
+  description?: string | null;
   status: string;
   admin_notes?: string | null;
   created_at: string;
