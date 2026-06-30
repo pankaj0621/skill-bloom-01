@@ -277,6 +277,44 @@ const Roadmap = () => {
 
             return (
               <TabsContent key={track.trackId} value={track.trackId} className="space-y-5">
+                {/* Sticky track progress header */}
+                {(() => {
+                  const totalCount = track.skills.length + trackCustom.length;
+                  const doneCount =
+                    track.skills.filter((s) => s.status === "completed").length +
+                    trackCustom.filter((c) => c.status === "completed").length;
+                  const inProg =
+                    track.skills.filter((s) => s.status === "in_progress").length +
+                    trackCustom.filter((c) => c.status === "in_progress").length;
+                  const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+                  return (
+                    <div className="sticky top-14 md:top-16 z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 bg-background/85 backdrop-blur-md border-b border-border/60">
+                      <div className="flex items-center justify-between gap-3 mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-semibold truncate">{track.name}</span>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {doneCount}/{totalCount}
+                          </Badge>
+                          {inProg > 0 && (
+                            <Badge variant="outline" className="text-[10px] text-primary border-primary/30 shrink-0">
+                              {inProg} in progress
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-primary tabular-nums shrink-0">{pct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-primary to-accent"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {categoryList.map(([category, skills]) => (
                   <motion.div
                     key={category}
