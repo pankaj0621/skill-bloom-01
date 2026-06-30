@@ -217,8 +217,8 @@ const Profile = () => {
         .eq("id", user!.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
       setUsernameDialogOpen(false);
       toast.success("Username updated!");
     },
