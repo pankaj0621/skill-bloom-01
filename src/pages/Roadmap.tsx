@@ -297,31 +297,34 @@ const Roadmap = () => {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: idx * 0.04 }}
                         >
-                          <Card className="hover:shadow-sm transition-shadow">
-                            <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2">
+                          <Card className={`group relative overflow-hidden border-border/60 transition-all hover:border-primary/40 hover:shadow-soft hover:-translate-y-0.5 ${p.status === "completed" ? "bg-accent/5" : ""}`}>
+                            {/* Status accent bar */}
+                            <span className={`absolute left-0 top-0 h-full w-1 ${config.accent}`} />
+                            <CardContent className="p-3 sm:p-4 pl-4 sm:pl-5 flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                 <motion.button
                                   onClick={() => updateStatus.mutate({ progressId: p.id, status: cycleStatus(p.status) })}
-                                  className={`${config.color}`}
+                                  className={`${config.color} shrink-0`}
                                   whileHover={{ scale: 1.2 }}
                                   whileTap={{ scale: 0.9, rotate: 15 }}
                                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                                  aria-label="Toggle status"
                                 >
                                   <Icon className="h-5 w-5" />
                                 </motion.button>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                    <span className="font-medium text-sm sm:text-base truncate">{p.skills?.name}</span>
+                                    <span className={`font-medium text-sm sm:text-base truncate ${p.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{p.skills?.name}</span>
                                     {p.skills?.difficulty_level && (
-                                      <Badge variant="outline" className={difficultyColors[p.skills.difficulty_level] || ""}>
+                                      <Badge variant="outline" className={`text-[10px] capitalize ${difficultyColors[p.skills.difficulty_level] || ""}`}>
                                         {p.skills.difficulty_level}
                                       </Badge>
                                     )}
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{p.skills?.description}</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{p.skills?.description}</p>
                                 </div>
                               </div>
-                              <Badge variant="outline" className={config.color}>
+                              <Badge variant="outline" className={`shrink-0 ${config.color} border-current/30`}>
                                 {config.label}
                               </Badge>
                             </CardContent>
