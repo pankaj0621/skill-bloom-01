@@ -392,7 +392,16 @@ const Onboarding = () => {
                           selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                         }`}
                       >
-                        <Checkbox checked={selected} className="mt-0.5 pointer-events-none" />
+                        <span
+                          aria-hidden
+                          className={`mt-0.5 inline-flex items-center justify-center h-4 w-4 shrink-0 rounded border ${
+                            selected
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "border-input bg-background"
+                          }`}
+                        >
+                          {selected && <Check className="h-3 w-3" />}
+                        </span>
                         <div className="flex-1">
                           <p className="font-medium text-sm">{track.name}</p>
                           {track.description && (
