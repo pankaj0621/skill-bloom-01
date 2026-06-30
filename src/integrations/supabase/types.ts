@@ -163,6 +163,53 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_guidance_requests: {
+        Row: {
+          created_at: string
+          helper_id: string | null
+          id: string
+          message: string
+          response: string | null
+          skill_id: string | null
+          skill_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          helper_id?: string | null
+          id?: string
+          message: string
+          response?: string | null
+          skill_id?: string | null
+          skill_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          helper_id?: string | null
+          id?: string
+          message?: string
+          response?: string | null
+          skill_id?: string | null
+          skill_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_guidance_requests_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peer_messages: {
         Row: {
           body: string
