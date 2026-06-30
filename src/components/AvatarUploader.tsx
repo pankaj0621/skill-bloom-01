@@ -271,12 +271,17 @@ const AvatarUploader = ({
     return (
       <>
         <span
-          onClick={openPicker}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openPicker();
+          }}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
+              e.stopPropagation();
               openPicker();
             }
           }}
