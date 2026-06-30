@@ -164,12 +164,61 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">
-            Welcome back, {profile?.display_name || "Student"} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground">Here's your skill progress overview</p>
-        </div>
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/15 via-card to-card p-5 sm:p-7 shadow-soft"
+        >
+          {/* Glow accents */}
+          <div className="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full bg-primary/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                Level Up · {level}
+              </div>
+              <h1 className="font-display text-2xl sm:text-4xl font-bold leading-tight">
+                Hey {profile?.display_name?.split(" ")[0] || "there"} 👋
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-md">
+                You've completed <span className="font-semibold text-foreground">{totalCompleted}</span> of{" "}
+                <span className="font-semibold text-foreground">{totalSkills}</span> skills.
+                {overallPct >= 50 ? " You're crushing it." : " Let's stack a win today."}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Streak chip */}
+              <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2 backdrop-blur">
+                <Flame className={`h-5 w-5 ${(profile?.current_streak ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+                <div className="leading-tight">
+                  <div className="text-lg font-bold">{profile?.current_streak ?? 0}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">streak</div>
+                </div>
+              </div>
+
+              {/* Progress ring */}
+              <div className="relative h-16 w-16 shrink-0">
+                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                  <motion.circle
+                    cx="18" cy="18" r="15.9" fill="none"
+                    stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round"
+                    strokeDasharray="100"
+                    initial={{ strokeDashoffset: 100 }}
+                    animate={{ strokeDashoffset: 100 - overallPct }}
+                    transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">{overallPct}%</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         <motion.div
           className="grid gap-3 grid-cols-2 md:grid-cols-4"
