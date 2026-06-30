@@ -233,6 +233,15 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
+        {/* Today's Focus */}
+        <TodaysFocus
+          nextSkillName={focusItem?.skills?.name}
+          nextTrackName={focusItem?.skills?.skill_tracks?.name}
+          difficulty={focusItem?.skills?.difficulty_level}
+          completed={totalCompleted}
+          total={totalSkills}
+        />
+
         <motion.div
           className="grid gap-3 grid-cols-2 md:grid-cols-4"
           variants={containerVariants}
