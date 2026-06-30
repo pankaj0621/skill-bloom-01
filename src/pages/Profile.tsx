@@ -507,14 +507,17 @@ const Profile = () => {
                     }}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    <Avatar className="h-16 w-16 ring-2 ring-primary/20 hover:ring-primary/50 transition-all">
-                      {profile?.avatar_url ? (
-                        <AvatarImage src={profile.avatar_url} alt={profile.display_name || "Avatar"} />
-                      ) : null}
-                      <AvatarFallback className="bg-muted">
-                        <User className="h-8 w-8 text-muted-foreground" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-primary via-accent to-primary opacity-70 blur-[2px]" />
+                      <Avatar className="relative h-16 w-16 ring-2 ring-background">
+                        {profile?.avatar_url ? (
+                          <AvatarImage src={profile.avatar_url} alt={profile.display_name || "Avatar"} />
+                        ) : null}
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-8 w-8 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
                   </button>
                   <input
                     ref={fileInputRef}
