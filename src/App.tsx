@@ -85,7 +85,21 @@ const RouteLoadingFallback = () => (
 const AnimatedRoutes = () => {
   const location = useLocation();
   const { user, isSuspended } = useAuth();
-  const showNavbar = user && !isSuspended && !['/auth', '/onboarding'].includes(location.pathname);
+  // Navbar sirf authenticated app shell pe — auth flows, onboarding, aur immersive
+  // full-screen views (AI mentor chat, 404) pe hide. Naya route add karte waqt yahin update karo.
+  const hideNavbarRoutes = [
+    "/auth",
+    "/forgot-password",
+    "/reset-password",
+    "/onboarding",
+    "/ai-mentor",
+  ];
+  const showNavbar =
+    !!user &&
+    !isSuspended &&
+    !hideNavbarRoutes.includes(location.pathname) &&
+    location.pathname !== "/" &&
+    !location.pathname.startsWith("/auth/");
 
   if (user && isSuspended) {
     return <SuspendedScreen />;
