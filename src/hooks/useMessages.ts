@@ -179,12 +179,49 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    // ── Optimistic update — Instagram-style instant reflection.
+    // Bubble appears immediately, input clears, no spinner. Realtime/refetch
+    // later replaces the temp row with the canonical server row.
+    onMutate: async () => {
+      const trimmed = messageText.trim();
+      if (!trimmed || !peerId || !userId) return;
       setMessageText("");
+
+      const key = ["peer_messages", userId, peerId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ id: string; from_user_id: string; to_user_id: string; body: string; read: boolean; created_at: string }[]>(key);
+
+      const tempMessage = {
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        from_user_id: userId,
+        to_user_id: peerId,
+        body: trimmed,
+        read: false,
+        created_at: new Date().toISOString(),
+        __optimistic: true as const,
+      };
+      queryClient.setQueryData(key, [...(previous || []), tempMessage]);
+
+      // Optimistically bump conversation preview too
+      queryClient.setQueryData(["all_peer_messages", userId], (old: typeof previous) =>
+        old ? [tempMessage, ...old] : [tempMessage]
+      );
+
+      return { previous, tempId: tempMessage.id };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      // Rollback — restore previous cache + put text back so user can retry
+      if (ctx?.previous && peerId && userId) {
+        queryClient.setQueryData(["peer_messages", userId, peerId], ctx.previous);
+      }
+      setMessageText((prev) => prev || (e as unknown as { _retryText?: string })._retryText || "");
+      toast.error(e.message);
+    },
+    onSettled: () => {
+      // Reconcile with server — realtime usually fires first, this is the safety net
       queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
       queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   return { messageText, setMessageText, sendMessage };
