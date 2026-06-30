@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateStreak } from "@/lib/streak";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { syncUserLevel } from "@/lib/syncLevel";
+import { scrollToElement } from "@/lib/scrollToElement";
 import type { Level } from "@/lib/levels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
