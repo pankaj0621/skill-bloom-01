@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          event: string
+          id: string
+          ip_address: string | null
+          metadata: Json
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string

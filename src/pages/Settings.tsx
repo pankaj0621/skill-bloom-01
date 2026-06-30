@@ -22,6 +22,7 @@ import {
   Save, ArrowLeft, MessageCircle, Trophy, TrendingUp, Users,
   Eye, EyeOff, BarChart3, Flame, Pencil,
 } from "lucide-react";
+import SecuritySection from "@/components/SecuritySection";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -228,6 +229,13 @@ const Settings = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Security & Data */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <SecuritySection />
+        </motion.div>
+
+
 
         {/* Notifications */}
         <motion.div variants={itemVariants} initial="hidden" animate="show">
