@@ -108,6 +108,7 @@ const UserProfileCard = ({ user, onClick, showBadge, isRequest, index = 0 }: Use
       </CardContent>
     </Card>
   </motion.div>
-);
+  );
+};
 
 export default UserProfileCard;
