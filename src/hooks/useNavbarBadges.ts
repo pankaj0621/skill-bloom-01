@@ -21,7 +21,7 @@ export function useNavbarBadges(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, display_name")
         .eq("id", userId!)
         .single();
       if (error) throw error;
