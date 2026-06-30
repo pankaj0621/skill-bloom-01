@@ -199,6 +199,17 @@ const Settings = () => {
           </div>
         </motion.div>
 
+        {/* Profile picture */}
+        {user && (
+          <motion.div variants={itemVariants} initial="hidden" animate="show">
+            <AvatarUploader
+              userId={user.id}
+              currentUrl={(profile as { avatar_url?: string | null } | undefined)?.avatar_url}
+              displayName={profile?.display_name}
+            />
+          </motion.div>
+        )}
+
         {/* Theme */}
         <motion.div variants={itemVariants} initial="hidden" animate="show">
           <Card>
