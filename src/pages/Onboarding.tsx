@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -31,6 +31,7 @@ const GOALS = [
 const Onboarding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
@@ -122,6 +123,8 @@ const Onboarding = () => {
       }
 
       toast.success("You're all set! Let's start tracking.");
+      await queryClient.invalidateQueries({ queryKey: ["profile-onboarding-check", user!.id] });
+      await queryClient.refetchQueries({ queryKey: ["profile-onboarding-check", user!.id] });
       navigate("/dashboard");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
