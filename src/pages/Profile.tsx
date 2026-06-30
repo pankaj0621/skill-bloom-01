@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,8 +21,7 @@ import { User, Plus, X, BookOpen, Camera, Loader2, Trash2, Check, Pencil, Flame,
 import EmptyState from "@/components/EmptyState";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
-import Cropper from "react-easy-crop";
-import type { Area } from "react-easy-crop";
+import AvatarUploader from "@/components/AvatarUploader";
 import PinchZoomPreview from "@/components/PinchZoomPreview";
 import { ResponsiveContainer, RadialBarChart, RadialBar, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 
