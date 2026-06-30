@@ -27,6 +27,17 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
+// Mobile shows 5 with AI as floating center action
+const mobileLeft = [
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/roadmap", label: "Path", icon: Map },
+];
+const mobileRight = [
+  { to: "/community", label: "Social", icon: UsersRound },
+  { to: "/profile", label: "Me", icon: UserCircle },
+];
+
+
 const BadgeCount = ({ count, className }: { count: number; className?: string }) => (
   <AnimatePresence mode="wait">
     <motion.span
@@ -166,38 +177,84 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t bg-background backdrop-blur-sm md:hidden">
-        <div className="flex items-stretch justify-around" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {navItems.map(({ to, label, icon: Icon }) => {
-            const isActive = location.pathname === to;
-            return (
+      {/* Mobile floating dock with center AI action */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[100] md:hidden pointer-events-none"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}
+      >
+        <nav className="pointer-events-auto mx-auto w-[min(92%,360px)] px-3">
+          <div className="relative flex items-center justify-between px-2 py-2.5 bg-background/70 backdrop-blur-2xl border border-border/60 rounded-[28px] shadow-2xl shadow-primary/10">
+            {mobileLeft.map(({ to, label, icon: Icon }) => {
+              const isActive = location.pathname === to;
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {isActive && <span className="absolute inset-0 bg-primary/10 rounded-2xl scale-90" />}
+                  <Icon className="w-5 h-5 mb-0.5 relative z-10" />
+                  <span className={cn("text-[10px] font-medium tracking-wide relative z-10", isActive && "text-primary")}>{label}</span>
+                  {isActive && <span className="absolute -bottom-0.5 w-1 h-1 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]" />}
+                </Link>
+              );
+            })}
+
+            {/* Center floating AI action */}
+            <div className="relative -mt-9">
+              <div className="absolute inset-0 bg-primary blur-xl opacity-30" />
               <Link
-                key={to}
-                to={to}
+                to="/ai-hub"
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[56px] text-[11px] font-medium transition-colors active:bg-muted/50",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "relative flex items-center justify-center w-14 h-14 rounded-full text-primary-foreground active:scale-95 transition-transform shadow-lg",
+                  "bg-gradient-to-tr from-primary to-primary/80 border-4 border-background"
                 )}
+                aria-label="AI Tools"
               >
-                {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
-                )}
-                {to === "/profile" && navProfile?.avatar_url ? (
-                  <Avatar className={cn("h-5 w-5", isActive && "ring-2 ring-primary")}>
-                    <AvatarImage src={navProfile.avatar_url} alt="Profile" />
-                    <AvatarFallback><Icon className="h-3 w-3" /></AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Icon className={cn("h-5 w-5", isActive && "scale-110")} style={{ transition: "transform 0.15s ease" }} />
-                )}
-                <span>{label}</span>
-                {getBadgeCount(to) > 0 && <BadgeCount count={getBadgeCount(to)} className="absolute top-1.5 right-1/4" data-small-target />}
+                <Brain className="w-6 h-6" />
               </Link>
-            );
-          })}
-        </div>
-      </nav>
+            </div>
+
+            {mobileRight.map(({ to, label, icon: Icon }) => {
+              const isActive = location.pathname === to;
+              const badge = getBadgeCount(to);
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {isActive && <span className="absolute inset-0 bg-primary/10 rounded-2xl scale-90" />}
+                  {to === "/profile" && navProfile?.avatar_url ? (
+                    <div className={cn("relative p-0.5 rounded-full border mb-0.5 z-10", isActive ? "border-primary" : "border-border")}>
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={navProfile.avatar_url} alt="Profile" />
+                        <AvatarFallback><Icon className="h-3 w-3" /></AvatarFallback>
+                      </Avatar>
+                    </div>
+                  ) : (
+                    <Icon className="w-5 h-5 mb-0.5 relative z-10" />
+                  )}
+                  <span className={cn("text-[10px] font-medium tracking-wide relative z-10", isActive && "text-primary")}>{label}</span>
+                  {isActive && <span className="absolute -bottom-0.5 w-1 h-1 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]" />}
+                  {badge > 0 && (
+                    <span className="absolute top-1 right-2 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground border-2 border-background">
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+
 
       {/* Chat Popup */}
       <ChatPopup open={chatOpen} onOpenChange={setChatOpen} />
