@@ -287,7 +287,7 @@ const FeedbackCard = ({ feedback, profile, hasVoted, onVote, statusIcon, statusB
   statusIcon: (s: string) => React.ReactNode;
   statusBadge: (s: string) => React.ReactNode;
 }) => (
-  <Card>
+  <Card data-feedback-id={feedback.id} className="scroll-mt-24">
     <CardContent className="p-4">
       <div className="flex gap-3">
         <div className="flex flex-col items-center gap-1">
