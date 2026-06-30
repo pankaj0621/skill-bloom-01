@@ -24,7 +24,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         >
           <motion.img
             src={appIcon}
-            alt="SPCT"
+            alt="Level Up"
             className="w-24 h-24 rounded-2xl shadow-2xl"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -36,7 +36,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.4 }}
           >
-            SkillTracker
+            Level Up
           </motion.h1>
           <motion.p
             className="mt-1 text-sm text-muted-foreground"
