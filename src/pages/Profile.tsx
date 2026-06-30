@@ -431,13 +431,6 @@ const Profile = () => {
                       </Avatar>
                     </div>
                   </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
                 </motion.div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
