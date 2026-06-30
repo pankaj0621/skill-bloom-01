@@ -129,8 +129,8 @@ const Navbar = () => {
       <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background backdrop-blur-sm md:hidden">
         <div className="flex h-12 items-center justify-between px-3">
           <Link to="/dashboard" className="font-bold text-base flex items-center gap-1.5">
-            <img src={appIcon} alt="SPCT" className="w-6 h-6 rounded-md" loading="lazy" decoding="async" />
-            SPCT
+            <img src={appIcon} alt="Level Up" className="w-6 h-6 rounded-md" loading="lazy" decoding="async" />
+            Level Up
           </Link>
           <div className="flex items-center gap-1">
             <NotificationBell className="h-8 w-8" />
