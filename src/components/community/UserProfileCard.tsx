@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { User, UserCheck, UserPlus, GraduationCap, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePresence } from "@/hooks/usePresence";
 
 interface UserProfileCardProps {
   user: {
