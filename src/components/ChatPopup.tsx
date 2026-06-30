@@ -408,11 +408,11 @@ export default function ChatPopup({ open, onOpenChange, initialPeerId }: ChatPop
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[85vh] max-h-[85vh]">
-          <DrawerHeader className="py-2 px-3 border-b">
+        <DrawerContent className="h-[90dvh] max-h-[90dvh] z-[150] flex flex-col p-0">
+          <DrawerHeader className="py-2 px-3 border-b flex-shrink-0">
             <DrawerTitle className="text-base">Messages</DrawerTitle>
           </DrawerHeader>
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <ChatPopupContent onOpenChange={onOpenChange} initialPeerId={initialPeerId} />
           </div>
         </DrawerContent>
@@ -422,7 +422,7 @@ export default function ChatPopup({ open, onOpenChange, initialPeerId }: ChatPop
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 flex flex-col">
+      <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 flex flex-col z-[150]">
         <SheetHeader className="py-3 px-4 border-b">
           <SheetTitle className="text-base">Messages</SheetTitle>
         </SheetHeader>
