@@ -190,9 +190,12 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Mobile floating dock with center AI action */}
+      {/* Mobile floating dock with center AI action — hidden while chat drawer is open so it doesn't overlap the message input */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-[100] md:hidden pointer-events-none"
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-[100] md:hidden pointer-events-none transition-opacity duration-200",
+          chatOpen && "opacity-0 pointer-events-none invisible"
+        )}
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}
       >
         <nav className="pointer-events-auto mx-auto w-[min(94%,360px)] px-2">

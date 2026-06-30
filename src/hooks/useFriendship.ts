@@ -119,24 +119,26 @@ export function useFriendRequests(userId: string | undefined) {
   return useQuery({
     queryKey: ["friend_requests", userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Two-step fetch — no FK relationship exists between friendships and profiles,
+      // so PostgREST joins fail. Fetch requests first, then hydrate requester profiles.
+      const { data: rows, error } = await supabase
         .from("friendships")
-        .select("*, profiles!friendships_requester_id_fkey(id, display_name, avatar_url, computed_level, stream, college)")
+        .select("*")
         .eq("addressee_id", userId!)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-      if (error) {
-        // Fallback: fetch without join if FK doesn't exist
-        const { data: raw, error: rawErr } = await supabase
-          .from("friendships")
-          .select("*")
-          .eq("addressee_id", userId!)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
-        if (rawErr) throw rawErr;
-        return raw || [];
-      }
-      return data || [];
+      if (error) throw error;
+      if (!rows || rows.length === 0) return [];
+
+      const requesterIds = Array.from(new Set(rows.map((r) => r.requester_id)));
+      const { data: profiles, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, computed_level, stream, college, username")
+        .in("id", requesterIds);
+      if (pErr) throw pErr;
+
+      const map = new Map((profiles || []).map((p) => [p.id, p]));
+      return rows.map((r) => ({ ...r, profiles: map.get(r.requester_id) || null }));
     },
     enabled: !!userId,
   });
