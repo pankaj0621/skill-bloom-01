@@ -71,6 +71,7 @@ const Leaderboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<TimeFilter>("all");
+  const { isOnline } = usePresence(user?.id);
 
   const { data: leaderboard, isLoading, error, refetch } = useQuery({
     queryKey: ["leaderboard", filter],
