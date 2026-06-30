@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getLevelColor, type Level } from "@/lib/levels";
 import { User, UserCheck, UserPlus, GraduationCap, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePresence } from "@/hooks/usePresence";
 
 interface UserProfileCardProps {
   user: {
@@ -22,26 +24,40 @@ interface UserProfileCardProps {
   index?: number;
 }
 
-const UserProfileCard = ({ user, onClick, showBadge, isRequest, index = 0 }: UserProfileCardProps) => (
+const UserProfileCard = ({ user, onClick, showBadge, isRequest, index = 0 }: UserProfileCardProps) => {
+  const { user: me } = useAuth();
+  const { isOnline } = usePresence(me?.id);
+  const online = isOnline(user.id);
+
+  return (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.25, delay: index * 0.04 }}
   >
     <Card
-      className="cursor-pointer hover:shadow-md transition-all duration-200 active:scale-[0.98] overflow-hidden"
+      className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200 active:scale-[0.98] overflow-hidden"
       onClick={onClick}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-border">
-            {user.avatar_url ? (
-              <AvatarImage src={user.avatar_url} alt={user.display_name || "User"} />
-            ) : null}
-            <AvatarFallback className="bg-muted">
-              <User className="h-5 w-5 text-muted-foreground" />
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-12 w-12 ring-2 ring-border">
+              {user.avatar_url ? (
+                <AvatarImage src={user.avatar_url} alt={user.display_name || "User"} />
+              ) : null}
+              <AvatarFallback className="bg-muted">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            {online && (
+              <span
+                className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-card"
+                aria-label="Online"
+                title="Online"
+              />
+            )}
+          </div>
 
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -92,6 +108,7 @@ const UserProfileCard = ({ user, onClick, showBadge, isRequest, index = 0 }: Use
       </CardContent>
     </Card>
   </motion.div>
-);
+  );
+};
 
 export default UserProfileCard;
