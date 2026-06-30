@@ -25,6 +25,7 @@ import {
 import SecuritySection from "@/components/SecuritySection";
 import ActiveSessionCard from "@/components/ActiveSessionCard";
 import TwoFactorSection from "@/components/TwoFactorSection";
+import AvatarUploader from "@/components/AvatarUploader";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -43,7 +44,7 @@ const Settings = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, bio, college, stream, year, primary_goal, username")
+        .select("display_name, bio, college, stream, year, primary_goal, username, avatar_url")
         .eq("id", user!.id)
         .single();
       if (error) throw error;
@@ -198,6 +199,17 @@ const Settings = () => {
             <p className="text-sm text-muted-foreground">Manage your preferences</p>
           </div>
         </motion.div>
+
+        {/* Profile picture */}
+        {user && (
+          <motion.div variants={itemVariants} initial="hidden" animate="show">
+            <AvatarUploader
+              userId={user.id}
+              currentUrl={(profile as { avatar_url?: string | null } | undefined)?.avatar_url}
+              displayName={profile?.display_name}
+            />
+          </motion.div>
+        )}
 
         {/* Theme */}
         <motion.div variants={itemVariants} initial="hidden" animate="show">

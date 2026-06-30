@@ -4,7 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield, MessageSquarePlus, Brain, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Map, UserCircle, LogOut, Trophy, Sun, Moon, UsersRound, MessageCircle, BarChart3, Settings, Shield, MessageSquarePlus, Brain, TrendingUp, Camera } from "lucide-react";
+import AvatarUploader from "@/components/AvatarUploader";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
@@ -122,6 +123,18 @@ const Navbar = () => {
               <MessageSquarePlus className="h-4 w-4" />
             </Button>
           </Link>
+          {user && (
+            <AvatarUploader
+              mode="trigger"
+              userId={user.id}
+              currentUrl={navProfile?.avatar_url}
+              displayName={navProfile?.display_name}
+            >
+              <Button variant="ghost" size="icon" title="Change profile picture" asChild>
+                <span><Camera className="h-4 w-4" /></span>
+              </Button>
+            </AvatarUploader>
+          )}
           <Link to="/settings">
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />

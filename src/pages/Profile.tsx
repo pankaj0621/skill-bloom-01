@@ -21,8 +21,7 @@ import { User, Plus, X, BookOpen, Camera, Loader2, Trash2, Check, Pencil, Flame,
 import EmptyState from "@/components/EmptyState";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
-import Cropper from "react-easy-crop";
-import type { Area } from "react-easy-crop";
+import AvatarUploader from "@/components/AvatarUploader";
 import PinchZoomPreview from "@/components/PinchZoomPreview";
 import { ResponsiveContainer, RadialBarChart, RadialBar, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 
@@ -34,13 +33,6 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [managingTracks, setManagingTracks] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [cropImage, setCropImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ display_name: "", bio: "", year: "", college: "", stream: "", primary_goal: "" });
   const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -53,86 +45,6 @@ const Profile = () => {
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
   const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-
-  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
-    setCroppedAreaPixels(croppedPixels);
-  }, []);
-
-  const getCroppedBlob = (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const size = 512;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(
-          img,
-          pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
-          0, 0, size, size
-        );
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
-          "image/webp",
-          0.85
-        );
-      };
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = imageSrc;
-    });
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setCropImage(url);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setCropDialogOpen(true);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleCropConfirm = async () => {
-    if (!cropImage || !croppedAreaPixels || !user) return;
-    setUploadingAvatar(true);
-    try {
-      const blob = await getCroppedBlob(cropImage, croppedAreaPixels);
-      const path = `${user.id}/avatar.webp`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, blob, { upsert: true, contentType: "image/webp" });
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(path);
-
-      const avatarUrl = `${publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
-      if (updateError) throw updateError;
-
-      await queryClient.refetchQueries({ queryKey: ["profile", user?.id] });
-      toast.success("Profile picture updated!");
-      setCropDialogOpen(false);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload avatar.");
-    } finally {
-      setUploadingAvatar(false);
-      if (cropImage) URL.revokeObjectURL(cropImage);
-      setCropImage(null);
-    }
-  };
 
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const handleRemoveAvatar = async () => {
@@ -519,13 +431,6 @@ const Profile = () => {
                       </Avatar>
                     </div>
                   </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
                 </motion.div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -1016,56 +921,8 @@ const Profile = () => {
         </motion.div>
       </div>
 
-      {/* Crop Dialog */}
-      <Dialog open={cropDialogOpen} onOpenChange={(open) => {
-        if (!open && cropImage) {
-          URL.revokeObjectURL(cropImage);
-          setCropImage(null);
-        }
-        setCropDialogOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Crop Profile Picture</DialogTitle>
-          </DialogHeader>
-          <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
-            {cropImage && (
-              <Cropper
-                image={cropImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            )}
-          </div>
-          <div className="flex items-center gap-3 px-1">
-            <span className="text-xs text-muted-foreground">Zoom</span>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.05}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 accent-primary h-2"
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setCropDialogOpen(false)} disabled={uploadingAvatar}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropConfirm} disabled={uploadingAvatar}>
-              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Fullscreen Avatar Preview with pinch-to-zoom */}
       <AnimatePresence>
@@ -1085,18 +942,27 @@ const Profile = () => {
             <DialogTitle>Profile Picture</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              className="justify-start gap-3 h-12"
-              onClick={() => {
-                setAvatarMenuOpen(false);
-                fileInputRef.current?.click();
-              }}
-              disabled={uploadingAvatar}
-            >
-              <Camera className="h-4 w-4" />
-              {profile?.avatar_url ? "Change Photo" : "Upload Photo"}
-            </Button>
+            {user && (
+              <AvatarUploader
+                mode="trigger"
+                userId={user.id}
+                currentUrl={profile?.avatar_url}
+                displayName={profile?.display_name}
+                onChange={() => setAvatarMenuOpen(false)}
+                className="w-full"
+              >
+                <Button
+                  variant="outline"
+                  className="justify-start gap-3 h-12 w-full"
+                  asChild
+                >
+                  <span>
+                    <Camera className="h-4 w-4" />
+                    {profile?.avatar_url ? "Change Photo" : "Upload Photo"}
+                  </span>
+                </Button>
+              </AvatarUploader>
+            )}
             {profile?.avatar_url && (
               <Button
                 variant="outline"
