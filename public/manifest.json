@@ -1,6 +1,6 @@
 {
-  "name": "SkillTracker — Student Progress & Career Tracker",
-  "short_name": "SkillTracker",
+  "name": "Level Up — Student Progress & Career Tracker",
+  "short_name": "Level Up",
   "description": "Track skills, goals, and progress for any stream or course",
   "start_url": "/dashboard",
   "scope": "/",

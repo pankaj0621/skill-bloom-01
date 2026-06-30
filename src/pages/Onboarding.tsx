@@ -1,37 +1,36 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Sparkles, ArrowRight, ArrowLeft, Rocket } from "lucide-react";
 
 const STREAMS = [
-  { value: "btech", label: "BTech" },
-  { value: "ba", label: "BA" },
-  { value: "bcom", label: "BCom" },
-  { value: "bsc", label: "BSc" },
-  { value: "other", label: "Other" },
+  { value: "btech", label: "BTech", icon: "💻" },
+  { value: "ba", label: "BA", icon: "📚" },
+  { value: "bcom", label: "BCom", icon: "📊" },
+  { value: "bsc", label: "BSc", icon: "🔬" },
+  { value: "other", label: "Other", icon: "✨" },
 ];
 
 const GOALS = [
-  { value: "job", label: "Job", icon: "💼" },
-  { value: "higher_studies", label: "Higher Studies", icon: "🎓" },
-  { value: "competitive_exams", label: "Competitive Exams", icon: "📝" },
-  { value: "skill_career", label: "Skill-based Career", icon: "🛠️" },
+  { value: "job", label: "Get a Job", icon: "💼", desc: "Land your dream role" },
+  { value: "higher_studies", label: "Higher Studies", icon: "🎓", desc: "Masters / PhD path" },
+  { value: "competitive_exams", label: "Competitive Exams", icon: "📝", desc: "UPSC, GATE, etc." },
+  { value: "skill_career", label: "Skill Career", icon: "🛠️", desc: "Freelance / build" },
 ];
 
 const Onboarding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
@@ -43,6 +42,28 @@ const Onboarding = () => {
   const [primaryGoal, setPrimaryGoal] = useState<string>("");
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Prefill if user already partially onboarded (avoids loop on retry)
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username, display_name, role, stream, primary_goal")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data) {
+        if (data.username) {
+          setUsername(data.username);
+          setUsernameStatus("available");
+        }
+        if (data.display_name) setDisplayName(data.display_name);
+        if (data.role) setRole(data.role);
+        if (data.stream) setStream(data.stream);
+        if (data.primary_goal) setPrimaryGoal(data.primary_goal);
+      }
+    })();
+  }, [user]);
 
   const checkUsername = useCallback(async (value: string) => {
     const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
@@ -60,18 +81,16 @@ const Onboarding = () => {
       .from("profiles")
       .select("id")
       .eq("username", clean)
+      .neq("id", user!.id)
       .maybeSingle();
     setUsernameStatus(data ? "taken" : "available");
-  }, []);
+  }, [user]);
 
   const { data: tracks } = useQuery({
     queryKey: ["skill_tracks", stream],
     queryFn: async () => {
-      // FIX: .eq() returns a new object — must reassign, otherwise the filter is discarded
       let query = supabase.from("skill_tracks").select("*").eq("is_default", true);
-      if (stream) {
-        query = query.eq("stream", stream);
-      }
+      if (stream) query = query.eq("stream", stream);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -79,36 +98,44 @@ const Onboarding = () => {
     enabled: !!stream,
   });
 
-  const toggleTrack = (trackId: string) => {
-    setSelectedTracks((prev) =>
-      prev.includes(trackId) ? prev.filter((id) => id !== trackId) : [...prev, trackId]
-    );
-  };
+  const toggleTrack = (trackId: string) =>
+    setSelectedTracks((prev) => (prev.includes(trackId) ? prev.filter((id) => id !== trackId) : [...prev, trackId]));
 
   const handleSubmit = async () => {
-    if (!username || usernameStatus !== "available") { toast.error("Please choose a valid username."); return; }
-    if (!stream) { toast.error("Please select your stream."); return; }
-    if (!primaryGoal) { toast.error("Please select your primary goal."); return; }
-    if (selectedTracks.length === 0) { toast.error("Please select at least one skill track."); return; }
+    if (!username || usernameStatus !== "available") return toast.error("Please choose a valid username.");
+    if (!stream) return toast.error("Please select your stream.");
+    if (!primaryGoal) return toast.error("Please select your primary goal.");
+    if (selectedTracks.length === 0) return toast.error("Please select at least one skill track.");
+
     setLoading(true);
     try {
+      // Upsert ensures the row exists even if the auth trigger never created it
+      const profileData = {
+        id: user!.id,
+        username,
+        display_name: displayName.trim() || username,
+        role,
+        stream,
+        primary_goal: primaryGoal,
+      };
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          username,
-          display_name: displayName.trim() || username,
-          role,
-          stream,
-          primary_goal: primaryGoal,
-        })
-        .eq("id", user!.id);
+        .upsert(profileData, { onConflict: "id" });
       if (profileError) throw profileError;
 
-      const { data: skills, error: skillsError } = await supabase
+      // Verify the write actually persisted (catches silent RLS issues)
+      const { data: verify } = await supabase
+        .from("profiles")
+        .select("username, role, stream")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (!verify?.username) throw new Error("Profile didn't save. Please try again.");
+
+      // Seed skill progress
+      const { data: skills } = await supabase
         .from("skills")
         .select("id")
         .in("track_id", selectedTracks);
-      if (skillsError) throw skillsError;
 
       if (skills && skills.length > 0) {
         const progressRows = skills.map((skill) => ({
@@ -116,16 +143,17 @@ const Onboarding = () => {
           skill_id: skill.id,
           status: "not_started" as const,
         }));
-        const { error: progressError } = await supabase
+        await supabase
           .from("user_skill_progress")
           .upsert(progressRows, { onConflict: "user_id,skill_id" });
-        if (progressError) throw progressError;
       }
 
-      toast.success("You're all set! Let's start tracking.");
+      // Prime the cache so ProtectedRoute sees the new profile immediately — no race
+      queryClient.setQueryData(["profile-onboarding-check", user!.id], verify);
       await queryClient.invalidateQueries({ queryKey: ["profile-onboarding-check", user!.id] });
-      await queryClient.refetchQueries({ queryKey: ["profile-onboarding-check", user!.id] });
-      navigate("/dashboard");
+
+      toast.success("You're all set! Welcome to Level Up 🚀");
+      navigate("/dashboard", { replace: true });
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
     } finally {
@@ -134,241 +162,277 @@ const Onboarding = () => {
   };
 
   const totalSteps = 4;
+  const canGoNext =
+    (step === 1 && usernameStatus === "available") ||
+    (step === 2 && !!stream) ||
+    (step === 3 && !!primaryGoal);
+
+  const goNext = () => {
+    if (step === 1 && usernameStatus !== "available") return toast.error("Pick a valid username first.");
+    if (step === 2 && !stream) return toast.error("Pick your stream.");
+    if (step === 3 && !primaryGoal) return toast.error("Pick your primary goal.");
+    if (step === 2) setSelectedTracks([]);
+    setStep((s) => Math.min(s + 1, totalSteps));
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <motion.div
         className="w-full max-w-lg"
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <Card>
-          <CardHeader className="text-center">
+        {/* Hero header */}
+        <div className="text-center mb-6">
+          <motion.div
+            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30 mb-4"
+            initial={{ scale: 0, rotate: -45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          >
+            <Sparkles className="w-7 h-7 text-primary-foreground" />
+          </motion.div>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome to Level Up</h1>
+          <p className="text-sm text-muted-foreground mt-1">Let's set up your journey — takes 30 seconds</p>
+        </div>
+
+        {/* Progress segments */}
+        <div className="flex gap-1.5 mb-6">
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-            >
-              <CardTitle className="text-2xl">Welcome to SPCT 🚀</CardTitle>
-            </motion.div>
-            <CardDescription>Step {step} of {totalSteps} — Let's personalize your experience</CardDescription>
-            <div className="flex gap-1.5 justify-center pt-2">
-              {Array.from({ length: totalSteps }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className={`h-1.5 rounded-full transition-colors ${i < step ? "bg-primary" : "bg-muted"}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: i < step ? 40 : 24 }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div
-                  key="step1"
-                  className="space-y-5"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">Choose your username</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
-                      <Input
-                        value={username}
-                        onChange={(e) => checkUsername(e.target.value)}
-                        placeholder="your_username"
-                        className="pl-8 pr-10 h-11"
-                        maxLength={30}
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {usernameStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                        {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" />}
-                        {(usernameStatus === "taken" || usernameStatus === "invalid") && <X className="h-4 w-4 text-destructive" />}
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {usernameStatus === "idle" && "3-30 characters, lowercase letters, numbers, and underscores"}
-                      {usernameStatus === "checking" && "Checking availability..."}
-                      {usernameStatus === "available" && <span className="text-green-500">✓ Username is available!</span>}
-                      {usernameStatus === "taken" && <span className="text-destructive">✗ Username is already taken</span>}
-                      {usernameStatus === "invalid" && <span className="text-destructive">✗ Min 3 chars, only a-z, 0-9, _</span>}
-                    </p>
-                  </div>
+              key={i}
+              className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-primary" : "bg-muted"}`}
+              animate={{ opacity: i < step ? 1 : 0.4 }}
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">Display Name <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+        <div className="rounded-2xl border bg-card p-6 shadow-xl">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="s1"
+                className="space-y-5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">Pick a username</h2>
+                  <p className="text-xs text-muted-foreground">This is how others find you.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Your name"
-                      className="h-11"
-                      maxLength={50}
+                      value={username}
+                      onChange={(e) => checkUsername(e.target.value)}
+                      placeholder="your_username"
+                      className="pl-8 pr-10 h-12 text-base"
+                      maxLength={30}
+                      autoFocus
                     />
-                  </div>
-
-                  <Button
-                    onClick={() => {
-                      if (!username || usernameStatus !== "available") {
-                        toast.error("Please choose a valid, available username.");
-                        return;
-                      }
-                      setStep(2);
-                    }}
-                    className="w-full"
-                  >
-                    Next →
-                  </Button>
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div
-                  key="step2"
-                  className="space-y-5"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">I am a...</Label>
-                    <RadioGroup value={role} onValueChange={setRole} className="flex gap-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="junior" id="junior" />
-                        <Label htmlFor="junior">Student (Learning)</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="senior" id="senior" />
-                        <Label htmlFor="senior">Peer Guide (Mentoring)</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">My stream / course</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {STREAMS.map((s, i) => (
-                        <motion.button
-                          key={s.value}
-                          type="button"
-                          className={`rounded-lg border p-3 text-sm font-medium transition-colors ${stream === s.value ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted/50"}`}
-                          onClick={() => setStream(s.value)}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: i * 0.05 }}
-                          whileHover={{ scale: 1.04 }}
-                          whileTap={{ scale: 0.96 }}
-                        >
-                          {s.label}
-                        </motion.button>
-                      ))}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {usernameStatus === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                      {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" />}
+                      {(usernameStatus === "taken" || usernameStatus === "invalid") && <X className="h-4 w-4 text-destructive" />}
                     </div>
                   </div>
+                  <p className="text-xs h-4">
+                    {usernameStatus === "idle" && <span className="text-muted-foreground">3–30 chars · a–z, 0–9, _</span>}
+                    {usernameStatus === "checking" && <span className="text-muted-foreground">Checking…</span>}
+                    {usernameStatus === "available" && <span className="text-green-500">✓ Available</span>}
+                    {usernameStatus === "taken" && <span className="text-destructive">Username already taken</span>}
+                    {usernameStatus === "invalid" && <span className="text-destructive">Min 3 chars · a–z, 0–9, _ only</span>}
+                  </p>
+                </div>
 
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">← Back</Button>
-                    <Button onClick={() => { if (!stream) { toast.error("Please select your stream."); return; } setSelectedTracks([]); setStep(3); }} className="flex-1">Next →</Button>
+                <div className="space-y-2">
+                  <Label className="text-sm">Display name <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Your name"
+                    className="h-12"
+                    maxLength={50}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                key="s2"
+                className="space-y-5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">What are you studying?</h2>
+                  <p className="text-xs text-muted-foreground">We'll personalize your tracks.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">I am a</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { v: "junior", l: "Student", d: "Learning" },
+                      { v: "senior", l: "Peer Guide", d: "Mentoring" },
+                    ].map((r) => (
+                      <button
+                        key={r.v}
+                        type="button"
+                        onClick={() => setRole(r.v)}
+                        className={`rounded-xl border p-3 text-left transition-all ${
+                          role === r.v ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <p className="font-medium text-sm">{r.l}</p>
+                        <p className="text-xs text-muted-foreground">{r.d}</p>
+                      </button>
+                    ))}
                   </div>
-                </motion.div>
-              )}
+                </div>
 
-              {step === 3 && (
-                <motion.div
-                  key="step3"
-                  className="space-y-5"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">What's your primary goal?</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {GOALS.map((g, i) => (
-                        <motion.button
-                          key={g.value}
-                          type="button"
-                          className={`rounded-xl border p-4 text-left transition-colors ${primaryGoal === g.value ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"}`}
-                          onClick={() => setPrimaryGoal(g.value)}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.25, delay: i * 0.07 }}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          <span className="text-2xl">{g.icon}</span>
-                          <p className="mt-1 text-sm font-medium">{g.label}</p>
-                        </motion.button>
-                      ))}
+                <div className="space-y-2">
+                  <Label className="text-sm">Stream</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {STREAMS.map((s) => (
+                      <motion.button
+                        key={s.value}
+                        type="button"
+                        whileTap={{ scale: 0.96 }}
+                        className={`rounded-xl border p-3 text-center transition-all ${
+                          stream === s.value ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
+                        }`}
+                        onClick={() => setStream(s.value)}
+                      >
+                        <div className="text-xl mb-0.5">{s.icon}</div>
+                        <div className="text-xs font-medium">{s.label}</div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div
+                key="s3"
+                className="space-y-5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">What's your main goal?</h2>
+                  <p className="text-xs text-muted-foreground">We'll tailor your roadmap.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {GOALS.map((g) => (
+                    <motion.button
+                      key={g.value}
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setPrimaryGoal(g.value)}
+                      className={`rounded-xl border p-4 text-left transition-all ${
+                        primaryGoal === g.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{g.icon}</div>
+                      <p className="text-sm font-semibold">{g.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{g.desc}</p>
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 4 && (
+              <motion.div
+                key="s4"
+                className="space-y-5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">Pick your skill tracks</h2>
+                  <p className="text-xs text-muted-foreground">Choose one or more to start.</p>
+                </div>
+
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {!tracks && (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
-                  </div>
+                  )}
+                  {tracks?.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      No default tracks for this stream yet. You can add custom skills later.
+                    </p>
+                  )}
+                  {tracks?.map((track) => {
+                    const selected = selectedTracks.includes(track.id);
+                    return (
+                      <button
+                        type="button"
+                        key={track.id}
+                        onClick={() => toggleTrack(track.id)}
+                        className={`w-full flex items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+                          selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <Checkbox checked={selected} className="mt-0.5 pointer-events-none" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{track.name}</p>
+                          {track.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{track.description}</p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(2)} className="flex-1">← Back</Button>
-                    <Button onClick={() => { if (!primaryGoal) { toast.error("Please select your goal."); return; } setStep(4); }} className="flex-1">Next →</Button>
-                  </div>
-                </motion.div>
-              )}
+          {/* Footer nav */}
+          <div className="flex gap-2 mt-6">
+            {step > 1 && (
+              <Button variant="outline" onClick={() => setStep((s) => s - 1)} className="flex-1" disabled={loading}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back
+              </Button>
+            )}
+            {step < totalSteps ? (
+              <Button onClick={goNext} className="flex-1" disabled={!canGoNext}>
+                Continue <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} className="flex-1" disabled={loading || selectedTracks.length === 0}>
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Setting up…</>
+                ) : (
+                  <><Rocket className="w-4 h-4 mr-2" /> Let's Go</>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
 
-              {step === 4 && (
-                <motion.div
-                  key="step4"
-                  className="space-y-5"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">Pick your skill tracks</Label>
-                    <div className="space-y-2">
-                      {tracks?.map((track, i) => (
-                        <motion.div
-                          key={track.id}
-                          className="flex items-start space-x-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: i * 0.08 }}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => toggleTrack(track.id)}
-                        >
-                          <Checkbox
-                            id={track.id}
-                            checked={selectedTracks.includes(track.id)}
-                            onCheckedChange={() => toggleTrack(track.id)}
-                          />
-                          <div>
-                            <Label htmlFor={track.id} className="font-medium cursor-pointer">
-                              {track.name}
-                            </Label>
-                            <p className="text-sm text-muted-foreground">{track.description}</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(3)} className="flex-1">← Back</Button>
-                    <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button onClick={handleSubmit} className="w-full" disabled={loading}>
-                        {loading ? "Setting up..." : "Get Started 🎉"}
-                      </Button>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Step {step} of {totalSteps}
+        </p>
       </motion.div>
     </div>
   );
