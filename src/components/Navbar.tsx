@@ -182,7 +182,7 @@ const Navbar = () => {
         className="fixed bottom-0 left-0 right-0 z-[100] md:hidden pointer-events-none"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}
       >
-        <nav className="pointer-events-auto mx-auto w-[min(92%,360px)] px-3">
+        <nav className="pointer-events-auto mx-auto w-[min(94%,360px)] px-2">
           <div className="relative flex items-center justify-between px-2 py-2.5 bg-background/70 backdrop-blur-2xl border border-border/60 rounded-[28px] shadow-2xl shadow-primary/10">
             {mobileLeft.map(({ to, label, icon: Icon }) => {
               const isActive = location.pathname === to;
