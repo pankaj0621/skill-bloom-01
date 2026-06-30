@@ -160,7 +160,7 @@ const App = () => {
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 };
 
