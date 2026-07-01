@@ -24,6 +24,7 @@ import Navbar from "@/components/Navbar";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversationsRealtime } from "@/hooks/useMessages";
 import { initOfflineQueue } from "@/lib/offlineQueue";
+import { CallProvider } from "@/contexts/CallContext";
 
 // Start listening for `online` events so queued mutations (skill status,
 // notification actions) automatically flush when the network returns.
