@@ -336,7 +336,22 @@ function ChatView({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[260] min-w-[180px]">
+            <DropdownMenuContent align="end" className="z-[260] min-w-[220px]">
+              <DropdownMenuLabel className="text-xs flex items-center gap-2">
+                <Timer className="h-3.5 w-3.5" /> Disappearing messages
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={String(chatDefaultSeconds ?? "null")}
+                onValueChange={(v) => updateDisappear.mutate(v === "null" ? null : Number(v))}
+              >
+                <DropdownMenuRadioItem value="null" className="text-xs">Off</DropdownMenuRadioItem>
+                {DISAPPEAR_OPTIONS.filter((o) => o.seconds).map((o) => (
+                  <DropdownMenuRadioItem key={o.seconds} value={String(o.seconds)} className="text-xs">
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();
