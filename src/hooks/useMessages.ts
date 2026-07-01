@@ -264,7 +264,8 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       if (error) throw error;
       return data;
     },
-    onMutate: async (opts: SendMessagePayload = {}) => {
+    onMutate: async (payload: SendMessagePayload | void) => {
+      const opts: SendMessagePayload = payload || {};
       const trimmed = messageText.trim();
       if (!peerId || !userId) return;
       if (!trimmed && !opts.media) return;
