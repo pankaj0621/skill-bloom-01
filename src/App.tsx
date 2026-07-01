@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import SuspendedScreen from "@/components/SuspendedScreen";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,8 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { setGlobalNavigate } from "@/lib/navigator";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -27,6 +28,17 @@ const GlobalRealtime = () => {
   const { user } = useAuth();
   useRealtimeNotifications(user?.id);
   useConversationsRealtime(user?.id);
+  return null;
+};
+
+/** Registers the router's navigate fn on a module-level ref so hooks that
+ *  live outside a component tree (toasts, service workers) can navigate
+ *  without triggering a full page reload. */
+const NavigateInjector = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setGlobalNavigate(navigate);
+  }, [navigate]);
   return null;
 };
 
@@ -117,6 +129,7 @@ const AnimatedRoutes = () => {
   }
   return (
     <div className="min-h-screen bg-background">
+      <NavigateInjector />
       {user && !isSuspended && <GlobalRealtime />}
       {/* Navbar outside of page transitions - always fixed */}
       {showNavbar && <Navbar />}
