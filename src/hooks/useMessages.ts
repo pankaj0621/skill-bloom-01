@@ -113,9 +113,13 @@ export function useConversationsRealtime(userId: string | undefined) {
           if (msg.from_user_id === userId || msg.to_user_id === userId) {
             if (msg.to_user_id === userId) {
               playMessageSound();
+              // Only reconcile from server for INCOMING messages. Outgoing
+              // messages are already swapped in-place by useSendMessage
+              // onSuccess — invalidating here would cause the just-sent
+              // bubble to briefly disappear during refetch.
+              queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
+              queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
             }
-            queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
-            queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
           }
         }
       )
