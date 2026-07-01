@@ -78,19 +78,23 @@ function TypingIndicator() {
   );
 }
 
-// ─── Read Receipt Icon ───
-function ReadReceipt({ isMine, isRead }: { isMine: boolean; isRead: boolean }) {
+// ─── Read Receipt Icon (WhatsApp-style) ───
+// pending → single gray ✓, delivered → double gray ✓✓, seen → double blue ✓✓
+function ReadReceipt({ isMine, isRead, isPending }: { isMine: boolean; isRead: boolean; isPending: boolean }) {
   if (!isMine) return null;
   return (
-    <span className="inline-flex items-center ml-1">
-      {isRead ? (
-        <CheckCheck className="h-3 w-3 text-primary" />
-      ) : (
+    <span className="inline-flex items-center ml-1" aria-label={isRead ? "Seen" : isPending ? "Sent" : "Delivered"}>
+      {isPending ? (
         <Check className="h-3 w-3 text-primary-foreground/50" />
+      ) : isRead ? (
+        <CheckCheck className="h-3 w-3 text-sky-400" />
+      ) : (
+        <CheckCheck className="h-3 w-3 text-primary-foreground/60" />
       )}
     </span>
   );
 }
+
 
 // ─── Conversation List ───
 function ConversationList({
