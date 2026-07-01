@@ -16,6 +16,7 @@ import AdminRoute from "@/components/AdminRoute";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashScreen from "./components/SplashScreen";
+import FullscreenLoader from "@/components/FullscreenLoader";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import NetworkStatus from "@/components/NetworkStatus";
 import useServiceWorkerUpdate from "@/hooks/useServiceWorkerUpdate";
