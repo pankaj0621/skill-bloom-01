@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFriendsList } from "@/hooks/useFriendship";
+import { BADGES } from "@/lib/badges";
 
 export interface FeedItem {
   id: string;
@@ -80,16 +81,17 @@ export function useActivityFeed(userId: string | undefined) {
 
       const items: FeedItem[] = [];
 
-      // Badge events
+      // Badge events — map raw badge_key to friendly display name.
       (badges || []).forEach((b) => {
         const p = profileMap.get(b.user_id);
+        const def = BADGES.find((d) => d.key === b.badge_key);
         items.push({
           id: `badge-${b.id}`,
           type: "badge",
           userId: b.user_id,
           displayName: p?.display_name || "Student",
           avatarUrl: p?.avatar_url || null,
-          title: `Earned the "${b.badge_key}" badge`,
+          title: `Earned the "${def?.name || b.badge_key}" badge 🏆`,
           detail: null,
           timestamp: b.earned_at,
         });
