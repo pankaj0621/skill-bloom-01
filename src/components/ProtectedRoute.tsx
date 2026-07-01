@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import FullscreenLoader from "@/components/FullscreenLoader";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -30,11 +31,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     !!user && !hasCompletedOnboarding && profileFetching;
 
   if (loading || (user && profileLoading) || waitingForFreshProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <FullscreenLoader />;
   }
 
   if (!user) {

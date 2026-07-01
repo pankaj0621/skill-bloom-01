@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ImmersiveLayout from "@/components/ImmersiveLayout";
+import FullscreenLoader from "@/components/FullscreenLoader";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -27,10 +28,21 @@ const GOALS = [
   { value: "skill_career", label: "Skill Career", icon: "🛠️", desc: "Freelance / build" },
 ];
 
+type CachedProfile = { username?: string | null; role?: string | null; stream?: string | null } | null;
+
 const Onboarding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Read the auth check cache synchronously so a completed user never even
+  // sees the form paint before we redirect.
+  const initialCached = user
+    ? (queryClient.getQueryData<CachedProfile>(["profile-onboarding-check", user.id]) ?? null)
+    : null;
+  const initiallyComplete = !!(
+    initialCached?.username || (initialCached?.role && initialCached?.stream)
+  );
 
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
@@ -43,22 +55,29 @@ const Onboarding = () => {
   const [primaryGoal, setPrimaryGoal] = useState<string>("");
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  // While we're fetching profile / redirecting, show a loader instead of the
+  // form so there's no flicker between splash → onboarding → dashboard.
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const [redirecting, setRedirecting] = useState(initiallyComplete);
 
   // Prefill if user already partially onboarded (avoids loop on retry).
   // If already fully onboarded, bounce straight to /dashboard so a stale
   // persisted query cache can't strand a returning user on this screen.
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("profiles")
         .select("username, display_name, role, stream, primary_goal")
         .eq("id", user.id)
         .maybeSingle();
+      if (cancelled) return;
       if (data) {
         const complete = !!data.username || (!!data.role && !!data.stream);
         if (complete) {
           queryClient.setQueryData(["profile-onboarding-check", user.id], data);
+          setRedirecting(true);
           navigate("/dashboard", { replace: true });
           return;
         }
@@ -71,8 +90,15 @@ const Onboarding = () => {
         if (data.stream) setStream(data.stream);
         if (data.primary_goal) setPrimaryGoal(data.primary_goal);
       }
+      setBootstrapping(false);
     })();
+    return () => { cancelled = true; };
   }, [user, navigate, queryClient]);
+
+  if (bootstrapping || redirecting) {
+    return <FullscreenLoader label={redirecting ? "Taking you in..." : "Loading..."} />;
+  }
+
 
   const checkUsername = useCallback(async (value: string) => {
     const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
