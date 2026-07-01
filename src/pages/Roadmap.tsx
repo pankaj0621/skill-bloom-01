@@ -22,6 +22,9 @@ import { CheckCircle, Circle, Clock, Plus, Map } from "lucide-react";
 import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { enqueue as enqueueOffline } from "@/lib/offlineQueue";
+
+const isOffline = () => typeof navigator !== "undefined" && !navigator.onLine;
 
 const statusConfig = {
   not_started: { icon: Circle, label: "Not Started", color: "text-muted-foreground", accent: "bg-muted-foreground/40" },
