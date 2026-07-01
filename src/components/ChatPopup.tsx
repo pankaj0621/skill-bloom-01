@@ -301,14 +301,20 @@ function ChatView({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-[260] min-w-[180px]">
               <DropdownMenuItem
-                onClick={() => { removeFriend.mutate(); onBack(); }}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => { removeFriend.mutate(); onBack(); }, 80);
+                }}
                 className="text-destructive focus:text-destructive gap-2"
               >
                 <UserX className="h-4 w-4" />
                 Unfriend
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => { blockUser.mutate(); onBack(); }}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => { blockUser.mutate(); onBack(); }, 80);
+                }}
                 className="text-destructive focus:text-destructive gap-2"
               >
                 <Ban className="h-4 w-4" />
