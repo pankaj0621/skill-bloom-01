@@ -63,12 +63,26 @@ export function useConversations(userId: string | undefined) {
     if (!allMessages || !userId || !peerProfiles) return [];
     const map = new Map<string, ConversationPreview>();
 
+    const now = Date.now();
     for (const msg of allMessages) {
-      // Skip messages the current user deleted for themselves.
+      // Hide messages the current user deleted for themselves.
       const deletedForMe = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId);
       if (deletedForMe) continue;
+      // Hide expired messages (disappearing).
+      const expiresAt = (msg as { expires_at?: string | null }).expires_at;
+      if (expiresAt && new Date(expiresAt).getTime() <= now) continue;
+
       const isDeletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
-      const preview = isDeletedForAll ? "🚫 This message was deleted" : msg.body;
+      const mediaKind = (msg as { media_kind?: string | null }).media_kind;
+      let preview: string;
+      if (isDeletedForAll) preview = "🚫 This message was deleted";
+      else if (msg.body && msg.body.length > 0) preview = msg.body;
+      else if (mediaKind === "image") preview = "📷 Photo";
+      else if (mediaKind === "video") preview = "🎥 Video";
+      else if (mediaKind === "audio") preview = "🎵 Audio";
+      else if (mediaKind === "file") preview = "📎 File";
+      else preview = "";
+
       const peerId = msg.from_user_id === userId ? msg.to_user_id : msg.from_user_id;
       if (!map.has(peerId)) {
         const profile = peerProfiles.find((p) => p.id === peerId);
