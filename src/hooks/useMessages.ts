@@ -89,7 +89,16 @@ export function useConversations(userId: string | undefined) {
     [conversations]
   );
 
-  // Realtime subscription
+  return { conversations, peerProfiles, totalUnread };
+}
+
+/**
+ * Standalone realtime subscription for peer messages. Mount ONCE globally
+ * so incoming-message sound + cache invalidation keep working on routes
+ * that hide the Navbar (AI Mentor, Onboarding, etc.).
+ */
+export function useConversationsRealtime(userId: string | undefined) {
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
@@ -122,8 +131,6 @@ export function useConversations(userId: string | undefined) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [userId, queryClient]);
-
-  return { conversations, peerProfiles, totalUnread };
 }
 
 export function useChatMessages(userId: string | undefined, peerId: string | null) {

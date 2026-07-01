@@ -18,6 +18,17 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import NetworkStatus from "@/components/NetworkStatus";
 import useServiceWorkerUpdate from "@/hooks/useServiceWorkerUpdate";
 import Navbar from "@/components/Navbar";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useConversationsRealtime } from "@/hooks/useMessages";
+
+/** Keeps friend-request + message realtime subscriptions alive on every
+ * authenticated route, including ones that hide the Navbar. */
+const GlobalRealtime = () => {
+  const { user } = useAuth();
+  useRealtimeNotifications(user?.id);
+  useConversationsRealtime(user?.id);
+  return null;
+};
 
 const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -106,6 +117,7 @@ const AnimatedRoutes = () => {
   }
   return (
     <div className="min-h-screen bg-background">
+      {user && !isSuspended && <GlobalRealtime />}
       {/* Navbar outside of page transitions - always fixed */}
       {showNavbar && <Navbar />}
       

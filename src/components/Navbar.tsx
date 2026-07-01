@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useNavbarBadges } from "@/hooks/useNavbarBadges";
 import { useIsAdmin } from "@/hooks/useAdmin";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversations } from "@/hooks/useMessages";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatPopup from "@/components/ChatPopup";
@@ -63,7 +62,7 @@ const Navbar = () => {
   const { isAdmin } = useIsAdmin();
   const [chatOpen, setChatOpen] = useState(false);
 
-  useRealtimeNotifications(user?.id);
+
 
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
 
