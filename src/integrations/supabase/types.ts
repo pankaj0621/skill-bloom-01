@@ -739,6 +739,7 @@ export type Database = {
         Args: { _from: string; _to: string }
         Returns: number
       }
+      mark_peer_messages_seen: { Args: { _ids: string[] }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
