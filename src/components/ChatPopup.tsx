@@ -217,6 +217,39 @@ function ChatView({
     | { messageId: string; scope: "everyone" | "me"; existing: string[] }
     | null
   >(null);
+  const { settings, updateDisappear } = useChatSettings(userId, peerId);
+  const chatDefaultSeconds = settings?.disappear_seconds ?? null;
+  // Per-message override: null = follow chat default; 0 = force off; N = seconds
+  const [pendingTimer, setPendingTimer] = useState<number | null | 0>(null);
+  const effectiveTimer = pendingTimer === 0 ? null : (pendingTimer ?? chatDefaultSeconds);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFilePicked = async (file: File) => {
+    if (!file) return;
+    if (file.size > MAX_MEDIA_BYTES) {
+      toast.error(`File too large. Max ${formatBytes(MAX_MEDIA_BYTES)}.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const media: UploadedMedia = await uploadChatMedia(userId, file);
+      sendMessage.mutate({ media, disappearSeconds: effectiveTimer });
+      setPendingTimer(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const doSend = () => {
+    if (!messageText.trim()) return;
+    sendMessage.mutate({ disappearSeconds: effectiveTimer });
+    setPendingTimer(null);
+  };
+
 
   useEffect(() => {
     const el = scrollRef.current;
