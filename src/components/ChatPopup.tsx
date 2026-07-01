@@ -269,7 +269,29 @@ function ChatView({
             </AnimatePresence>
           </div>
         </div>
-        <div className="ml-auto flex-shrink-0">
+        <div className="ml-auto flex-shrink-0 flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Voice call"
+            onClick={() =>
+              startCall({ peerId, peerName: peerProfile?.display_name || "Student", peerAvatarUrl: peerProfile?.avatar_url, kind: "audio" })
+            }
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Video call"
+            onClick={() =>
+              startCall({ peerId, peerName: peerProfile?.display_name || "Student", peerAvatarUrl: peerProfile?.avatar_url, kind: "video" })
+            }
+          >
+            <Video className="h-4 w-4" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
