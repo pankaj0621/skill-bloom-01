@@ -153,7 +153,10 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
         )
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data;
+      // Hide messages the current user has deleted for themselves.
+      return (data || []).filter(
+        (m) => !userId || !(m as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId)
+      );
     },
     enabled: !!userId && !!peerId,
   });
