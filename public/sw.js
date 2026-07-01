@@ -107,8 +107,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Supabase API: stale-while-revalidate for GET requests
+  // Supabase API: stale-while-revalidate for GET requests.
+  // Skip auth, realtime, storage, and functions — anything session-sensitive
+  // or non-idempotent must always hit the network so we never serve one
+  // user's cached response to another after sign-in/sign-out.
   if (url.includes('supabase.co') && request.method === 'GET') {
+    const isAuthSensitive =
+      url.includes('/auth/') ||
+      url.includes('/realtime/') ||
+      url.includes('/storage/') ||
+      url.includes('/functions/') ||
+      request.headers.has('Authorization');
+
+    if (isAuthSensitive) {
+      // Network-only, no cache write, no cache read.
+      event.respondWith(
+        fetch(request).catch(() =>
+          new Response('{"error":"offline"}', {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+      );
+      return;
+    }
+
     event.respondWith(
       caches.match(request).then((cached) => {
         const fetchPromise = fetch(request)

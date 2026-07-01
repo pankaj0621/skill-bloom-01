@@ -76,6 +76,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // Purge stale refresh tokens quietly. On a cold visit with an expired
+    // token in localStorage, Supabase logs a noisy AuthApiError; a local
+    // signOut clears storage without triggering a network call.
+    supabase.auth.getSession().catch(async (err) => {
+      const code = (err as { code?: string })?.code;
+      if (code === "refresh_token_not_found" || code === "refresh_token_already_used") {
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      }
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 

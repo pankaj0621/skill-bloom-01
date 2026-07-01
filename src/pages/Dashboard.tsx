@@ -82,19 +82,22 @@ const Dashboard = () => {
     } | null;
   };
 
-  const trackStats = progress
-    ? Object.values(
-        (progress as DashboardProgressItem[]).reduce((acc: Record<string, { name: string; total: number; completed: number; nextSkill?: string }>, p) => {
-          const trackName = p.skills?.skill_tracks?.name || "Unknown";
-          const trackId = p.skills?.track_id || "unknown";
-          if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0 };
-          acc[trackId].total++;
-          if (p.status === "completed") acc[trackId].completed++;
-          else if (!acc[trackId].nextSkill) acc[trackId].nextSkill = p.skills?.name;
-          return acc;
-        }, {})
-      )
-    : [];
+  // Memoized — this reduce runs across potentially hundreds of skill rows
+  // and was previously recomputed on every render (Framer Motion frames too).
+  const trackStats = useMemo(() => {
+    if (!progress) return [] as { name: string; total: number; completed: number; nextSkill?: string }[];
+    return Object.values(
+      (progress as DashboardProgressItem[]).reduce((acc: Record<string, { name: string; total: number; completed: number; nextSkill?: string }>, p) => {
+        const trackName = p.skills?.skill_tracks?.name || "Unknown";
+        const trackId = p.skills?.track_id || "unknown";
+        if (!acc[trackId]) acc[trackId] = { name: trackName, total: 0, completed: 0 };
+        acc[trackId].total++;
+        if (p.status === "completed") acc[trackId].completed++;
+        else if (!acc[trackId].nextSkill) acc[trackId].nextSkill = p.skills?.name;
+        return acc;
+      }, {})
+    );
+  }, [progress]);
 
   const totalSkills = trackStats.reduce((s, t) => s + t.total, 0);
   const totalCompleted = trackStats.reduce((s, t) => s + t.completed, 0);

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { playFriendRequestSound } from "@/lib/sounds";
+import { globalNavigate } from "@/lib/navigator";
 
 export function useRealtimeNotifications(userId: string | undefined) {
   const queryClient = useQueryClient();
@@ -25,7 +26,8 @@ export function useRealtimeNotifications(userId: string | undefined) {
               description: "Someone wants to connect with you!",
               action: {
                 label: "View",
-                onClick: () => { window.location.href = "/community"; },
+                // Client-side navigate — preserves cache, no full reload.
+                onClick: () => globalNavigate("/community"),
               },
             });
           }

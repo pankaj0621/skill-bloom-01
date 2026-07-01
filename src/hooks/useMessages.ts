@@ -39,7 +39,9 @@ export function useConversations(userId: string | undefined) {
       if (m.from_user_id !== userId) ids.add(m.from_user_id);
       if (m.to_user_id !== userId) ids.add(m.to_user_id);
     });
-    return Array.from(ids);
+    // Sort for a stable query key — prevents needless refetches when the
+    // underlying Set order changes but the peer set is identical.
+    return Array.from(ids).sort();
   }, [allMessages, userId]);
 
   const { data: peerProfiles } = useQuery({
@@ -152,9 +154,14 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
     enabled: !!userId && !!peerId,
   });
 
-  // Mark as read
+  // Mark as read — only fire when there's actually unread inbound mail,
+  // otherwise every optimistic message spams an UPDATE round-trip.
   useEffect(() => {
-    if (!userId || !peerId) return;
+    if (!userId || !peerId || !messages) return;
+    const hasUnread = messages.some(
+      (m) => m.to_user_id === userId && m.from_user_id === peerId && !m.read
+    );
+    if (!hasUnread) return;
     supabase
       .from("peer_messages")
       .update({ read: true })
@@ -214,14 +221,15 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
         old ? [tempMessage, ...old] : [tempMessage]
       );
 
-      return { previous, tempId: tempMessage.id };
+      // Return the draft so onError can restore what the user typed.
+      return { previous, tempId: tempMessage.id, draftText: trimmed };
     },
     onError: (e: Error, _vars, ctx) => {
       // Rollback — restore previous cache + put text back so user can retry
       if (ctx?.previous && peerId && userId) {
         queryClient.setQueryData(["peer_messages", userId, peerId], ctx.previous);
       }
-      setMessageText((prev) => prev || (e as unknown as { _retryText?: string })._retryText || "");
+      if (ctx?.draftText) setMessageText((prev) => prev || ctx.draftText);
       toast.error(e.message);
     },
     onSettled: () => {
