@@ -295,11 +295,11 @@ function ChatView({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" aria-label="Chat actions">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="z-[260] min-w-[180px]">
               <DropdownMenuItem
                 onClick={() => { removeFriend.mutate(); onBack(); }}
                 className="text-destructive focus:text-destructive gap-2"
@@ -394,13 +394,13 @@ function ChatView({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+                            className="h-8 w-8 flex-shrink-0 touch-manipulation opacity-100 md:h-6 md:w-6 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
                             aria-label="Message actions"
                           >
                             <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align={isMine ? "end" : "start"} className="min-w-[180px]">
+                        <DropdownMenuContent align={isMine ? "end" : "start"} className="z-[260] min-w-[190px]">
                           {canEdit && !deletedForAll && (
                             <>
                               <DropdownMenuItem onClick={() => startEdit({ id: msg.id, body: msg.body })} className="gap-2">
