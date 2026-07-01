@@ -233,9 +233,20 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       if (ctx?.draftText) setMessageText((prev) => prev || ctx.draftText);
       toast.error(e.message);
     },
+    onSuccess: (row, _vars, ctx) => {
+      // In-place swap: replace the temp row with the canonical server row.
+      // Avoids a refetch flicker that would make the bubble briefly disappear.
+      if (!row || !ctx?.tempId || !peerId || !userId) return;
+      const key = ["peer_messages", userId, peerId];
+      queryClient.setQueryData<Array<{ id: string }>>(key, (old) =>
+        old ? old.map((m) => (m.id === ctx.tempId ? { ...(row as { id: string }) } : m)) : old
+      );
+      queryClient.setQueryData<Array<{ id: string }>>(["all_peer_messages", userId], (old) =>
+        old ? old.map((m) => (m.id === ctx.tempId ? { ...(row as { id: string }) } : m)) : old
+      );
+    },
     onSettled: () => {
-      // Reconcile with server — realtime usually fires first, this is the safety net
-      queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
+      // Refresh conversation previews only; chat thread was already reconciled in onSuccess.
       queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
     },
   });
