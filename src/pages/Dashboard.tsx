@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { Skeleton } from "@/components/ui/skeleton";
