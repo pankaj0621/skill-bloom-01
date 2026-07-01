@@ -16,6 +16,10 @@ export default function IncomingCallDialog({ peerName, peerAvatarUrl, kind, onAc
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onDecline(); }}>
       <DialogContent className="max-w-sm z-[300] p-0 overflow-hidden">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Incoming {kind} call from {peerName}</DialogTitle>
+          <DialogDescription>Accept or decline the incoming call.</DialogDescription>
+        </DialogHeader>
         <div className="flex flex-col items-center gap-4 p-6 bg-gradient-to-b from-primary/10 to-background">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">
             Incoming {kind === "video" ? "video" : "voice"} call
