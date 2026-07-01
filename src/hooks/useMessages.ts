@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { playMessageSound } from "@/lib/sounds";
+import type { UploadedMedia } from "@/lib/chatMedia";
 
 export interface ConversationPreview {
   peerId: string;
