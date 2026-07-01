@@ -22,6 +22,11 @@ import useServiceWorkerUpdate from "@/hooks/useServiceWorkerUpdate";
 import Navbar from "@/components/Navbar";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversationsRealtime } from "@/hooks/useMessages";
+import { initOfflineQueue } from "@/lib/offlineQueue";
+
+// Start listening for `online` events so queued mutations (skill status,
+// notification actions) automatically flush when the network returns.
+initOfflineQueue();
 
 /** Keeps friend-request + message realtime subscriptions alive on every
  * authenticated route, including ones that hide the Navbar. */
