@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFriendsList } from "@/hooks/useFriendship";
+import { BADGES } from "@/lib/badges";
 
 export interface FeedItem {
   id: string;
