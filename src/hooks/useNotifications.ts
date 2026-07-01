@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueue } from "@/lib/offlineQueue";
+
+const isOffline = () => typeof navigator !== "undefined" && !navigator.onLine;
 
 export interface Notification {
   id: string;
@@ -36,6 +39,10 @@ export function useNotifications(userId: string | undefined) {
   // Optimistic: instantly mark read in cache, then reconcile with server.
   const markAsRead = useMutation({
     mutationFn: async (notificationId: string) => {
+      if (isOffline()) {
+        enqueue({ type: "notification_read", notificationId });
+        return;
+      }
       const { error } = await supabase
         .from("notifications")
         .update({ read: true } as { read: boolean })
@@ -85,6 +92,10 @@ export function useNotifications(userId: string | undefined) {
 
   const deleteNotification = useMutation({
     mutationFn: async (notificationId: string) => {
+      if (isOffline()) {
+        enqueue({ type: "notification_delete", notificationId });
+        return;
+      }
       const { error } = await supabase
         .from("notifications")
         .delete()
