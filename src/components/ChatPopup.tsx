@@ -489,6 +489,27 @@ function ChatView({
             <AlertDialogTitle>
               {confirmDelete?.scope === "everyone" ? "Delete for everyone?" : "Delete for you?"}
             </AlertDialogTitle>
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => {
+          if (!o) {
+            setConfirmDelete(null);
+            // Safety net: Radix sometimes forgets to clear this when a dialog
+            // is opened from within another modal (dropdown → drawer). Without
+            // this the entire app appears frozen.
+            setTimeout(() => {
+              if (document.body.style.pointerEvents === "none") {
+                document.body.style.pointerEvents = "";
+              }
+            }, 100);
+          }
+        }}
+      >
+        <AlertDialogContent className="z-[300]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDelete?.scope === "everyone" ? "Delete for everyone?" : "Delete for you?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDelete?.scope === "everyone"
                 ? "This message will be removed for everyone in this chat. This cannot be undone."
@@ -499,14 +520,16 @@ function ChatView({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
+              onClick={() => {
                 if (!confirmDelete) return;
-                if (confirmDelete.scope === "everyone") {
-                  await deleteForEveryone.mutateAsync(confirmDelete.messageId);
-                } else {
-                  await deleteForMe.mutateAsync({ messageId: confirmDelete.messageId, existing: confirmDelete.existing });
-                }
+                const target = confirmDelete;
+                // Close dialog immediately for snappy UX; fire mutation in background.
                 setConfirmDelete(null);
+                if (target.scope === "everyone") {
+                  deleteForEveryone.mutate(target.messageId);
+                } else {
+                  deleteForMe.mutate({ messageId: target.messageId, existing: target.existing });
+                }
               }}
             >
               Delete
