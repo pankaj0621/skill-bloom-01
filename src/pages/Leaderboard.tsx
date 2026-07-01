@@ -76,17 +76,24 @@ const Leaderboard = () => {
   const { data: leaderboard, isLoading, error, refetch } = useQuery({
     queryKey: ["leaderboard", filter],
     queryFn: async () => {
-      // Get all profiles with streak info
+      // Server-side sort + limit — previously fetched every profile row and
+      // sorted client-side, which scaled poorly past a few hundred users.
+      const orderCol = filter === "weekly" ? "weekly_xp" : "xp";
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, college, current_streak, xp, weekly_xp");
+        .select("id, display_name, avatar_url, computed_level, college, current_streak, xp, weekly_xp")
+        .order(orderCol, { ascending: false, nullsFirst: false })
+        .limit(200);
       if (pErr) throw pErr;
 
-      // Get completed skill counts per user (optionally filtered by date)
+      // Get completed skill counts per user (optionally filtered by date).
+      // Only fetch progress for the users we actually plan to display.
       const threshold = getDateThreshold(filter);
+      const topIds = (profiles || []).map((p) => p.id);
       let query = supabase
         .from("user_skill_progress")
         .select("user_id, status, completed_at")
+        .in("user_id", topIds)
         .eq("status", "completed");
 
       if (threshold) {

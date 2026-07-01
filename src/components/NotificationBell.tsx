@@ -57,30 +57,33 @@ const NotificationItem = ({
         </p>
       </div>
 
-      <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
+      {/* Always visible — desktop hover-only was invisible on touch devices. */}
+      <div className="flex items-center gap-1 transition-opacity flex-shrink-0">
         {!notification.read && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 md:h-6 md:w-6"
+            aria-label="Mark as read"
+            className="h-8 w-8 md:h-7 md:w-7"
             onClick={(e) => {
               e.stopPropagation();
               onRead(notification.id);
             }}
           >
-            <Check className="h-4 w-4 md:h-3 md:w-3" />
+            <Check className="h-4 w-4 md:h-3.5 md:w-3.5" />
           </Button>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 md:h-6 md:w-6 text-muted-foreground hover:text-destructive"
+          aria-label="Delete notification"
+          className="h-8 w-8 md:h-7 md:w-7 text-muted-foreground hover:text-destructive"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(notification.id);
           }}
         >
-          <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
+          <Trash2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
         </Button>
       </div>
     </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useDeferredValue } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +19,9 @@ const Community = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  // Deferred value — lets React de-prioritize the query trigger so typing
+  // stays snappy and we don't fire a Supabase request on every keystroke.
+  const deferredSearch = useDeferredValue(searchQuery);
   const [activeTab, setActiveTab] = useState("discover");
   const [selectedStream, setSelectedStream] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
@@ -27,14 +30,14 @@ const Community = () => {
   const { data: friendRequests } = useFriendRequests(user?.id);
   const { data: friends } = useFriendsList(user?.id);
 
-  const hasSearch = searchQuery.trim().length >= 2;
+  const hasSearch = deferredSearch.trim().length >= 2;
   const hasFilters = !!selectedStream || !!selectedLevel;
   const isSearchActive = hasSearch || hasFilters;
 
   const { data: searchResults, isLoading: searching } = useQuery({
-    queryKey: ["user_search", searchQuery, selectedStream, selectedLevel],
+    queryKey: ["user_search", deferredSearch, selectedStream, selectedLevel],
     queryFn: async () => {
-      const q = searchQuery.trim().toLowerCase().replace(/[%_\\]/g, "");
+      const q = deferredSearch.trim().toLowerCase().replace(/[%_\\]/g, "");
 
       let query = supabase
         .from("profiles")

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -240,15 +240,18 @@ const Roadmap = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["custom_skills"] }),
   });
 
-  const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: SkillProgress[] }>, p: SkillProgress) => {
-    const trackId = p.skills?.track_id;
-    const trackName = p.skills?.skill_tracks?.name || "Unknown";
-    if (!acc[trackId]) acc[trackId] = { name: trackName, trackId, skills: [] };
-    acc[trackId].skills.push(p);
-    return acc;
-  }, {}) || {};
-
-  const trackList: { name: string; trackId: string; skills: SkillProgress[] }[] = Object.values(tracks ?? {});
+  // Memoized — for users with 50+ skills across 5 tracks, previously
+  // recomputed on every render (including Framer Motion animation frames).
+  const trackList = useMemo<{ name: string; trackId: string; skills: SkillProgress[] }[]>(() => {
+    const tracks = progress?.reduce((acc: Record<string, { name: string; trackId: string; skills: SkillProgress[] }>, p: SkillProgress) => {
+      const trackId = p.skills?.track_id;
+      const trackName = p.skills?.skill_tracks?.name || "Unknown";
+      if (!acc[trackId]) acc[trackId] = { name: trackName, trackId, skills: [] };
+      acc[trackId].skills.push(p);
+      return acc;
+    }, {}) || {};
+    return Object.values(tracks);
+  }, [progress]);
 
   const cycleStatus = (current: string) => {
     if (current === "not_started") return "in_progress";
@@ -413,7 +416,7 @@ const Roadmap = () => {
                           className="scroll-mt-24"
                           initial={{ opacity: 0, x: -16 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: idx * 0.04 }}
+                          transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
                         >
                           <Card className={`group relative overflow-hidden border-border/60 transition-all hover:border-primary/40 hover:shadow-soft hover:-translate-y-0.5 ${p.status === "completed" ? "bg-accent/5" : ""}`}>
                             {/* Status accent bar */}
