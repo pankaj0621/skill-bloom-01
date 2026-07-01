@@ -452,6 +452,9 @@ function ChatView({
                           : `bg-muted text-foreground rounded-bl-md ${isMediaBubble ? "p-1" : "px-3 py-2"}`
                       }`}
                     >
+                      {!isMine && !msg.read && !msg.id.startsWith("temp-") && (
+                        <SeenObserver id={msg.id} onSeen={markSeen} />
+                      )}
                       {isMediaBubble && mediaPath && mediaKind && (
                         <div className={msg.body ? "mb-1" : ""}>
                           <MediaAttachment
