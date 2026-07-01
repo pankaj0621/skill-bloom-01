@@ -137,6 +137,13 @@ export function initOfflineQueue() {
   };
 
   window.addEventListener("online", attempt);
+  // Also re-attempt when the tab is foregrounded — mobile browsers freeze
+  // background tabs, so an offline→online transition can happen while we
+  // aren't listening. Coming back visible is our chance to catch up.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") attempt();
+  });
+  window.addEventListener("focus", attempt);
   // On boot: if we already have pending ops and we're online, drain them.
   if (navigator.onLine) {
     setTimeout(attempt, 1500);
