@@ -235,16 +235,15 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
 
       const disappearSeconds = opts.disappearSeconds ?? null;
-      const expiresAt = disappearSeconds && disappearSeconds > 0
-        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
-        : null;
-
+      // NOTE: expires_at is intentionally NOT set at send time. The timer
+      // starts only after the recipient reads the message (see
+      // mark_peer_messages_read RPC), so it doesn't vanish before they see it.
       const insertRow: Record<string, unknown> = {
         from_user_id: userId!,
         to_user_id: peerId,
         body: trimmed,
         disappear_seconds: disappearSeconds,
-        expires_at: expiresAt,
+        expires_at: null,
       };
       if (opts.media) {
         insertRow.media_path = opts.media.path;
