@@ -203,6 +203,7 @@ function ChatView({
   const editMessage = useEditMessage(userId, peerId);
   const { deleteForEveryone, deleteForMe } = useDeleteMessage(userId, peerId);
   const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
+  const { startCall } = useCall();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
