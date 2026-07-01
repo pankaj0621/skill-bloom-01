@@ -494,29 +494,102 @@ function ChatView({
 
       {/* Input */}
       <div
-        className="border-t p-2 flex gap-2 bg-background flex-shrink-0"
+        className="border-t bg-background flex-shrink-0"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
       >
-        <Input
-          placeholder="Type a message..."
-          value={messageText}
-          onChange={(e) => {
-            setMessageText(e.target.value);
-            if (e.target.value.trim()) broadcastTyping();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && messageText.trim()) sendMessage.mutate();
-          }}
-          className="text-sm"
-        />
-        <Button
-          size="icon"
-          onClick={() => sendMessage.mutate()}
-          disabled={!messageText.trim()}
-          className="flex-shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        {effectiveTimer && (
+          <div className="flex items-center justify-between gap-2 px-3 pt-2 text-[11px] text-primary">
+            <div className="flex items-center gap-1.5">
+              <Timer className="h-3 w-3" />
+              Next message disappears in {disappearLabel(effectiveTimer)}
+            </div>
+            {pendingTimer !== null && (
+              <button
+                type="button"
+                onClick={() => setPendingTimer(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+        <div className="p-2 flex gap-1.5 items-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.csv,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFilePicked(f);
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 flex-shrink-0 touch-manipulation"
+            aria-label="Attach"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 flex-shrink-0 touch-manipulation ${effectiveTimer ? "text-primary" : ""}`}
+                aria-label="Disappearing timer"
+              >
+                <Timer className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-[260]">
+              <DropdownMenuLabel className="text-xs">
+                Next message only
+                {chatDefaultSeconds ? ` · default ${disappearLabel(chatDefaultSeconds)}` : ""}
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={String(pendingTimer)}
+                onValueChange={(v) => setPendingTimer(v === "null" ? null : Number(v))}
+              >
+                <DropdownMenuRadioItem value="null" className="text-xs">
+                  Use chat default
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="0" className="text-xs">
+                  Off
+                </DropdownMenuRadioItem>
+                {DISAPPEAR_OPTIONS.filter((o) => o.seconds).map((o) => (
+                  <DropdownMenuRadioItem key={o.seconds} value={String(o.seconds)} className="text-xs">
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Input
+            placeholder="Type a message..."
+            value={messageText}
+            onChange={(e) => {
+              setMessageText(e.target.value);
+              if (e.target.value.trim()) broadcastTyping();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && messageText.trim()) doSend();
+            }}
+            className="text-sm"
+          />
+          <Button
+            size="icon"
+            onClick={doSend}
+            disabled={!messageText.trim()}
+            className="flex-shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Confirm delete dialog */}
