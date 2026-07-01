@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video, Paperclip, Timer, Clock, Image as ImageIcon, Loader2 } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video, Paperclip, Timer, Clock, Loader2 } from "lucide-react";
 import { useCall } from "@/contexts/CallContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
