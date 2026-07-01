@@ -51,7 +51,10 @@ export function subscribeQueue(cb: () => void): () => void {
   };
 }
 
-export function enqueue(op: Omit<QueuedOp, "id">) {
+// Distributive omit so each union arm keeps its own required fields.
+type DistributiveOmit<T, K extends keyof any> = T extends unknown ? Omit<T, K> : never;
+
+export function enqueue(op: DistributiveOmit<QueuedOp, "id">) {
   const queue = load();
   const withId = { ...op, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` } as QueuedOp;
   queue.push(withId);
