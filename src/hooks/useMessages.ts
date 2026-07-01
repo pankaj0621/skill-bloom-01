@@ -275,9 +275,6 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       const previous = queryClient.getQueryData<Array<Record<string, unknown>>>(key);
 
       const disappearSeconds = opts.disappearSeconds ?? null;
-      const expiresAt = disappearSeconds && disappearSeconds > 0
-        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
-        : null;
 
       const tempMessage: Record<string, unknown> = {
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -286,7 +283,7 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
         body: trimmed,
         read: false,
         created_at: new Date().toISOString(),
-        expires_at: expiresAt,
+        expires_at: null,
         disappear_seconds: disappearSeconds,
         media_path: opts.media?.path ?? null,
         media_mime: opts.media?.mime ?? null,
