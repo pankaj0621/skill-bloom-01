@@ -22,6 +22,9 @@ import { CheckCircle, Circle, Clock, Plus, Map } from "lucide-react";
 import ErrorAlert, { getQueryErrorProps } from "@/components/ErrorAlert";
 import EmptyState from "@/components/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { enqueue as enqueueOffline } from "@/lib/offlineQueue";
+
+const isOffline = () => typeof navigator !== "undefined" && !navigator.onLine;
 
 const statusConfig = {
   not_started: { icon: Circle, label: "Not Started", color: "text-muted-foreground", accent: "bg-muted-foreground/40" },
@@ -92,12 +95,14 @@ const Roadmap = () => {
 
   const updateStatus = useMutation({
     mutationFn: async ({ progressId, status }: { progressId: string; status: string }) => {
+      const completedAt = status === "completed" ? new Date().toISOString() : null;
+      if (isOffline()) {
+        enqueueOffline({ type: "skill_status", progressId, status, completedAt });
+        return;
+      }
       const { error } = await supabase
         .from("user_skill_progress")
-        .update({
-          status,
-          completed_at: status === "completed" ? new Date().toISOString() : null,
-        })
+        .update({ status, completed_at: completedAt })
         .eq("id", progressId);
       if (error) throw error;
     },
@@ -148,8 +153,9 @@ const Roadmap = () => {
       });
     },
     onSuccess: async () => {
-      // Server-side: streak, level recompute, badge checks
-      if (user) {
+      // Server-side: streak, level, badges. Skip while offline — will trigger
+      // naturally once the queued mutation flushes on reconnect.
+      if (user && !isOffline()) {
         await updateStreak(user.id);
         const { previousLevel, newLevel } = await syncUserLevel(user.id);
         if (newLevel !== previousLevel) {
@@ -218,6 +224,10 @@ const Roadmap = () => {
 
   const updateCustomStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (isOffline()) {
+        enqueueOffline({ type: "custom_skill_status", skillId: id, status });
+        return;
+      }
       const { error } = await supabase.from("user_custom_skills").update({ status }).eq("id", id);
       if (error) throw error;
     },
