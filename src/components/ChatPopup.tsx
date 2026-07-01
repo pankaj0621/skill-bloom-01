@@ -373,8 +373,15 @@ function ChatView({
               const deletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
               const editedAt = (msg as { edited_at?: string | null }).edited_at;
               const existingDeletes = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids || [];
-              const canEdit = isMine && !deletedForAll && Date.now() - new Date(msg.created_at).getTime() < 15 * 60 * 1000;
+              const mediaPath = (msg as { media_path?: string | null }).media_path;
+              const mediaKind = (msg as { media_kind?: string | null }).media_kind as "image" | "video" | "audio" | "file" | null;
+              const mediaMime = (msg as { media_mime?: string | null }).media_mime;
+              const mediaName = (msg as { media_name?: string | null }).media_name;
+              const mediaSize = (msg as { media_size?: number | null }).media_size;
+              const expiresAt = (msg as { expires_at?: string | null }).expires_at;
+              const canEdit = isMine && !deletedForAll && !mediaPath && Date.now() - new Date(msg.created_at).getTime() < 15 * 60 * 1000;
               const isEditing = editingId === msg.id;
+              const isMediaBubble = !!mediaPath && !deletedForAll;
 
               return (
                 <motion.div
@@ -387,16 +394,28 @@ function ChatView({
                 >
                   <div className={`flex items-end gap-1 max-w-[85%] ${isMine ? "flex-row-reverse" : "flex-row"}`}>
                     <div
-                      className={`rounded-2xl px-3 py-2 text-sm ${
+                      className={`rounded-2xl text-sm overflow-hidden ${
                         deletedForAll
-                          ? "bg-muted/60 text-muted-foreground italic"
+                          ? "bg-muted/60 text-muted-foreground italic px-3 py-2"
                           : isMine
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
+                          ? `bg-primary text-primary-foreground rounded-br-md ${isMediaBubble ? "p-1" : "px-3 py-2"}`
+                          : `bg-muted text-foreground rounded-bl-md ${isMediaBubble ? "p-1" : "px-3 py-2"}`
                       }`}
                     >
+                      {isMediaBubble && mediaPath && mediaKind && (
+                        <div className={msg.body ? "mb-1" : ""}>
+                          <MediaAttachment
+                            path={mediaPath}
+                            mime={mediaMime}
+                            name={mediaName}
+                            size={mediaSize}
+                            kind={mediaKind}
+                            isMine={isMine}
+                          />
+                        </div>
+                      )}
                       {isEditing ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 px-2 py-1">
                           <Input
                             ref={editInputRef}
                             value={editDraft}
@@ -415,11 +434,22 @@ function ChatView({
                           </Button>
                         </div>
                       ) : (
-                        <p className="break-words whitespace-pre-wrap">
-                          {deletedForAll ? "🚫 This message was deleted" : msg.body}
-                        </p>
+                        (deletedForAll || msg.body) && (
+                          <p className={`break-words whitespace-pre-wrap ${isMediaBubble ? "px-2 py-1" : ""}`}>
+                            {deletedForAll ? "🚫 This message was deleted" : msg.body}
+                          </p>
+                        )
                       )}
-                      <div className="flex items-center justify-end gap-1 mt-1">
+                      <div className={`flex items-center justify-end gap-1 mt-1 ${isMediaBubble ? "px-2 pb-1" : ""}`}>
+                        {expiresAt && !deletedForAll && (
+                          <span
+                            title={`Disappears ${new Date(expiresAt).toLocaleString()}`}
+                            className={`inline-flex items-center gap-0.5 text-[9px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                          >
+                            <Clock className="h-2.5 w-2.5" />
+                            {timeUntil(expiresAt)}
+                          </span>
+                        )}
                         {editedAt && !deletedForAll && !isEditing && (
                           <span className={`text-[9px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}>edited</span>
                         )}
