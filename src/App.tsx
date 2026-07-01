@@ -14,6 +14,7 @@ import { AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import PageTransition from "@/components/PageTransition";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashScreen from "./components/SplashScreen";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import NetworkStatus from "@/components/NetworkStatus";
