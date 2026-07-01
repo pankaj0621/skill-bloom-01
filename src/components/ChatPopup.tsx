@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useConversations, useChatMessages, useSendMessage, useEditMessage, useDeleteMessage, formatMessageTime } from "@/hooks/useMessages";
+import { useConversations, useChatMessages, useSendMessage, useEditMessage, useDeleteMessage, useMarkMessagesSeen, formatMessageTime } from "@/hooks/useMessages";
 import { useFriendsList, useFriendship } from "@/hooks/useFriendship";
 import { useBlockUser } from "@/hooks/useBlockUser";
 import { usePresence, useTypingIndicator } from "@/hooks/usePresence";
