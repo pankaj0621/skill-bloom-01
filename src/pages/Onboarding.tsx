@@ -44,7 +44,9 @@ const Onboarding = () => {
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Prefill if user already partially onboarded (avoids loop on retry)
+  // Prefill if user already partially onboarded (avoids loop on retry).
+  // If already fully onboarded, bounce straight to /dashboard so a stale
+  // persisted query cache can't strand a returning user on this screen.
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -54,6 +56,12 @@ const Onboarding = () => {
         .eq("id", user.id)
         .maybeSingle();
       if (data) {
+        const complete = !!data.username || (!!data.role && !!data.stream);
+        if (complete) {
+          queryClient.setQueryData(["profile-onboarding-check", user.id], data);
+          navigate("/dashboard", { replace: true });
+          return;
+        }
         if (data.username) {
           setUsername(data.username);
           setUsernameStatus("available");
@@ -64,7 +72,7 @@ const Onboarding = () => {
         if (data.primary_goal) setPrimaryGoal(data.primary_goal);
       }
     })();
-  }, [user]);
+  }, [user, navigate, queryClient]);
 
   const checkUsername = useCallback(async (value: string) => {
     const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
