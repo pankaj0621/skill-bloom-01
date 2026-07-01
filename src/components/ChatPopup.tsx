@@ -205,6 +205,7 @@ function ChatView({
   isOnline: boolean;
 }) {
   const { messages } = useChatMessages(userId, peerId);
+  const { markSeen } = useMarkMessagesSeen(userId, peerId);
   const { removeFriend } = useFriendship(userId, peerId);
   const { isBlocked, blockUser } = useBlockUser(userId, peerId);
   const { messageText, setMessageText, sendMessage } = useSendMessage(userId, peerId);
