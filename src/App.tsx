@@ -24,6 +24,7 @@ import Navbar from "@/components/Navbar";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useConversationsRealtime } from "@/hooks/useMessages";
 import { initOfflineQueue } from "@/lib/offlineQueue";
+import { CallProvider } from "@/contexts/CallContext";
 
 // Start listening for `online` events so queued mutations (skill status,
 // notification actions) automatically flush when the network returns.
@@ -192,15 +193,17 @@ const App = () => {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <NetworkStatus />
-            <ServiceWorkerUpdater />
-            {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
-            <PwaInstallPrompt />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
+            <CallProvider>
+              <Toaster />
+              <Sonner />
+              <NetworkStatus />
+              <ServiceWorkerUpdater />
+              {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
+              <PwaInstallPrompt />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </CallProvider>
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>

@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video } from "lucide-react";
+import { useCall } from "@/contexts/CallContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
@@ -202,6 +203,7 @@ function ChatView({
   const editMessage = useEditMessage(userId, peerId);
   const { deleteForEveryone, deleteForMe } = useDeleteMessage(userId, peerId);
   const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
+  const { startCall } = useCall();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -268,7 +270,29 @@ function ChatView({
             </AnimatePresence>
           </div>
         </div>
-        <div className="ml-auto flex-shrink-0">
+        <div className="ml-auto flex-shrink-0 flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Voice call"
+            onClick={() =>
+              startCall({ peerId, peerName: peerProfile?.display_name || "Student", peerAvatarUrl: peerProfile?.avatar_url, kind: "audio" })
+            }
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Video call"
+            onClick={() =>
+              startCall({ peerId, peerName: peerProfile?.display_name || "Student", peerAvatarUrl: peerProfile?.avatar_url, kind: "video" })
+            }
+          >
+            <Video className="h-4 w-4" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
