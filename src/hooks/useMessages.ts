@@ -165,6 +165,12 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
   const { data: messages } = useQuery({
     queryKey: ["peer_messages", userId, peerId],
     queryFn: async () => {
+      // Best-effort: purge expired disappearing messages the current user
+      // participates in. Failure is non-fatal — client also filters below.
+      supabase.rpc("cleanup_expired_peer_messages").then(() => {
+        queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
+      });
+
       const { data, error } = await supabase
         .from("peer_messages")
         .select("*")
@@ -173,16 +179,20 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
         )
         .order("created_at", { ascending: true });
       if (error) throw error;
-      // Hide messages the current user has deleted for themselves.
-      return (data || []).filter(
-        (m) => !userId || !(m as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId)
-      );
+      const now = Date.now();
+      return (data || []).filter((m) => {
+        if (userId && (m as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId)) return false;
+        const exp = (m as { expires_at?: string | null }).expires_at;
+        if (exp && new Date(exp).getTime() <= now) return false;
+        return true;
+      });
     },
     enabled: !!userId && !!peerId,
+    // Poll frequently so per-message timers actually disappear without user
+    // interaction. Cheap because it's a single indexed query.
+    refetchInterval: 15_000,
   });
 
-  // Mark as read — only fire when there's actually unread inbound mail,
-  // otherwise every optimistic message spams an UPDATE round-trip.
   useEffect(() => {
     if (!userId || !peerId || !messages) return;
     const hasUnread = messages.some(
@@ -204,56 +214,95 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
   return { messages };
 }
 
+export interface SendMessagePayload {
+  media?: UploadedMedia;
+  /** Per-message override; falls back to chat default. NULL/0 = no expiry. */
+  disappearSeconds?: number | null;
+}
+
 export function useSendMessage(userId: string | undefined, peerId: string | null) {
   const queryClient = useQueryClient();
   const [messageText, setMessageText] = useState("");
 
   const sendMessage = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (opts: SendMessagePayload = {}) => {
       const trimmed = messageText.trim();
-      if (!trimmed || !peerId) return null;
+      if (!peerId) return null;
+      const hasBody = trimmed.length > 0;
+      const hasMedia = !!opts.media;
+      if (!hasBody && !hasMedia) return null;
       if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
+
+      const disappearSeconds = opts.disappearSeconds ?? null;
+      const expiresAt = disappearSeconds && disappearSeconds > 0
+        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
+        : null;
+
+      const insertRow: Record<string, unknown> = {
+        from_user_id: userId!,
+        to_user_id: peerId,
+        body: trimmed,
+        disappear_seconds: disappearSeconds,
+        expires_at: expiresAt,
+      };
+      if (opts.media) {
+        insertRow.media_path = opts.media.path;
+        insertRow.media_mime = opts.media.mime;
+        insertRow.media_name = opts.media.name;
+        insertRow.media_size = opts.media.size;
+        insertRow.media_kind = opts.media.kind;
+        if (opts.media.duration_ms) insertRow.media_duration_ms = opts.media.duration_ms;
+      }
+
       const { data, error } = await supabase
         .from("peer_messages")
-        .insert({ from_user_id: userId!, to_user_id: peerId, body: trimmed })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(insertRow as any)
         .select()
         .single();
       if (error) throw error;
       return data;
     },
-    // ── Optimistic update — Instagram-style instant reflection.
-    // Bubble appears immediately, input clears, no spinner. Realtime/refetch
-    // later replaces the temp row with the canonical server row.
-    onMutate: async () => {
+    onMutate: async (opts: SendMessagePayload = {}) => {
       const trimmed = messageText.trim();
-      if (!trimmed || !peerId || !userId) return;
+      if (!peerId || !userId) return;
+      if (!trimmed && !opts.media) return;
       setMessageText("");
 
       const key = ["peer_messages", userId, peerId];
       await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<{ id: string; from_user_id: string; to_user_id: string; body: string; read: boolean; created_at: string }[]>(key);
+      const previous = queryClient.getQueryData<Array<Record<string, unknown>>>(key);
 
-      const tempMessage = {
+      const disappearSeconds = opts.disappearSeconds ?? null;
+      const expiresAt = disappearSeconds && disappearSeconds > 0
+        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
+        : null;
+
+      const tempMessage: Record<string, unknown> = {
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         from_user_id: userId,
         to_user_id: peerId,
         body: trimmed,
         read: false,
         created_at: new Date().toISOString(),
-        __optimistic: true as const,
+        expires_at: expiresAt,
+        disappear_seconds: disappearSeconds,
+        media_path: opts.media?.path ?? null,
+        media_mime: opts.media?.mime ?? null,
+        media_name: opts.media?.name ?? null,
+        media_size: opts.media?.size ?? null,
+        media_kind: opts.media?.kind ?? null,
+        media_duration_ms: opts.media?.duration_ms ?? null,
+        __optimistic: true,
       };
       queryClient.setQueryData(key, [...(previous || []), tempMessage]);
-
-      // Optimistically bump conversation preview too
       queryClient.setQueryData(["all_peer_messages", userId], (old: typeof previous) =>
         old ? [tempMessage, ...old] : [tempMessage]
       );
 
-      // Return the draft so onError can restore what the user typed.
-      return { previous, tempId: tempMessage.id, draftText: trimmed };
+      return { previous, tempId: tempMessage.id as string, draftText: trimmed };
     },
     onError: (e: Error, _vars, ctx) => {
-      // Rollback — restore previous cache + put text back so user can retry
       if (ctx?.previous && peerId && userId) {
         queryClient.setQueryData(["peer_messages", userId, peerId], ctx.previous);
       }
@@ -261,8 +310,6 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       toast.error(e.message);
     },
     onSuccess: (row, _vars, ctx) => {
-      // In-place swap: replace the temp row with the canonical server row.
-      // Avoids a refetch flicker that would make the bubble briefly disappear.
       if (!row || !ctx?.tempId || !peerId || !userId) return;
       const key = ["peer_messages", userId, peerId];
       queryClient.setQueryData<Array<{ id: string }>>(key, (old) =>
@@ -273,7 +320,6 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       );
     },
     onSettled: () => {
-      // Refresh conversation previews only; chat thread was already reconciled in onSuccess.
       queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
     },
   });
