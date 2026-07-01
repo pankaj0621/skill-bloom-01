@@ -105,6 +105,9 @@ const CareerAdvisor = () => {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
+        if (resp.status === 429) throw new Error("Rate limit reached — please wait a moment before trying again.");
+        if (resp.status === 402) throw new Error("AI credits exhausted. Please add credits to continue.");
+        if (resp.status === 401) throw new Error("Session expired. Please sign in again.");
         throw new Error(err.error || `Error ${resp.status}`);
       }
 
