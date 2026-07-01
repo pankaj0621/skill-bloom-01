@@ -301,14 +301,20 @@ function ChatView({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-[260] min-w-[180px]">
               <DropdownMenuItem
-                onClick={() => { removeFriend.mutate(); onBack(); }}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => { removeFriend.mutate(); onBack(); }, 80);
+                }}
                 className="text-destructive focus:text-destructive gap-2"
               >
                 <UserX className="h-4 w-4" />
                 Unfriend
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => { blockUser.mutate(); onBack(); }}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => { blockUser.mutate(); onBack(); }, 80);
+                }}
                 className="text-destructive focus:text-destructive gap-2"
               >
                 <Ban className="h-4 w-4" />
@@ -411,14 +417,23 @@ function ChatView({
                           )}
                           {isMine && !deletedForAll && (
                             <DropdownMenuItem
-                              onClick={() => setConfirmDelete({ messageId: msg.id, scope: "everyone", existing: existingDeletes })}
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                // Wait for the dropdown to fully close before opening the
+                                // AlertDialog — otherwise Radix leaves body pointer-events
+                                // stuck and the whole UI freezes.
+                                setTimeout(() => setConfirmDelete({ messageId: msg.id, scope: "everyone", existing: existingDeletes }), 80);
+                              }}
                               className="text-destructive focus:text-destructive gap-2"
                             >
                               <Trash2 className="h-3.5 w-3.5" /> Delete for everyone
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
-                            onClick={() => setConfirmDelete({ messageId: msg.id, scope: "me", existing: existingDeletes })}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setTimeout(() => setConfirmDelete({ messageId: msg.id, scope: "me", existing: existingDeletes }), 80);
+                            }}
                             className="gap-2"
                           >
                             <Trash2 className="h-3.5 w-3.5" /> Delete for me
@@ -468,8 +483,23 @@ function ChatView({
       </div>
 
       {/* Confirm delete dialog */}
-      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent>
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => {
+          if (!o) {
+            setConfirmDelete(null);
+            // Safety net: Radix sometimes forgets to clear this when a dialog
+            // is opened from within another modal (dropdown → drawer). Without
+            // this the entire app appears frozen.
+            setTimeout(() => {
+              if (document.body.style.pointerEvents === "none") {
+                document.body.style.pointerEvents = "";
+              }
+            }, 100);
+          }
+        }}
+      >
+        <AlertDialogContent className="z-[300]">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmDelete?.scope === "everyone" ? "Delete for everyone?" : "Delete for you?"}
@@ -484,14 +514,16 @@ function ChatView({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
+              onClick={() => {
                 if (!confirmDelete) return;
-                if (confirmDelete.scope === "everyone") {
-                  await deleteForEveryone.mutateAsync(confirmDelete.messageId);
-                } else {
-                  await deleteForMe.mutateAsync({ messageId: confirmDelete.messageId, existing: confirmDelete.existing });
-                }
+                const target = confirmDelete;
+                // Close dialog immediately for snappy UX; fire mutation in background.
                 setConfirmDelete(null);
+                if (target.scope === "everyone") {
+                  deleteForEveryone.mutate(target.messageId);
+                } else {
+                  deleteForMe.mutate({ messageId: target.messageId, existing: target.existing });
+                }
               }}
             >
               Delete
