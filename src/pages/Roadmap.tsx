@@ -153,8 +153,9 @@ const Roadmap = () => {
       });
     },
     onSuccess: async () => {
-      // Server-side: streak, level recompute, badge checks
-      if (user) {
+      // Server-side: streak, level, badges. Skip while offline — will trigger
+      // naturally once the queued mutation flushes on reconnect.
+      if (user && !isOffline()) {
         await updateStreak(user.id);
         const { previousLevel, newLevel } = await syncUserLevel(user.id);
         if (newLevel !== previousLevel) {
@@ -223,6 +224,10 @@ const Roadmap = () => {
 
   const updateCustomStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (isOffline()) {
+        enqueueOffline({ type: "custom_skill_status", skillId: id, status });
+        return;
+      }
       const { error } = await supabase.from("user_custom_skills").update({ status }).eq("id", id);
       if (error) throw error;
     },
