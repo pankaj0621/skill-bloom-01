@@ -63,6 +63,11 @@ export function useConversations(userId: string | undefined) {
     const map = new Map<string, ConversationPreview>();
 
     for (const msg of allMessages) {
+      // Skip messages the current user deleted for themselves.
+      const deletedForMe = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId);
+      if (deletedForMe) continue;
+      const isDeletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
+      const preview = isDeletedForAll ? "🚫 This message was deleted" : msg.body;
       const peerId = msg.from_user_id === userId ? msg.to_user_id : msg.from_user_id;
       if (!map.has(peerId)) {
         const profile = peerProfiles.find((p) => p.id === peerId);
@@ -72,13 +77,13 @@ export function useConversations(userId: string | undefined) {
           peerLevel: profile?.computed_level || "Beginner",
           peerAvatarUrl: profile?.avatar_url || null,
           peerUsername: profile?.username || null,
-          lastMessage: msg.body,
+          lastMessage: preview,
           lastMessageTime: msg.created_at,
           unreadCount: 0,
         });
       }
       const conv = map.get(peerId)!;
-      if (msg.to_user_id === userId && !msg.read) {
+      if (msg.to_user_id === userId && !msg.read && !isDeletedForAll) {
         conv.unreadCount++;
       }
     }
@@ -153,7 +158,10 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
         )
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data;
+      // Hide messages the current user has deleted for themselves.
+      return (data || []).filter(
+        (m) => !userId || !(m as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId)
+      );
     },
     enabled: !!userId && !!peerId,
   });
@@ -258,6 +266,65 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
   return { messageText, setMessageText, sendMessage };
 }
 
+export function useEditMessage(userId: string | undefined, peerId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, newBody }: { messageId: string; newBody: string }) => {
+      const trimmed = newBody.trim();
+      if (!trimmed) throw new Error("Message cannot be empty");
+      if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ body: trimmed })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteMessage(userId: string | undefined, peerId: string | null) {
+  const queryClient = useQueryClient();
+
+  const deleteForEveryone = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ deleted_for_everyone: true })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteForMe = useMutation({
+    mutationFn: async ({ messageId, existing }: { messageId: string; existing: string[] }) => {
+      if (!userId) throw new Error("Not signed in");
+      const next = Array.from(new Set([...(existing || []), userId]));
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ deleted_for_user_ids: next })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return { deleteForEveryone, deleteForMe };
+}
+
 export function formatMessageTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
@@ -266,3 +333,4 @@ export function formatMessageTime(iso: string) {
   }
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
+

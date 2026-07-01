@@ -247,6 +247,9 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          deleted_for_everyone: boolean
+          deleted_for_user_ids: string[]
+          edited_at: string | null
           from_user_id: string
           id: string
           read: boolean
@@ -255,6 +258,9 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          deleted_for_everyone?: boolean
+          deleted_for_user_ids?: string[]
+          edited_at?: string | null
           from_user_id: string
           id?: string
           read?: boolean
@@ -263,6 +269,9 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          deleted_for_everyone?: boolean
+          deleted_for_user_ids?: string[]
+          edited_at?: string | null
           from_user_id?: string
           id?: string
           read?: boolean

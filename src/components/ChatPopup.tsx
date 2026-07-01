@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useConversations, useChatMessages, useSendMessage, formatMessageTime } from "@/hooks/useMessages";
+import { useConversations, useChatMessages, useSendMessage, useEditMessage, useDeleteMessage, formatMessageTime } from "@/hooks/useMessages";
 import { useFriendsList, useFriendship } from "@/hooks/useFriendship";
 import { useBlockUser } from "@/hooks/useBlockUser";
 import { usePresence, useTypingIndicator } from "@/hooks/usePresence";
@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -198,17 +199,41 @@ function ChatView({
   const { removeFriend } = useFriendship(userId, peerId);
   const { isBlocked, blockUser } = useBlockUser(userId, peerId);
   const { messageText, setMessageText, sendMessage } = useSendMessage(userId, peerId);
+  const editMessage = useEditMessage(userId, peerId);
+  const { deleteForEveryone, deleteForMe } = useDeleteMessage(userId, peerId);
   const { peerIsTyping, broadcastTyping } = useTypingIndicator(userId, peerId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<
+    | { messageId: string; scope: "everyone" | "me"; existing: string[] }
+    | null
+  >(null);
 
-  // Auto-scroll to latest message whenever messages, typing state, or draft height changes.
-  // Uses both scrollTop and a sentinel scrollIntoView for reliability across mobile browsers.
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
     bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages, peerIsTyping, messageText]);
+
+  useEffect(() => {
+    if (editingId) editInputRef.current?.focus();
+  }, [editingId]);
+
+  const startEdit = (msg: { id: string; body: string }) => {
+    setEditingId(msg.id);
+    setEditDraft(msg.body);
+  };
+  const cancelEdit = () => { setEditingId(null); setEditDraft(""); };
+  const commitEdit = async () => {
+    if (!editingId) return;
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+    await editMessage.mutateAsync({ messageId: editingId, newBody: trimmed });
+    cancelEdit();
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -232,23 +257,11 @@ function ChatView({
             <p className="font-medium text-sm truncate leading-tight">{peerProfile?.display_name || "Student"}</p>
             <AnimatePresence mode="wait">
               {peerIsTyping ? (
-                <motion.p
-                  key="typing"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-[10px] text-primary leading-tight"
-                >
+                <motion.p key="typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-primary leading-tight">
                   typing…
                 </motion.p>
               ) : (
-                <motion.p
-                  key="status"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-[10px] text-muted-foreground leading-tight"
-                >
+                <motion.p key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-muted-foreground leading-tight">
                   {isOnline ? "online" : "offline"}
                 </motion.p>
               )}
@@ -282,7 +295,7 @@ function ChatView({
         </div>
       </div>
 
-      {/* Messages — extra bottom padding so the last bubble never hides behind the input */}
+      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 pb-6 space-y-2 overscroll-contain">
         {(!messages || messages.length === 0) ? (
           <p className="text-center text-muted-foreground py-12 text-sm">No messages yet. Say hello! 👋</p>
@@ -290,28 +303,105 @@ function ChatView({
           <AnimatePresence initial={false}>
             {messages.map((msg) => {
               const isMine = msg.from_user_id === userId;
+              const deletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
+              const editedAt = (msg as { edited_at?: string | null }).edited_at;
+              const existingDeletes = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids || [];
+              const canEdit = isMine && !deletedForAll && Date.now() - new Date(msg.created_at).getTime() < 15 * 60 * 1000;
+              const isEditing = editingId === msg.id;
+
               return (
                 <motion.div
                   key={msg.id}
+                  layout
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  className={`flex ${isMine ? "justify-end" : "justify-start"} group`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                      isMine
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    }`}
-                  >
-                    <p className="break-words">{msg.body}</p>
-                    <div className={`flex items-center justify-end gap-0.5 mt-1`}>
-                      <span className={`text-[10px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <ReadReceipt isMine={isMine} isRead={msg.read} />
+                  <div className={`flex items-end gap-1 max-w-[85%] ${isMine ? "flex-row-reverse" : "flex-row"}`}>
+                    <div
+                      className={`rounded-2xl px-3 py-2 text-sm ${
+                        deletedForAll
+                          ? "bg-muted/60 text-muted-foreground italic"
+                          : isMine
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                      }`}
+                    >
+                      {isEditing ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            ref={editInputRef}
+                            value={editDraft}
+                            onChange={(e) => setEditDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") { e.preventDefault(); commitEdit(); }
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                            className="h-7 text-sm bg-background/90 text-foreground min-w-[160px]"
+                          />
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={commitEdit} disabled={!editDraft.trim() || editMessage.isPending}>
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEdit}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="break-words whitespace-pre-wrap">
+                          {deletedForAll ? "🚫 This message was deleted" : msg.body}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        {editedAt && !deletedForAll && !isEditing && (
+                          <span className={`text-[9px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}>edited</span>
+                        )}
+                        <span className={`text-[10px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        {!deletedForAll && <ReadReceipt isMine={isMine} isRead={msg.read} />}
+                      </div>
                     </div>
+
+                    {/* Message action menu — hidden while editing or if server row not yet ready */}
+                    {!isEditing && !msg.id.startsWith("temp-") && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+                            aria-label="Message actions"
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align={isMine ? "end" : "start"} className="min-w-[180px]">
+                          {canEdit && !deletedForAll && (
+                            <>
+                              <DropdownMenuItem onClick={() => startEdit({ id: msg.id, body: msg.body })} className="gap-2">
+                                <Pencil className="h-3.5 w-3.5" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          {isMine && !deletedForAll && (
+                            <DropdownMenuItem
+                              onClick={() => setConfirmDelete({ messageId: msg.id, scope: "everyone", existing: existingDeletes })}
+                              className="text-destructive focus:text-destructive gap-2"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete for everyone
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => setConfirmDelete({ messageId: msg.id, scope: "me", existing: existingDeletes })}
+                            className="gap-2"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete for me
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -319,16 +409,14 @@ function ChatView({
           </AnimatePresence>
         )}
 
-        {/* Typing indicator in chat */}
         <AnimatePresence>
           {peerIsTyping && <TypingIndicator />}
         </AnimatePresence>
 
-        {/* Sentinel to anchor auto-scroll at the very bottom */}
         <div ref={bottomRef} className="h-1" aria-hidden />
       </div>
 
-      {/* Input — sticky-feel with safe-area padding so it never overlaps messages on mobile */}
+      {/* Input */}
       <div
         className="border-t p-2 flex gap-2 bg-background flex-shrink-0"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
@@ -354,6 +442,39 @@ function ChatView({
           <Send className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Confirm delete dialog */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDelete?.scope === "everyone" ? "Delete for everyone?" : "Delete for you?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDelete?.scope === "everyone"
+                ? "This message will be removed for everyone in this chat. This cannot be undone."
+                : "This message will be hidden only on your side. The other person will still see it."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                if (confirmDelete.scope === "everyone") {
+                  await deleteForEveryone.mutateAsync(confirmDelete.messageId);
+                } else {
+                  await deleteForMe.mutateAsync({ messageId: confirmDelete.messageId, existing: confirmDelete.existing });
+                }
+                setConfirmDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
