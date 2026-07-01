@@ -199,13 +199,14 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
       (m) => m.to_user_id === userId && m.from_user_id === peerId && !m.read
     );
     if (!hasUnread) return;
-    supabase
-      .from("peer_messages")
-      .update({ read: true })
-      .eq("to_user_id", userId)
-      .eq("from_user_id", peerId)
-      .eq("read", false)
+    // Use RPC so the server can also stamp expires_at for disappearing
+    // messages — the timer starts when the recipient actually sees them.
+    (supabase.rpc as unknown as (fn: string, args: Record<string, string>) => Promise<unknown>)(
+      "mark_peer_messages_read",
+      { _from: peerId, _to: userId }
+    )
       .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
         queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
         queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
       });
@@ -235,16 +236,15 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
 
       const disappearSeconds = opts.disappearSeconds ?? null;
-      const expiresAt = disappearSeconds && disappearSeconds > 0
-        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
-        : null;
-
+      // NOTE: expires_at is intentionally NOT set at send time. The timer
+      // starts only after the recipient reads the message (see
+      // mark_peer_messages_read RPC), so it doesn't vanish before they see it.
       const insertRow: Record<string, unknown> = {
         from_user_id: userId!,
         to_user_id: peerId,
         body: trimmed,
         disappear_seconds: disappearSeconds,
-        expires_at: expiresAt,
+        expires_at: null,
       };
       if (opts.media) {
         insertRow.media_path = opts.media.path;
@@ -276,9 +276,6 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       const previous = queryClient.getQueryData<Array<Record<string, unknown>>>(key);
 
       const disappearSeconds = opts.disappearSeconds ?? null;
-      const expiresAt = disappearSeconds && disappearSeconds > 0
-        ? new Date(Date.now() + disappearSeconds * 1000).toISOString()
-        : null;
 
       const tempMessage: Record<string, unknown> = {
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -287,7 +284,7 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
         body: trimmed,
         read: false,
         created_at: new Date().toISOString(),
-        expires_at: expiresAt,
+        expires_at: null,
         disappear_seconds: disappearSeconds,
         media_path: opts.media?.path ?? null,
         media_mime: opts.media?.mime ?? null,

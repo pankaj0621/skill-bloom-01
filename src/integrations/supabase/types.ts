@@ -735,6 +735,10 @@ export type Database = {
         Returns: boolean
       }
       is_own_record: { Args: { record_user_id: string }; Returns: boolean }
+      mark_peer_messages_read: {
+        Args: { _from: string; _to: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
