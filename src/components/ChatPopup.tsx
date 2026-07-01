@@ -483,12 +483,6 @@ function ChatView({
       </div>
 
       {/* Confirm delete dialog */}
-      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDelete?.scope === "everyone" ? "Delete for everyone?" : "Delete for you?"}
-            </AlertDialogTitle>
       <AlertDialog
         open={!!confirmDelete}
         onOpenChange={(o) => {
