@@ -411,14 +411,23 @@ function ChatView({
                           )}
                           {isMine && !deletedForAll && (
                             <DropdownMenuItem
-                              onClick={() => setConfirmDelete({ messageId: msg.id, scope: "everyone", existing: existingDeletes })}
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                // Wait for the dropdown to fully close before opening the
+                                // AlertDialog — otherwise Radix leaves body pointer-events
+                                // stuck and the whole UI freezes.
+                                setTimeout(() => setConfirmDelete({ messageId: msg.id, scope: "everyone", existing: existingDeletes }), 80);
+                              }}
                               className="text-destructive focus:text-destructive gap-2"
                             >
                               <Trash2 className="h-3.5 w-3.5" /> Delete for everyone
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
-                            onClick={() => setConfirmDelete({ messageId: msg.id, scope: "me", existing: existingDeletes })}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setTimeout(() => setConfirmDelete({ messageId: msg.id, scope: "me", existing: existingDeletes }), 80);
+                            }}
                             className="gap-2"
                           >
                             <Trash2 className="h-3.5 w-3.5" /> Delete for me
