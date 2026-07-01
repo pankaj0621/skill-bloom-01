@@ -16,8 +16,10 @@ export function useNavbarBadges(userId: string | undefined) {
     enabled: !!userId,
   });
 
+  // Distinct query key so this narrow SELECT doesn't clobber Dashboard's
+  // full profile fetch cached under ["profile", userId].
   const { data: navProfile } = useQuery({
-    queryKey: ["profile", userId],
+    queryKey: ["navbar_profile", userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")

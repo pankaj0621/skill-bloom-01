@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Notification {
@@ -15,9 +14,10 @@ export interface Notification {
 
 export function useNotifications(userId: string | undefined) {
   const queryClient = useQueryClient();
+  const key = ["notifications", userId];
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["notifications", userId],
+    queryKey: key,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
@@ -33,6 +33,7 @@ export function useNotifications(userId: string | undefined) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // Optimistic: instantly mark read in cache, then reconcile with server.
   const markAsRead = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
@@ -41,8 +42,19 @@ export function useNotifications(userId: string | undefined) {
         .eq("id", notificationId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    onMutate: async (notificationId: string) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const prev = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (old) =>
+        (old || []).map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
@@ -55,8 +67,19 @@ export function useNotifications(userId: string | undefined) {
         .eq("read", false);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const prev = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (old) =>
+        (old || []).map((n) => ({ ...n, read: true }))
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
@@ -68,34 +91,25 @@ export function useNotifications(userId: string | undefined) {
         .eq("id", notificationId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    onMutate: async (notificationId: string) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const prev = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (old) =>
+        (old || []).filter((n) => n.id !== notificationId)
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`user-notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, queryClient]);
+  // NOTE: Realtime subscription lives in useRealtimeNotifications (mounted
+  // globally in App.tsx). We do NOT open a second channel here — that would
+  // double invalidations and risk Supabase connection limits.
 
   return {
     notifications,

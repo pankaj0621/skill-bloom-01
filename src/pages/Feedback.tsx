@@ -48,7 +48,7 @@ const Feedback = () => {
   const [form, setForm] = useState({ title: "", description: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Fetch feedback
+  // Fetch feedback — wait for auth so RLS-protected rows resolve correctly.
   const { data: feedbackList = [] } = useQuery({
     queryKey: ["feedback"],
     queryFn: async () => {
@@ -58,6 +58,7 @@ const Feedback = () => {
         .order("votes_count", { ascending: false });
       return (data || []) as Feedback[];
     },
+    enabled: !!user,
   });
 
   // Fetch user votes

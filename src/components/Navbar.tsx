@@ -106,19 +106,19 @@ const Navbar = () => {
             ))}
           </nav>
           <NotificationBell />
-          <Button variant="ghost" size="icon" className="relative mr-1" onClick={() => setChatOpen(true)}>
+          <Button variant="ghost" size="icon" aria-label="Open messages" className="relative mr-1" onClick={() => setChatOpen(true)}>
             <MessageCircle className="h-4 w-4" />
             {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-1 -right-1" data-small-target />}
           </Button>
           {isAdmin && (
-            <Link to="/admin">
-              <Button variant="ghost" size="icon" className="text-primary">
+            <Link to="/admin" aria-label="Admin dashboard">
+              <Button variant="ghost" size="icon" aria-label="Admin dashboard" className="text-primary">
                 <Shield className="h-4 w-4" />
               </Button>
             </Link>
           )}
-          <Link to="/feedback">
-            <Button variant="ghost" size="icon" title="Feedback">
+          <Link to="/feedback" aria-label="Feedback">
+            <Button variant="ghost" size="icon" aria-label="Feedback" title="Feedback">
               <MessageSquarePlus className="h-4 w-4" />
             </Button>
           </Link>
@@ -129,20 +129,20 @@ const Navbar = () => {
               currentUrl={navProfile?.avatar_url}
               displayName={navProfile?.display_name}
             >
-              <Button variant="ghost" size="icon" title="Change profile picture" asChild>
+              <Button variant="ghost" size="icon" aria-label="Change profile picture" title="Change profile picture" asChild>
                 <span><Camera className="h-4 w-4" /></span>
               </Button>
             </AvatarUploader>
           )}
-          <Link to="/settings">
-            <Button variant="ghost" size="icon">
+          <Link to="/settings" aria-label="Settings">
+            <Button variant="ghost" size="icon" aria-label="Settings">
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
+          <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggleTheme} className="mr-2">
             {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={signOut}>
+          <Button variant="ghost" size="sm" aria-label="Sign out" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
@@ -158,31 +158,31 @@ const Navbar = () => {
           </Link>
           <div className="flex items-center gap-1">
             <NotificationBell className="h-8 w-8" />
-            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setChatOpen(true)}>
+            <Button variant="ghost" size="icon" aria-label="Open messages" className="relative h-8 w-8" onClick={() => setChatOpen(true)}>
               <MessageCircle className="h-4 w-4" />
               {totalUnread > 0 && <BadgeCount count={totalUnread} className="absolute -top-0.5 -right-0.5" data-small-target />}
             </Button>
             {isAdmin && (
-              <Link to="/admin">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+              <Link to="/admin" aria-label="Admin dashboard">
+                <Button variant="ghost" size="icon" aria-label="Admin dashboard" className="h-8 w-8 text-primary">
                   <Shield className="h-4 w-4" />
                 </Button>
               </Link>
             )}
-            <Link to="/feedback">
-              <Button variant="ghost" size="icon" className="h-8 w-8" title="Feedback">
+            <Link to="/feedback" aria-label="Feedback">
+              <Button variant="ghost" size="icon" aria-label="Feedback" className="h-8 w-8" title="Feedback">
                 <MessageSquarePlus className="h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/settings">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Link to="/settings" aria-label="Settings">
+              <Button variant="ghost" size="icon" aria-label="Settings" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+            <Button variant="ghost" size="icon" aria-label="Toggle theme" className="h-8 w-8" onClick={toggleTheme}>
               {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={signOut}>
+            <Button variant="ghost" size="icon" aria-label="Sign out" className="h-8 w-8" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
