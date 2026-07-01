@@ -258,6 +258,65 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
   return { messageText, setMessageText, sendMessage };
 }
 
+export function useEditMessage(userId: string | undefined, peerId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, newBody }: { messageId: string; newBody: string }) => {
+      const trimmed = newBody.trim();
+      if (!trimmed) throw new Error("Message cannot be empty");
+      if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ body: trimmed })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteMessage(userId: string | undefined, peerId: string | null) {
+  const queryClient = useQueryClient();
+
+  const deleteForEveryone = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ deleted_for_everyone: true })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteForMe = useMutation({
+    mutationFn: async ({ messageId, existing }: { messageId: string; existing: string[] }) => {
+      if (!userId) throw new Error("Not signed in");
+      const next = Array.from(new Set([...(existing || []), userId]));
+      const { error } = await supabase
+        .from("peer_messages")
+        .update({ deleted_for_user_ids: next })
+        .eq("id", messageId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return { deleteForEveryone, deleteForMe };
+}
+
 export function formatMessageTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
@@ -266,3 +325,4 @@ export function formatMessageTime(iso: string) {
   }
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
+
