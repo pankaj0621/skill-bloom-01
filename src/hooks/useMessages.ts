@@ -184,14 +184,15 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
   const sendMessage = useMutation({
     mutationFn: async () => {
       const trimmed = messageText.trim();
-      if (!trimmed || !peerId) return;
+      if (!trimmed || !peerId) return null;
       if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
-      const { error } = await supabase.from("peer_messages").insert({
-        from_user_id: userId!,
-        to_user_id: peerId,
-        body: trimmed,
-      });
+      const { data, error } = await supabase
+        .from("peer_messages")
+        .insert({ from_user_id: userId!, to_user_id: peerId, body: trimmed })
+        .select()
+        .single();
       if (error) throw error;
+      return data;
     },
     // ── Optimistic update — Instagram-style instant reflection.
     // Bubble appears immediately, input clears, no spinner. Realtime/refetch
