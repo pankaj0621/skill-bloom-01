@@ -63,6 +63,11 @@ export function useConversations(userId: string | undefined) {
     const map = new Map<string, ConversationPreview>();
 
     for (const msg of allMessages) {
+      // Skip messages the current user deleted for themselves.
+      const deletedForMe = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids?.includes(userId);
+      if (deletedForMe) continue;
+      const isDeletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
+      const preview = isDeletedForAll ? "🚫 This message was deleted" : msg.body;
       const peerId = msg.from_user_id === userId ? msg.to_user_id : msg.from_user_id;
       if (!map.has(peerId)) {
         const profile = peerProfiles.find((p) => p.id === peerId);
@@ -72,13 +77,13 @@ export function useConversations(userId: string | undefined) {
           peerLevel: profile?.computed_level || "Beginner",
           peerAvatarUrl: profile?.avatar_url || null,
           peerUsername: profile?.username || null,
-          lastMessage: msg.body,
+          lastMessage: preview,
           lastMessageTime: msg.created_at,
           unreadCount: 0,
         });
       }
       const conv = map.get(peerId)!;
-      if (msg.to_user_id === userId && !msg.read) {
+      if (msg.to_user_id === userId && !msg.read && !isDeletedForAll) {
         conv.unreadCount++;
       }
     }
