@@ -2,16 +2,31 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import appIcon from "@/assets/app-icon-512.png";
 
+const SPLASH_KEY = "spct-splash-shown";
+
 const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
-  const [visible, setVisible] = useState(true);
+  // Splash sirf tab dikhaye jab session mein pehli baar app khula ho.
+  // Refresh/route change pe dobara na dikhe.
+  const alreadyShown =
+    typeof window !== "undefined" && sessionStorage.getItem(SPLASH_KEY) === "1";
+  const [visible, setVisible] = useState(!alreadyShown);
 
   useEffect(() => {
+    if (alreadyShown) {
+      onComplete();
+      return;
+    }
+    try {
+      sessionStorage.setItem(SPLASH_KEY, "1");
+    } catch {
+      /* storage disabled — ignore */
+    }
     const timer = setTimeout(() => {
       setVisible(false);
       setTimeout(onComplete, 500); // wait for fade-out
     }, 1800);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [onComplete, alreadyShown]);
 
   return (
     <AnimatePresence>

@@ -7,7 +7,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, isFetching: profileFetching } = useQuery({
     queryKey: ["profile-onboarding-check", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -18,9 +18,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return data;
     },
     enabled: !!user,
+    staleTime: 0,
   });
 
-  if (loading || (user && profileLoading)) {
+  const hasCompletedOnboarding = profile?.username || (profile?.role && profile?.stream);
+
+  // If we have a user but the cached profile looks incomplete AND we're still
+  // revalidating from the server, wait — otherwise a stale persisted `null`
+  // will bounce a fully onboarded user back to /onboarding on refresh.
+  const waitingForFreshProfile =
+    !!user && !hasCompletedOnboarding && profileFetching;
+
+  if (loading || (user && profileLoading) || waitingForFreshProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -34,7 +43,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   // If user hasn't completed onboarding, redirect to onboarding
   // Check username OR (role + stream) for backward compatibility with older users
-  const hasCompletedOnboarding = profile?.username || (profile?.role && profile?.stream);
   if (!hasCompletedOnboarding && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
