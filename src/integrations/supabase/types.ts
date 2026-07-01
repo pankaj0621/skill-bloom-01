@@ -68,6 +68,39 @@ export type Database = {
         }
         Relationships: []
       }
+      call_signals: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          kind: string
+          room: string
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          kind: string
+          room: string
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          kind?: string
+          room?: string
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           admin_response: string | null
