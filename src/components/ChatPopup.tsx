@@ -96,6 +96,36 @@ function ReadReceipt({ isMine, isRead, isPending }: { isMine: boolean; isRead: b
 }
 
 
+
+// ─── Seen Observer ───
+// Fires `onSeen(id)` when the bubble is at least 60% in view AND the tab
+// is focused. Used to start the disappear timer only after the recipient
+// actually sees the message.
+function SeenObserver({ id, onSeen }: { id: string; onSeen: (id: string) => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      if (document.visibilityState !== "visible") return;
+      fired = true;
+      onSeen(id);
+      observer.disconnect();
+    };
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting && e.intersectionRatio >= 0.6)) fire(); },
+      { threshold: [0, 0.6, 1] }
+    );
+    observer.observe(el);
+    const onVis = () => fire();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", onVis); };
+  }, [id, onSeen]);
+  return <span ref={ref} aria-hidden className="sr-only" />;
+}
+
 // ─── Conversation List ───
 function ConversationList({
   conversations,
