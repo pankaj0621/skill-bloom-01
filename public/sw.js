@@ -22,10 +22,11 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('install', (event) => {
+  // Do NOT skipWaiting automatically — wait for explicit user opt-in via
+  // postMessage({ type: 'SKIP_WAITING' }) so we don't hijack the current page.
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -33,7 +34,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => !keepCaches.includes(k)).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    )
   );
 });
 
