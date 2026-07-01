@@ -475,7 +475,7 @@ function ChatView({
                         <span className={`text-[10px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
-                        {!deletedForAll && <ReadReceipt isMine={isMine} isRead={msg.read} />}
+                        {!deletedForAll && <ReadReceipt isMine={isMine} isRead={msg.read} isPending={msg.id.startsWith("temp-")} />}
                       </div>
                     </div>
 
