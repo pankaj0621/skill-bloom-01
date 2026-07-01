@@ -36,7 +36,7 @@ const qualityMeta = (q: ConnectionQuality) => {
 export default function CallQualityIndicator() {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
-  const { quality } = useConnectionQualityIndicator(localParticipant);
+  const { quality } = useConnectionQualityIndicator({ participant: localParticipant });
   const [stats, setStats] = useState<Stats>(emptyStats);
   const [warnedPoor, setWarnedPoor] = useState(false);
 
