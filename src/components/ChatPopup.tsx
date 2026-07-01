@@ -12,11 +12,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video, Paperclip, Timer, Clock, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useCall } from "@/contexts/CallContext";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
+import { MediaAttachment } from "@/components/MediaAttachment";
+import { useChatSettings } from "@/hooks/useChatSettings";
+import { DISAPPEAR_OPTIONS, disappearLabel, timeUntil, uploadChatMedia, formatBytes, MAX_MEDIA_BYTES, kindFromMime, type UploadedMedia } from "@/lib/chatMedia";
+import { toast } from "sonner";
 
 
 interface FriendProfile {
