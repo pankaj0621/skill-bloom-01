@@ -13,6 +13,7 @@ import "@livekit/components-styles";
 import { Loader2, PhoneOff, X } from "lucide-react";
 import { toast } from "sonner";
 import CallPermissionGate from "@/components/CallPermissionGate";
+import CallQualityIndicator from "@/components/CallQualityIndicator";
 
 interface Props {
   call: {
