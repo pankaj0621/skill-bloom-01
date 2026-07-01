@@ -215,7 +215,9 @@ export function useFriendsList(userId: string | undefined) {
       
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, stream, college, primary_goal")
+        .select(
+          "id, display_name, avatar_url, computed_level, stream, college, primary_goal, current_streak, xp"
+        )
         .in("id", friendIds);
       if (pErr) throw pErr;
       return profiles || [];
