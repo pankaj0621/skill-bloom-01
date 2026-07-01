@@ -109,9 +109,15 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
   }, [user, activeCall]);
 
   const endCall = useCallback(async (status: "ended" | "cancelled" | "declined" | "missed" = "ended") => {
-    if (!activeCall) return;
-    await supabase.from("call_signals").update({ status }).eq("id", activeCall.signalId);
+    const cur = activeCall;
+    // Close UI immediately so the hangup button is never "stuck" waiting on the network.
     setActiveCall(null);
+    if (!cur) return;
+    try {
+      await supabase.from("call_signals").update({ status }).eq("id", cur.signalId);
+    } catch {
+      /* best-effort — UI already closed */
+    }
   }, [activeCall]);
 
   const acceptCall = useCallback(async () => {
