@@ -193,27 +193,48 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
     refetchInterval: 15_000,
   });
 
-  useEffect(() => {
-    if (!userId || !peerId || !messages) return;
-    const hasUnread = messages.some(
-      (m) => m.to_user_id === userId && m.from_user_id === peerId && !m.read
-    );
-    if (!hasUnread) return;
-    // Use RPC so the server can also stamp expires_at for disappearing
-    // messages — the timer starts when the recipient actually sees them.
-    (supabase.rpc as unknown as (fn: string, args: Record<string, string>) => Promise<unknown>)(
-      "mark_peer_messages_read",
-      { _from: peerId, _to: userId }
-    )
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
-        queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
-        queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
-      });
-  }, [userId, peerId, messages, queryClient]);
+  // NOTE: We no longer auto-mark all messages as read when the chat opens.
+  // Marking is driven by `useMarkMessagesSeen` + IntersectionObserver in
+  // ChatPopup, so the disappear timer starts only when a message is actually
+  // scrolled into view (and the tab is focused).
 
   return { messages };
 }
+
+/**
+ * Mark specific messages as seen (by id). Batches ids so we make one RPC
+ * call per animation frame instead of one per bubble. Also stamps
+ * expires_at on the server for disappearing messages.
+ */
+export function useMarkMessagesSeen(userId: string | undefined, peerId: string | null) {
+  const queryClient = useQueryClient();
+  const [pending] = useState<Set<string>>(() => new Set());
+  const timerRef = useMemo(() => ({ current: null as ReturnType<typeof setTimeout> | null }), []);
+
+  const flush = () => {
+    if (pending.size === 0) return;
+    const ids = Array.from(pending);
+    pending.clear();
+    (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<unknown>)(
+      "mark_peer_messages_seen",
+      { _ids: ids }
+    ).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
+      queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
+      queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
+    });
+  };
+
+  const markSeen = (id: string) => {
+    if (!id || id.startsWith("temp-")) return;
+    pending.add(id);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(flush, 250);
+  };
+
+  return { markSeen };
+}
+
 
 export interface SendMessagePayload {
   media?: UploadedMedia;
