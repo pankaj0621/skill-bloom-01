@@ -229,6 +229,27 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_chat_settings: {
+        Row: {
+          disappear_seconds: number | null
+          peer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          disappear_seconds?: number | null
+          peer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          disappear_seconds?: number | null
+          peer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       peer_guidance_requests: {
         Row: {
           created_at: string
@@ -282,9 +303,18 @@ export type Database = {
           created_at: string
           deleted_for_everyone: boolean
           deleted_for_user_ids: string[]
+          disappear_seconds: number | null
           edited_at: string | null
+          expires_at: string | null
           from_user_id: string
           id: string
+          media_duration_ms: number | null
+          media_kind: string | null
+          media_mime: string | null
+          media_name: string | null
+          media_path: string | null
+          media_size: number | null
+          media_url: string | null
           read: boolean
           to_user_id: string
         }
@@ -293,9 +323,18 @@ export type Database = {
           created_at?: string
           deleted_for_everyone?: boolean
           deleted_for_user_ids?: string[]
+          disappear_seconds?: number | null
           edited_at?: string | null
+          expires_at?: string | null
           from_user_id: string
           id?: string
+          media_duration_ms?: number | null
+          media_kind?: string | null
+          media_mime?: string | null
+          media_name?: string | null
+          media_path?: string | null
+          media_size?: number | null
+          media_url?: string | null
           read?: boolean
           to_user_id: string
         }
@@ -304,9 +343,18 @@ export type Database = {
           created_at?: string
           deleted_for_everyone?: boolean
           deleted_for_user_ids?: string[]
+          disappear_seconds?: number | null
           edited_at?: string | null
+          expires_at?: string | null
           from_user_id?: string
           id?: string
+          media_duration_ms?: number | null
+          media_kind?: string | null
+          media_mime?: string | null
+          media_name?: string | null
+          media_path?: string | null
+          media_size?: number | null
+          media_url?: string | null
           read?: boolean
           to_user_id?: string
         }
@@ -678,6 +726,7 @@ export type Database = {
     }
     Functions: {
       check_and_award_badges: { Args: never; Returns: string[] }
+      cleanup_expired_peer_messages: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
