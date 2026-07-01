@@ -95,12 +95,14 @@ const Roadmap = () => {
 
   const updateStatus = useMutation({
     mutationFn: async ({ progressId, status }: { progressId: string; status: string }) => {
+      const completedAt = status === "completed" ? new Date().toISOString() : null;
+      if (isOffline()) {
+        enqueueOffline({ type: "skill_status", progressId, status, completedAt });
+        return;
+      }
       const { error } = await supabase
         .from("user_skill_progress")
-        .update({
-          status,
-          completed_at: status === "completed" ? new Date().toISOString() : null,
-        })
+        .update({ status, completed_at: completedAt })
         .eq("id", progressId);
       if (error) throw error;
     },
