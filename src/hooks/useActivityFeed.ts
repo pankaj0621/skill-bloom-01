@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFriendsList } from "@/hooks/useFriendship";
 
@@ -13,12 +14,29 @@ export interface FeedItem {
   timestamp: string;
 }
 
+interface FriendProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  computed_level?: string;
+  current_streak?: number;
+}
+
 export function useActivityFeed(userId: string | undefined) {
   const { data: friends } = useFriendsList(userId);
-  const friendIds = friends?.map((f: { id: string }) => f.id) || [];
+  const queryClient = useQueryClient();
+
+  // Memoize + sort so the query key is stable across renders.
+  // Without this, `.join(",")` produced a new string per render and the
+  // query was re-registered/re-fetched on every parent update.
+  const friendIds = useMemo(
+    () => (friends?.map((f: { id: string }) => f.id) ?? []).slice().sort(),
+    [friends]
+  );
+  const friendIdsKey = useMemo(() => friendIds.join(","), [friendIds]);
 
   return useQuery<FeedItem[]>({
-    queryKey: ["activity_feed", userId, friendIds.join(",")],
+    queryKey: ["activity_feed", userId, friendIdsKey],
     queryFn: async () => {
       if (friendIds.length === 0) return [];
 
@@ -30,15 +48,25 @@ export function useActivityFeed(userId: string | undefined) {
         .order("earned_at", { ascending: false })
         .limit(15);
 
-      // Fetch friends' profiles for names
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, computed_level, current_streak")
-        .in("id", friendIds);
+      // Reuse friends list from cache when possible — useFriendsList already
+      // fetched full profile rows, so a second `.in("id", friendIds)` is waste.
+      const cachedFriends = queryClient.getQueryData<FriendProfile[]>([
+        "friends_list",
+        userId,
+      ]);
+      let profiles: FriendProfile[] | null = cachedFriends ?? null;
+      const missing = profiles
+        ? friendIds.filter((id) => !profiles!.some((p) => p.id === id))
+        : friendIds;
+      if (missing.length > 0 || !profiles) {
+        const { data: fresh } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, computed_level, current_streak")
+          .in("id", missing.length > 0 ? missing : friendIds);
+        profiles = [...(profiles ?? []), ...((fresh as FriendProfile[]) ?? [])];
+      }
 
-      const profileMap = new Map(
-        (profiles || []).map((p) => [p.id, p])
-      );
+      const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
       // Fetch recent skill completions by friends
       const { data: completions } = await supabase
@@ -83,8 +111,8 @@ export function useActivityFeed(userId: string | undefined) {
       });
 
       // Streak highlights (friends with active streaks)
-      (profiles || []).forEach((p) => {
-        if (p.current_streak >= 3) {
+      profiles.forEach((p) => {
+        if ((p.current_streak ?? 0) >= 3) {
           items.push({
             id: `streak-${p.id}`,
             type: "streak",

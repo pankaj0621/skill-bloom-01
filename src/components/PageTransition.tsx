@@ -1,28 +1,24 @@
 import { ReactNode, memo } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 
-const prefersReducedMotion = typeof window !== "undefined"
-  ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  : false;
-
-const pageVariants = prefersReducedMotion
-  ? { initial: {}, animate: {}, exit: {} }
-  : {
-      initial: { opacity: 0, y: 12, scale: 0.99 },
-      animate: { opacity: 1, y: 0, scale: 1 },
-      exit: { opacity: 0, y: -8, scale: 0.99 },
-    };
-
-const pageTransition = prefersReducedMotion
-  ? { duration: 0 }
-  : {
-      duration: 0.25,
-      ease: [0.25, 0.1, 0.25, 1] as const,
-    };
-
+// Reactive variants — reads the OS reduced-motion preference on every
+// render, so a mid-session accessibility toggle is honored immediately.
 const PageTransition = memo(({ children }: { children: ReactNode }) => {
   const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
+
+  const pageVariants = prefersReducedMotion
+    ? { initial: {}, animate: {}, exit: {} }
+    : {
+        initial: { opacity: 0, y: 12, scale: 0.99 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -8, scale: 0.99 },
+      };
+
+  const pageTransition = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] as const };
 
   return (
     <motion.div

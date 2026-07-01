@@ -18,11 +18,13 @@ export const useIsAdmin = () => {
         .maybeSingle();
       
       if (error) {
-        console.error("Admin check error:", error);
+        if (import.meta.env.DEV) console.error("Admin check error:", error);
         return false;
       }
-      
-      console.log("Admin check result:", { userId: user.id, data, isAdmin: !!data });
+
+      if (import.meta.env.DEV) {
+        console.log("Admin check result:", { userId: user.id, isAdmin: !!data });
+      }
       return !!data;
     },
     enabled: !!user?.id,
