@@ -13,6 +13,7 @@ import "@livekit/components-styles";
 import { Loader2, PhoneOff, X } from "lucide-react";
 import { toast } from "sonner";
 import CallPermissionGate from "@/components/CallPermissionGate";
+import CallQualityIndicator from "@/components/CallQualityIndicator";
 
 interface Props {
   call: {
@@ -180,6 +181,10 @@ export default function CallRoom({ call, onLeave }: Props) {
         }}
         className="flex-1 flex flex-col min-h-0"
       >
+        {/* Live network quality pill — top-left, always visible during the call */}
+        <div className="absolute top-3 left-3 z-[340]">
+          <CallQualityIndicator />
+        </div>
         <div className="flex-1 min-h-0 overflow-hidden">
           <Stage />
         </div>
