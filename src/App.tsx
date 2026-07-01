@@ -193,15 +193,17 @@ const App = () => {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <NetworkStatus />
-            <ServiceWorkerUpdater />
-            {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
-            <PwaInstallPrompt />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
+            <CallProvider>
+              <Toaster />
+              <Sonner />
+              <NetworkStatus />
+              <ServiceWorkerUpdater />
+              {!splashDone && <SplashScreen onComplete={handleSplashComplete} />}
+              <PwaInstallPrompt />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </CallProvider>
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
