@@ -113,9 +113,13 @@ export function useConversationsRealtime(userId: string | undefined) {
           if (msg.from_user_id === userId || msg.to_user_id === userId) {
             if (msg.to_user_id === userId) {
               playMessageSound();
+              // Only reconcile from server for INCOMING messages. Outgoing
+              // messages are already swapped in-place by useSendMessage
+              // onSuccess — invalidating here would cause the just-sent
+              // bubble to briefly disappear during refetch.
+              queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
+              queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
             }
-            queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
-            queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
           }
         }
       )
@@ -184,14 +188,15 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
   const sendMessage = useMutation({
     mutationFn: async () => {
       const trimmed = messageText.trim();
-      if (!trimmed || !peerId) return;
+      if (!trimmed || !peerId) return null;
       if (trimmed.length > 5000) throw new Error("Message must be 5000 characters or fewer");
-      const { error } = await supabase.from("peer_messages").insert({
-        from_user_id: userId!,
-        to_user_id: peerId,
-        body: trimmed,
-      });
+      const { data, error } = await supabase
+        .from("peer_messages")
+        .insert({ from_user_id: userId!, to_user_id: peerId, body: trimmed })
+        .select()
+        .single();
       if (error) throw error;
+      return data;
     },
     // ── Optimistic update — Instagram-style instant reflection.
     // Bubble appears immediately, input clears, no spinner. Realtime/refetch
@@ -232,9 +237,20 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
       if (ctx?.draftText) setMessageText((prev) => prev || ctx.draftText);
       toast.error(e.message);
     },
+    onSuccess: (row, _vars, ctx) => {
+      // In-place swap: replace the temp row with the canonical server row.
+      // Avoids a refetch flicker that would make the bubble briefly disappear.
+      if (!row || !ctx?.tempId || !peerId || !userId) return;
+      const key = ["peer_messages", userId, peerId];
+      queryClient.setQueryData<Array<{ id: string }>>(key, (old) =>
+        old ? old.map((m) => (m.id === ctx.tempId ? { ...(row as { id: string }) } : m)) : old
+      );
+      queryClient.setQueryData<Array<{ id: string }>>(["all_peer_messages", userId], (old) =>
+        old ? old.map((m) => (m.id === ctx.tempId ? { ...(row as { id: string }) } : m)) : old
+      );
+    },
     onSettled: () => {
-      // Reconcile with server — realtime usually fires first, this is the safety net
-      queryClient.invalidateQueries({ queryKey: ["peer_messages"] });
+      // Refresh conversation previews only; chat thread was already reconciled in onSuccess.
       queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
     },
   });
