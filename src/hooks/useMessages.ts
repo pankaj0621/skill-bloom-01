@@ -225,7 +225,8 @@ export function useSendMessage(userId: string | undefined, peerId: string | null
   const [messageText, setMessageText] = useState("");
 
   const sendMessage = useMutation({
-    mutationFn: async (opts: SendMessagePayload = {}) => {
+    mutationFn: async (payload: SendMessagePayload | void) => {
+      const opts: SendMessagePayload = payload || {};
       const trimmed = messageText.trim();
       if (!peerId) return null;
       const hasBody = trimmed.length > 0;
