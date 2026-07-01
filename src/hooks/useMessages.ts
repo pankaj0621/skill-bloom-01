@@ -199,13 +199,14 @@ export function useChatMessages(userId: string | undefined, peerId: string | nul
       (m) => m.to_user_id === userId && m.from_user_id === peerId && !m.read
     );
     if (!hasUnread) return;
-    supabase
-      .from("peer_messages")
-      .update({ read: true })
-      .eq("to_user_id", userId)
-      .eq("from_user_id", peerId)
-      .eq("read", false)
+    // Use RPC so the server can also stamp expires_at for disappearing
+    // messages — the timer starts when the recipient actually sees them.
+    (supabase.rpc as unknown as (fn: string, args: Record<string, string>) => Promise<unknown>)(
+      "mark_peer_messages_read",
+      { _from: peerId, _to: userId }
+    )
       .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["peer_messages", userId, peerId] });
         queryClient.invalidateQueries({ queryKey: ["all_peer_messages"] });
         queryClient.invalidateQueries({ queryKey: ["unread_peer_messages"] });
       });
