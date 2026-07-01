@@ -117,6 +117,7 @@ const AnimatedRoutes = () => {
   }
   return (
     <div className="min-h-screen bg-background">
+      {user && !isSuspended && <GlobalRealtime />}
       {/* Navbar outside of page transitions - always fixed */}
       {showNavbar && <Navbar />}
       
