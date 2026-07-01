@@ -12,11 +12,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video } from "lucide-react";
+import { User, Send, ArrowLeft, MessageCircle, Check, CheckCheck, Ban, UserX, MoreVertical, Pencil, Trash2, X, Phone, Video, Paperclip, Timer, Clock, Loader2 } from "lucide-react";
 import { useCall } from "@/contexts/CallContext";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
+import { MediaAttachment } from "@/components/MediaAttachment";
+import { useChatSettings } from "@/hooks/useChatSettings";
+import { DISAPPEAR_OPTIONS, disappearLabel, timeUntil, uploadChatMedia, formatBytes, MAX_MEDIA_BYTES, kindFromMime, type UploadedMedia } from "@/lib/chatMedia";
+import { toast } from "sonner";
 
 
 interface FriendProfile {
@@ -213,6 +217,39 @@ function ChatView({
     | { messageId: string; scope: "everyone" | "me"; existing: string[] }
     | null
   >(null);
+  const { settings, updateDisappear } = useChatSettings(userId, peerId);
+  const chatDefaultSeconds = settings?.disappear_seconds ?? null;
+  // Per-message override: null = follow chat default; 0 = force off; N = seconds
+  const [pendingTimer, setPendingTimer] = useState<number | null | 0>(null);
+  const effectiveTimer = pendingTimer === 0 ? null : (pendingTimer ?? chatDefaultSeconds);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFilePicked = async (file: File) => {
+    if (!file) return;
+    if (file.size > MAX_MEDIA_BYTES) {
+      toast.error(`File too large. Max ${formatBytes(MAX_MEDIA_BYTES)}.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const media: UploadedMedia = await uploadChatMedia(userId, file);
+      sendMessage.mutate({ media, disappearSeconds: effectiveTimer });
+      setPendingTimer(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const doSend = () => {
+    if (!messageText.trim()) return;
+    sendMessage.mutate({ disappearSeconds: effectiveTimer });
+    setPendingTimer(null);
+  };
+
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -299,7 +336,22 @@ function ChatView({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[260] min-w-[180px]">
+            <DropdownMenuContent align="end" className="z-[260] min-w-[220px]">
+              <DropdownMenuLabel className="text-xs flex items-center gap-2">
+                <Timer className="h-3.5 w-3.5" /> Disappearing messages
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={String(chatDefaultSeconds ?? "null")}
+                onValueChange={(v) => updateDisappear.mutate(v === "null" ? null : Number(v))}
+              >
+                <DropdownMenuRadioItem value="null" className="text-xs">Off</DropdownMenuRadioItem>
+                {DISAPPEAR_OPTIONS.filter((o) => o.seconds).map((o) => (
+                  <DropdownMenuRadioItem key={o.seconds} value={String(o.seconds)} className="text-xs">
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();
@@ -336,8 +388,15 @@ function ChatView({
               const deletedForAll = (msg as { deleted_for_everyone?: boolean }).deleted_for_everyone;
               const editedAt = (msg as { edited_at?: string | null }).edited_at;
               const existingDeletes = (msg as { deleted_for_user_ids?: string[] }).deleted_for_user_ids || [];
-              const canEdit = isMine && !deletedForAll && Date.now() - new Date(msg.created_at).getTime() < 15 * 60 * 1000;
+              const mediaPath = (msg as { media_path?: string | null }).media_path;
+              const mediaKind = (msg as { media_kind?: string | null }).media_kind as "image" | "video" | "audio" | "file" | null;
+              const mediaMime = (msg as { media_mime?: string | null }).media_mime;
+              const mediaName = (msg as { media_name?: string | null }).media_name;
+              const mediaSize = (msg as { media_size?: number | null }).media_size;
+              const expiresAt = (msg as { expires_at?: string | null }).expires_at;
+              const canEdit = isMine && !deletedForAll && !mediaPath && Date.now() - new Date(msg.created_at).getTime() < 15 * 60 * 1000;
               const isEditing = editingId === msg.id;
+              const isMediaBubble = !!mediaPath && !deletedForAll;
 
               return (
                 <motion.div
@@ -350,16 +409,28 @@ function ChatView({
                 >
                   <div className={`flex items-end gap-1 max-w-[85%] ${isMine ? "flex-row-reverse" : "flex-row"}`}>
                     <div
-                      className={`rounded-2xl px-3 py-2 text-sm ${
+                      className={`rounded-2xl text-sm overflow-hidden ${
                         deletedForAll
-                          ? "bg-muted/60 text-muted-foreground italic"
+                          ? "bg-muted/60 text-muted-foreground italic px-3 py-2"
                           : isMine
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
+                          ? `bg-primary text-primary-foreground rounded-br-md ${isMediaBubble ? "p-1" : "px-3 py-2"}`
+                          : `bg-muted text-foreground rounded-bl-md ${isMediaBubble ? "p-1" : "px-3 py-2"}`
                       }`}
                     >
+                      {isMediaBubble && mediaPath && mediaKind && (
+                        <div className={msg.body ? "mb-1" : ""}>
+                          <MediaAttachment
+                            path={mediaPath}
+                            mime={mediaMime}
+                            name={mediaName}
+                            size={mediaSize}
+                            kind={mediaKind}
+                            isMine={isMine}
+                          />
+                        </div>
+                      )}
                       {isEditing ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 px-2 py-1">
                           <Input
                             ref={editInputRef}
                             value={editDraft}
@@ -378,11 +449,22 @@ function ChatView({
                           </Button>
                         </div>
                       ) : (
-                        <p className="break-words whitespace-pre-wrap">
-                          {deletedForAll ? "🚫 This message was deleted" : msg.body}
-                        </p>
+                        (deletedForAll || msg.body) && (
+                          <p className={`break-words whitespace-pre-wrap ${isMediaBubble ? "px-2 py-1" : ""}`}>
+                            {deletedForAll ? "🚫 This message was deleted" : msg.body}
+                          </p>
+                        )
                       )}
-                      <div className="flex items-center justify-end gap-1 mt-1">
+                      <div className={`flex items-center justify-end gap-1 mt-1 ${isMediaBubble ? "px-2 pb-1" : ""}`}>
+                        {expiresAt && !deletedForAll && (
+                          <span
+                            title={`Disappears ${new Date(expiresAt).toLocaleString()}`}
+                            className={`inline-flex items-center gap-0.5 text-[9px] ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                          >
+                            <Clock className="h-2.5 w-2.5" />
+                            {timeUntil(expiresAt)}
+                          </span>
+                        )}
                         {editedAt && !deletedForAll && !isEditing && (
                           <span className={`text-[9px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground/70"}`}>edited</span>
                         )}
@@ -457,29 +539,102 @@ function ChatView({
 
       {/* Input */}
       <div
-        className="border-t p-2 flex gap-2 bg-background flex-shrink-0"
+        className="border-t bg-background flex-shrink-0"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
       >
-        <Input
-          placeholder="Type a message..."
-          value={messageText}
-          onChange={(e) => {
-            setMessageText(e.target.value);
-            if (e.target.value.trim()) broadcastTyping();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && messageText.trim()) sendMessage.mutate();
-          }}
-          className="text-sm"
-        />
-        <Button
-          size="icon"
-          onClick={() => sendMessage.mutate()}
-          disabled={!messageText.trim()}
-          className="flex-shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        {effectiveTimer && (
+          <div className="flex items-center justify-between gap-2 px-3 pt-2 text-[11px] text-primary">
+            <div className="flex items-center gap-1.5">
+              <Timer className="h-3 w-3" />
+              Next message disappears in {disappearLabel(effectiveTimer)}
+            </div>
+            {pendingTimer !== null && (
+              <button
+                type="button"
+                onClick={() => setPendingTimer(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+        <div className="p-2 flex gap-1.5 items-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.csv,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFilePicked(f);
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 flex-shrink-0 touch-manipulation"
+            aria-label="Attach"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 flex-shrink-0 touch-manipulation ${effectiveTimer ? "text-primary" : ""}`}
+                aria-label="Disappearing timer"
+              >
+                <Timer className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-[260]">
+              <DropdownMenuLabel className="text-xs">
+                Next message only
+                {chatDefaultSeconds ? ` · default ${disappearLabel(chatDefaultSeconds)}` : ""}
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={String(pendingTimer)}
+                onValueChange={(v) => setPendingTimer(v === "null" ? null : Number(v))}
+              >
+                <DropdownMenuRadioItem value="null" className="text-xs">
+                  Use chat default
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="0" className="text-xs">
+                  Off
+                </DropdownMenuRadioItem>
+                {DISAPPEAR_OPTIONS.filter((o) => o.seconds).map((o) => (
+                  <DropdownMenuRadioItem key={o.seconds} value={String(o.seconds)} className="text-xs">
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Input
+            placeholder="Type a message..."
+            value={messageText}
+            onChange={(e) => {
+              setMessageText(e.target.value);
+              if (e.target.value.trim()) broadcastTyping();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && messageText.trim()) doSend();
+            }}
+            className="text-sm"
+          />
+          <Button
+            size="icon"
+            onClick={doSend}
+            disabled={!messageText.trim()}
+            className="flex-shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Confirm delete dialog */}
