@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         .maybeSingle();
       return data;
     },
-    enabled: !!user,
+    enabled: !loading && !!user,
     staleTime: 0,
   });
 
@@ -34,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <FullscreenLoader />;
   }
 
-  if (!user) {
+  if (!loading && !user) {
     const from = location.pathname + location.search;
     return <Navigate to="/auth" replace state={{ from }} />;
   }

@@ -60,33 +60,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // onAuthStateChange fires immediately with INITIAL_SESSION on mount,
-    // so we don't need a separate getSession() call (which would cause a
-    // double state update race condition on initial load).
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (session?.user) {
-        // Defer to avoid Supabase client deadlock on synchronous auth callbacks
-        setTimeout(() => checkSuspension(session.user.id), 0);
+    let active = true;
+
+    const applySession = (nextSession: Session | null) => {
+      if (!active) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      if (nextSession?.user) {
+        // Defer to avoid auth-client deadlocks inside auth callbacks.
+        setTimeout(() => checkSuspension(nextSession.user.id), 0);
       } else {
         setIsSuspended(false);
         setSuspendReason(null);
       }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // INITIAL_SESSION can arrive before storage restore has fully settled in
+      // some browsers. The explicit bootstrap below is the single source for
+      // initial readiness, preventing auth → login → auth loops on refresh.
+      if (event === "INITIAL_SESSION") return;
+      applySession(nextSession);
+      setLoading(false);
     });
 
-    // Purge stale refresh tokens quietly. On a cold visit with an expired
-    // token in localStorage, Supabase logs a noisy AuthApiError; a local
-    // signOut clears storage without triggering a network call.
-    supabase.auth.getSession().catch(async (err) => {
-      const code = (err as { code?: string })?.code;
-      if (code === "refresh_token_not_found" || code === "refresh_token_already_used") {
-        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        applySession(data.session);
+      } catch (err) {
+        const code = (err as { code?: string })?.code;
+        if (code === "refresh_token_not_found" || code === "refresh_token_already_used") {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        }
+        applySession(null);
+      } finally {
+        if (active) setLoading(false);
       }
-    });
+    })();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
