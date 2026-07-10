@@ -95,11 +95,6 @@ const Onboarding = () => {
     return () => { cancelled = true; };
   }, [user, navigate, queryClient]);
 
-  if (bootstrapping || redirecting) {
-    return <FullscreenLoader label={redirecting ? "Taking you in..." : "Loading..."} />;
-  }
-
-
   const checkUsername = useCallback(async (value: string) => {
     const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setUsername(clean);
@@ -132,6 +127,11 @@ const Onboarding = () => {
     },
     enabled: !!stream,
   });
+
+  // Early return AFTER all hooks so React's hook order stays stable.
+  if (bootstrapping || redirecting) {
+    return <FullscreenLoader label={redirecting ? "Taking you in..." : "Loading..."} />;
+  }
 
   const toggleTrack = (trackId: string) =>
     setSelectedTracks((prev) => (prev.includes(trackId) ? prev.filter((id) => id !== trackId) : [...prev, trackId]));
