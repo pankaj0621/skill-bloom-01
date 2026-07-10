@@ -30,9 +30,17 @@ const Auth = () => {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
       if (result.error) {
-        toast.error(result.error.message || "Google sign-in failed");
+        const msg = result.error.message || "";
+        if (/cancel|closed|popup/i.test(msg)) {
+          toast.error("Sign-in window was closed. Please try again and keep the Google window open.");
+        } else if (/popup.*block/i.test(msg)) {
+          toast.error("Popup blocked by browser. Allow popups for this site and retry.");
+        } else {
+          toast.error(msg || "Google sign-in failed");
+        }
         setLoading(false);
         return;
       }
@@ -43,6 +51,7 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
