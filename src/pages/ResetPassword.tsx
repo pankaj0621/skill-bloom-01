@@ -62,8 +62,10 @@ const ResetPassword = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Password updated! Redirecting...");
-        setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+        toast.success("Password updated! Please sign in with your new password.");
+        // Sign out the recovery session so the user must re-authenticate with the new password.
+        await supabase.auth.signOut();
+        setTimeout(() => navigate("/auth", { replace: true }), 800);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update password");
