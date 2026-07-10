@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
+import FullscreenLoader from "@/components/FullscreenLoader";
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
@@ -23,11 +26,47 @@ const PERKS = [
   { icon: ShieldCheck, text: "Private, secure, one-tap sign-in" },
 ];
 
-const Auth = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+const isSafeSameOriginPath = (p: unknown): p is string =>
+  typeof p === "string" && p.startsWith("/") && !p.startsWith("//") && !p.startsWith("/auth");
 
-  if (user) return <Navigate to="/dashboard" replace />;
+const Auth = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [routing, setRouting] = useState(false);
+
+  // Preserve where the user was headed before they got bounced to /auth.
+  const intendedFromState = (location.state as { from?: string } | null)?.from;
+  const intendedFromQuery = new URLSearchParams(location.search).get("next");
+  const intendedPath =
+    (isSafeSameOriginPath(intendedFromState) && intendedFromState) ||
+    (isSafeSameOriginPath(intendedFromQuery) && intendedFromQuery) ||
+    "/dashboard";
+
+  // Once a session is present, decide onboarding vs. intended page BEFORE we
+  // navigate, so users don't flash through /dashboard on their way to /onboarding.
+  useEffect(() => {
+    if (!user || routing) return;
+    let cancelled = false;
+    setRouting(true);
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username, role, stream")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      // Prime the ProtectedRoute cache so it doesn't refetch and flicker.
+      queryClient.setQueryData(["profile-onboarding-check", user.id], data);
+      const complete = !!(data?.username || (data?.role && data?.stream));
+      navigate(complete ? intendedPath : "/onboarding", { replace: true });
+    })();
+    return () => { cancelled = true; };
+  }, [user, routing, navigate, intendedPath, queryClient]);
+
+  if (authLoading || user) return <FullscreenLoader label="Signing you in..." />;
 
   const handleGoogle = async () => {
     if (loading) return;
