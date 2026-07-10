@@ -35,7 +35,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    const from = location.pathname + location.search;
+    return <Navigate to="/auth" replace state={{ from }} />;
   }
 
   // If user hasn't completed onboarding, redirect to onboarding
