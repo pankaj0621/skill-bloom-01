@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles, ShieldCheck, Zap, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import FullscreenLoader from "@/components/FullscreenLoader";
 
 const PERKS = [
@@ -27,10 +25,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [routing, setRouting] = useState(false);
 
@@ -61,67 +55,28 @@ const Auth = () => {
 
   if (authLoading || user) return <FullscreenLoader label="Signing you in..." />;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     if (loading) return;
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !password) {
-      toast.error("Please enter your email and password.");
-      return;
-    }
-    if (mode === "signup" && password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email: trimmed,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        });
-        if (error) {
-          if (/already/i.test(error.message)) {
-            toast.error("An account already exists with this email. Try signing in.");
-            setMode("signin");
-          } else {
-            toast.error(error.message);
-          }
-          setLoading(false);
-          return;
-        }
-        toast.success("Account created! Signing you in…");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: trimmed,
-          password,
-        });
-        if (error) {
-          toast.error(/invalid/i.test(error.message)
-            ? "Invalid email or password."
-            : error.message);
-          setLoading(false);
-          return;
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+
+      if (result.error) {
+        toast.error(result.error.message || "Google sign-in failed. Please try again.");
+        setLoading(false);
+        return;
       }
+
+      if (result.redirected) return;
+
+      toast.success("Signed in successfully.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
       setLoading(false);
     }
-  };
-
-  const handleForgot = async () => {
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed) {
-      toast.error("Enter your email above first.");
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent. Check your inbox.");
   };
 
   return (
@@ -158,86 +113,30 @@ const Auth = () => {
             Welcome to Level Up
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "signin" ? "Sign in to continue your streak." : "Create your account in seconds."}
+            Sign in once and continue your learning streak.
           </p>
         </div>
 
         <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-primary/50 via-white/10 to-transparent shadow-2xl">
           <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 space-y-5">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Sign up</TabsTrigger>
-              </TabsList>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full h-12 font-semibold gap-3"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <GoogleIcon className="h-5 w-5" />
+              )}
+              Continue with Google
+            </Button>
 
-              <TabsContent value={mode} className="mt-5">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-9 h-11"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      {mode === "signin" && (
-                        <button
-                          type="button"
-                          onClick={handleForgot}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Forgot?
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPw ? "text" : "password"}
-                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                        placeholder={mode === "signup" ? "At least 6 characters" : "••••••••"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-9 pr-10 h-11"
-                        required
-                        minLength={mode === "signup" ? 6 : undefined}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPw((s) => !s)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground"
-                        aria-label={showPw ? "Hide password" : "Show password"}
-                      >
-                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : mode === "signin" ? (
-                      "Sign in"
-                    ) : (
-                      "Create account"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <p className="text-center text-xs text-muted-foreground leading-relaxed">
+              Use the same Google account every time to keep your XP, streaks, badges, and messages synced.
+            </p>
 
             <ul className="space-y-2.5 pt-1">
               {PERKS.map(({ icon: Icon, text }, i) => (
@@ -265,5 +164,14 @@ const Auth = () => {
     </div>
   );
 };
+
+const GoogleIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z" />
+  </svg>
+);
 
 export default Auth;
