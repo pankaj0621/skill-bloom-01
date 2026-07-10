@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, Loader2, Phone, ShieldCheck, Sparkles } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -18,15 +28,43 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const COUNTRIES = [
+  { code: "+91", label: "🇮🇳 India (+91)" },
+  { code: "+1", label: "🇺🇸 USA (+1)" },
+  { code: "+44", label: "🇬🇧 UK (+44)" },
+  { code: "+61", label: "🇦🇺 Australia (+61)" },
+  { code: "+971", label: "🇦🇪 UAE (+971)" },
+  { code: "+65", label: "🇸🇬 Singapore (+65)" },
+  { code: "+49", label: "🇩🇪 Germany (+49)" },
+  { code: "+33", label: "🇫🇷 France (+33)" },
+  { code: "+81", label: "🇯🇵 Japan (+81)" },
+  { code: "+880", label: "🇧🇩 Bangladesh (+880)" },
+  { code: "+92", label: "🇵🇰 Pakistan (+92)" },
+];
+
 const Auth = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [country, setCountry] = useState("+91");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setInterval(() => setResendIn((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [resendIn]);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
+  const fullPhone = `${country}${phone.replace(/\D/g, "")}`;
+
   const handleGoogle = async () => {
-    if (loading) return;
-    setLoading(true);
+    if (googleLoading) return;
+    setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
@@ -35,63 +73,276 @@ const Auth = () => {
       if (result.error) {
         const msg = result.error.message || "";
         if (/cancel|closed|popup/i.test(msg)) {
-          toast.error("Sign-in window was closed. Please try again and keep the Google window open.");
+          toast.error("Sign-in window was closed. Try again and keep the Google window open.");
         } else if (/popup.*block/i.test(msg)) {
-          toast.error("Popup blocked by browser. Allow popups for this site and retry.");
+          toast.error("Popup blocked. Allow popups for this site and retry.");
         } else {
           toast.error(msg || "Google sign-in failed");
         }
-        setLoading(false);
+        setGoogleLoading(false);
         return;
       }
       if (result.redirected) return;
-      // Session set — AuthContext will navigate.
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
+  const sendOtp = async () => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 6) {
+      toast.error("Enter a valid phone number");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
+      if (error) throw error;
+      toast.success(`OTP sent to ${fullPhone}`);
+      setStep("otp");
+      setResendIn(30);
+    } catch (err: any) {
+      const msg = err?.message || "Could not send OTP";
+      if (/provider.*disabled|not enabled|unsupported/i.test(msg)) {
+        toast.error("Phone sign-in isn't enabled yet. Please use Google for now.");
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyOtp = async (code: string) => {
+    setOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: fullPhone,
+        token: code,
+        type: "sms",
+      });
+      if (error) throw error;
+      toast.success("Signed in!");
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or expired code");
+      setOtpLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div
-        className="w-full max-w-sm"
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        <Card>
-          <CardHeader className="text-center pb-2">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-            >
-              <img src={appIcon} alt="Level Up" className="w-16 h-16 rounded-xl shadow-lg mx-auto mb-3" loading="lazy" decoding="async" />
-              <CardTitle className="text-2xl font-bold">Level Up</CardTitle>
-            </motion.div>
-            <CardDescription>Sign in with your Google account to continue</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-11 gap-3 bg-background"
-                onClick={handleGoogle}
-                disabled={loading}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-                {loading ? "Connecting…" : "Continue with Google"}
-              </Button>
-            </motion.div>
+    <div className="min-h-[100dvh] relative overflow-hidden bg-background flex items-center justify-center p-4">
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-primary/20 blur-[120px]" />
+        <div className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-fuchsia-500/15 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.04),transparent_60%)]" />
+      </div>
 
-            <p className="text-xs text-muted-foreground text-center">
-              By signing in, you agree to our terms of service
-            </p>
-          </CardContent>
-        </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-md"
+      >
+        {/* Brand */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 rounded-2xl bg-primary/40 blur-xl" />
+            <img
+              src={appIcon}
+              alt="Level Up"
+              className="relative w-16 h-16 rounded-2xl shadow-2xl ring-1 ring-white/10"
+              loading="lazy"
+              decoding="async"
+            />
+          </motion.div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+            Welcome to Level Up
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Track skills. Earn XP. Level up daily.
+          </p>
+        </div>
+
+        {/* Glass card */}
+        <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-primary/40 via-white/10 to-transparent">
+          <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 shadow-2xl">
+            <AnimatePresence mode="wait">
+              {step === "phone" ? (
+                <motion.div
+                  key="phone"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 12 }}
+                  transition={{ duration: 0.25 }}
+                  className="space-y-5"
+                >
+                  {/* Google */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 gap-3 text-[15px] font-medium bg-background/60 hover:bg-background border-white/10"
+                    onClick={handleGoogle}
+                    disabled={googleLoading}
+                  >
+                    {googleLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <GoogleIcon />
+                    )}
+                    {googleLoading ? "Connecting…" : "Continue with Google"}
+                  </Button>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-[11px] uppercase tracking-widest">
+                      <span className="bg-card/80 px-3 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  {/* Phone form */}
+                  <div className="space-y-3">
+                    <Label htmlFor="phone" className="text-sm flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-primary" />
+                      Phone number
+                    </Label>
+                    <div className="flex gap-2">
+                      <Select value={country} onValueChange={setCountry}>
+                        <SelectTrigger className="w-[112px] h-12 bg-background/60 border-white/10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {COUNTRIES.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        placeholder="98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/[^\d\s]/g, ""))}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") sendOtp();
+                        }}
+                        className="h-12 flex-1 bg-background/60 border-white/10 text-base"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      className="w-full h-12 text-[15px] font-medium"
+                      onClick={sendOtp}
+                      disabled={otpLoading || !phone.trim()}
+                    >
+                      {otpLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>Send verification code</>
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="otp"
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.25 }}
+                  className="space-y-5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("phone");
+                      setOtp("");
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Change number
+                  </button>
+
+                  <div className="text-center space-y-1">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/15 text-primary mb-2">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Enter verification code</h2>
+                    <p className="text-xs text-muted-foreground">
+                      We sent a 6-digit code to{" "}
+                      <span className="text-foreground font-medium">{fullPhone}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={otp}
+                      onChange={(v) => {
+                        setOtp(v);
+                        if (v.length === 6) verifyOtp(v);
+                      }}
+                      autoFocus
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot key={i} index={i} className="w-11 h-12 text-lg" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <Button
+                    type="button"
+                    className="w-full h-12 text-[15px] font-medium"
+                    disabled={otp.length !== 6 || otpLoading}
+                    onClick={() => verifyOtp(otp)}
+                  >
+                    {otpLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Verify & continue"
+                    )}
+                  </Button>
+
+                  <div className="text-center text-xs text-muted-foreground">
+                    {resendIn > 0 ? (
+                      <>Resend code in {resendIn}s</>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={sendOtp}
+                        className="text-primary hover:underline font-medium"
+                        disabled={otpLoading}
+                      >
+                        Resend code
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-muted-foreground px-6 leading-relaxed">
+          By continuing, you agree to our Terms of Service and acknowledge our Privacy Policy.
+        </p>
       </motion.div>
     </div>
   );

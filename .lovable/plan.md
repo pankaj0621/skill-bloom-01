@@ -1,70 +1,42 @@
-## Senior-dev makeover — 3 phases
 
-App ka pura redesign + security ek hi turn mai shipping karna risky hai (50+ files badlenge, regressions ki garunty). Isiliye 3 phases mai todunga. Har phase apne aap mai shippable hai — aap ek-ek karke approve karenge.
+## Goal
+`/auth` page ko dobara design karna — cleaner, premium look — aur **Phone (SMS OTP)** login add karna Google ke saath.
 
----
+## Auth Methods (final)
+1. **Continue with Google** (already working, primary CTA)
+2. **Continue with Phone (OTP)** — naya
+   - Step 1: Country code + phone number → "Send code"
+   - Step 2: 6-digit OTP input → "Verify & continue"
+   - Resend timer (30s), change number link
+   - Existing account merge logic (`handle_new_user` trigger) already handles duplicate identities by email; phone-only accounts will create fresh profiles and go through onboarding.
 
-### Phase 1 — Security foundations & "trust" features (start here)
-Ye sabse jyada value deti hai aur dikhti bhi hai.
+Email/password band hi rahega (memory rule).
 
-- **HIBP leaked-password check** on signup/password-change (free, built into Cloud).
-- **Audit log table** (`audit_logs`) — sensitive events: login, password change, profile update, role change, account delete. Visible to admins; users see apna own log in Settings → Security.
-- **Account export** — Settings → Security → "Download my data" → JSON dump (profile, skills, progress, badges, messages, guidance requests).
-- **Account delete** — Settings → Security → "Delete account" with confirm-typed-username, cascades via existing FK + edge function for `auth.users`.
-- **Input validation hardening** — central Zod schemas for username, display_name, message body, feedback. Server-side triggers re-validate (already partially there).
-- **RLS audit pass** — run scanner, fix any leak, tighten policies.
-- **Security memory** updated.
+## Backend
+- Lovable Cloud auth mein **Phone provider** enable karna (SMS OTP). Twilio/MessageBird jaisa SMS provider Cloud-managed use hoga — agar credentials chahiye toh user se pooch ke `add_secret` se store karenge (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGE_SERVICE_SID`). Confirm before enabling.
+- `supabase.auth.signInWithOtp({ phone })` aur `verifyOtp({ phone, token, type: 'sms' })` use karenge — client-side, koi custom edge function nahi.
+- `handle_new_user` trigger already profile create karta hai; phone signups ke liye `display_name` fallback phone number ho jayega — theek hai (user onboarding mein set karega).
 
-> ⚠️ "Rate limiting" — Lovable Cloud mai abhi standard primitive nahi hai, scanner findings bhi ignore karne ke liye documented hai. Ad-hoc per-table counter ban sakta hai but trade-off hai. Phase 1 mai skip, Phase 3 mai 2FA ke saath revisit.
+## UI Redesign (`src/pages/Auth.tsx`)
+Dark premium card, brand-consistent (Primary #6366F1 on #0F172A):
+- Left/top: Brand mark + tagline ("Level up your skills.")
+- Center card (glass, subtle gradient border):
+  - Big Google button (icon + label)
+  - Divider "or"
+  - Phone form (country selector default +91, tel input, animated OTP boxes on step 2)
+  - Fine print: Terms + Privacy
+- Micro-animations: framer-motion fade/slide between "phone" and "otp" steps
+- Loading + error states via `sonner` toasts
+- Mobile-first: full-height, safe-area padding, big tap targets
+- Popup/iframe warnings retained for Google
 
----
+Files touched:
+- `src/pages/Auth.tsx` — full rewrite (UI + phone OTP logic)
+- Small helper: `src/components/auth/PhoneOtpForm.tsx` (step machine, OTP boxes)
+- No DB schema changes required.
 
-### Phase 2 — Design polish across pages (senior craft pass)
+## Open questions before build
+1. Phone OTP ke liye SMS provider — **Twilio** use karun (most common, Cloud-supported)? Agar haan toh Twilio credentials chahiye honge (SID, Auth Token, Messaging Service SID).
+2. Default country code **+91 (India)** rakhun, ya multi-country selector?
 
-Locked tokens (indigo primary, emerald accent, ink-navy bg, Space Grotesk/Inter). Same rhythm everywhere:
-
-- **Dashboard** — quieter hero, real KPI row, weekly trend sparkline, "today's focus" card.
-- **Roadmap** — collapsible tracks, sticky progress header, inline difficulty pills, keyboard arrows for status.
-- **Progress** — chart polish (axis, tooltip skin), recommendation cards with reason chip.
-- **Profile** — banner + meta block, segmented tabs (Overview / Activity / Badges / Security), inline edit with optimistic UI.
-- **Settings** — sectioned cards (Account / Security / Notifications / Appearance / Data), each with clear save state.
-- **Community + Leaderboard** — denser cards, rank chip, online dot, skeleton shimmer.
-- **Empty states + error states** — every page gets one with an action.
-- **Micro-motion** — page transitions stay, list items get stagger; nothing bouncy.
-
-```text
-┌─ Hero ────────────────────────┐
-│ Level 3 · 1,240 XP · 🔥 7d   │
-├─ KPI row (4 stat cards) ─────┤
-│ Skills · XP · Streak · Rank  │
-├─ Today's focus ──────────────┤
-│ "Pick where you left off"    │
-└──────────────────────────────┘
-```
-
----
-
-### Phase 3 — Advanced auth & ops
-
-- **2FA (TOTP)** — enroll via authenticator app (Google Authenticator / 1Password), 6-digit verify on login, recovery codes.
-- **Active sessions list** — Settings → Security, list devices/IP from `auth.sessions` via edge function with service role, "sign out everywhere" button.
-- **Admin audit dashboard** — searchable table of `audit_logs` with filters (event type, user, date).
-- **Soft rate-limit** — per-user counter table on guidance requests, feedback, password reset (ad-hoc, documented trade-off).
-
----
-
-### Technical notes
-
-- New tables (Phase 1): `audit_logs`. Cascade rules via FK already in place for most user-owned tables.
-- New edge functions: `account-export`, `account-delete`, (Phase 3) `list-sessions`, `revoke-sessions`.
-- Auth config: enable HIBP via `configure_auth`.
-- TypeScript types regenerate after migrations.
-- No `<noscript>` tracking in `<head>`; semantic tokens only; no hardcoded colors.
-
----
-
-### What I'll do right now if you approve
-
-**Start Phase 1 only.** Migration for `audit_logs`, enable HIBP, ship export/delete edge functions + Settings UI section. Verify with build + a quick browser run.
-
-Approve to start Phase 1, ya bolo "sirf design phase 2 do" / "directly 2FA Phase 3 chahiye".
+Confirm karo — main build mode mein switch hote hi implement kar dunga.
