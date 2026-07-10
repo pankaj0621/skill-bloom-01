@@ -740,6 +740,10 @@ export type Database = {
         Returns: number
       }
       mark_peer_messages_seen: { Args: { _ids: string[] }; Returns: number }
+      merge_user_accounts: {
+        Args: { new_id: string; old_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
