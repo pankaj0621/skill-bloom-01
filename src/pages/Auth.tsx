@@ -1,29 +1,22 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { Loader2, Sparkles, ShieldCheck, Zap, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import FullscreenLoader from "@/components/FullscreenLoader";
-
-const GoogleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
-    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
-    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.87-3.04.87-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
-    <path fill="#FBBC05" d="M3.97 10.73A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.73V4.94H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.06l3.01-2.33z"/>
-    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-  </svg>
-);
 
 const PERKS = [
   { icon: Zap, text: "Track skills & earn XP daily" },
   { icon: Sparkles, text: "AI mentor + personalized roadmap" },
-  { icon: ShieldCheck, text: "Private, secure, one-tap sign-in" },
+  { icon: ShieldCheck, text: "Private, secure sign-in" },
 ];
 
 const isSafeSameOriginPath = (p: unknown): p is string =>
@@ -34,10 +27,13 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [routing, setRouting] = useState(false);
 
-  // Preserve where the user was headed before they got bounced to /auth.
   const intendedFromState = (location.state as { from?: string } | null)?.from;
   const intendedFromQuery = new URLSearchParams(location.search).get("next");
   const intendedPath =
@@ -45,8 +41,6 @@ const Auth = () => {
     (isSafeSameOriginPath(intendedFromQuery) && intendedFromQuery) ||
     "/dashboard";
 
-  // Once a session is present, decide onboarding vs. intended page BEFORE we
-  // navigate, so users don't flash through /dashboard on their way to /onboarding.
   useEffect(() => {
     if (!user || routing) return;
     let cancelled = false;
@@ -58,7 +52,6 @@ const Auth = () => {
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      // Prime the ProtectedRoute cache so it doesn't refetch and flicker.
       queryClient.setQueryData(["profile-onboarding-check", user.id], data);
       const complete = !!(data?.username || (data?.role && data?.stream));
       navigate(complete ? intendedPath : "/onboarding", { replace: true });
@@ -68,36 +61,71 @@ const Auth = () => {
 
   if (authLoading || user) return <FullscreenLoader label="Signing you in..." />;
 
-  const handleGoogle = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (loading) return;
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
+    if (mode === "signup" && password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      if (result.error) {
-        const msg = result.error.message || "";
-        if (/cancel|closed|popup/i.test(msg)) {
-          toast.error("Sign-in window was closed. Try again and keep the Google window open.");
-        } else if (/popup.*block/i.test(msg)) {
-          toast.error("Popup blocked. Allow popups for this site and retry.");
-        } else {
-          toast.error(msg || "Google sign-in failed");
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: trimmed,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/` },
+        });
+        if (error) {
+          if (/already/i.test(error.message)) {
+            toast.error("An account already exists with this email. Try signing in.");
+            setMode("signin");
+          } else {
+            toast.error(error.message);
+          }
+          setLoading(false);
+          return;
         }
-        setLoading(false);
-        return;
+        toast.success("Account created! Signing you in…");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: trimmed,
+          password,
+        });
+        if (error) {
+          toast.error(/invalid/i.test(error.message)
+            ? "Invalid email or password."
+            : error.message);
+          setLoading(false);
+          return;
+        }
       }
-      if (result.redirected) return;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   };
 
+  const handleForgot = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      toast.error("Enter your email above first.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Password reset link sent. Check your inbox.");
+  };
+
   return (
     <div className="min-h-[100dvh] relative overflow-hidden bg-background flex items-center justify-center p-4">
-      {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-primary/25 blur-[130px]" />
         <div className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-fuchsia-500/15 blur-[130px]" />
@@ -110,8 +138,7 @@ const Auth = () => {
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-md"
       >
-        {/* Brand */}
-        <div className="flex flex-col items-center text-center mb-7">
+        <div className="flex flex-col items-center text-center mb-6">
           <motion.div
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -131,31 +158,88 @@ const Auth = () => {
             Welcome to Level Up
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to continue your learning streak.
+            {mode === "signin" ? "Sign in to continue your streak." : "Create your account in seconds."}
           </p>
         </div>
 
-        {/* Glass card */}
         <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-primary/50 via-white/10 to-transparent shadow-2xl">
-          <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 space-y-6">
-            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12 gap-3 text-[15px] font-medium bg-background/70 hover:bg-background border-white/10"
-                onClick={handleGoogle}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <GoogleIcon />
-                )}
-                {loading ? "Connecting…" : "Continue with Google"}
-              </Button>
-            </motion.div>
+          <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 space-y-5">
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="signin">Sign in</TabsTrigger>
+                <TabsTrigger value="signup">Sign up</TabsTrigger>
+              </TabsList>
 
-            <ul className="space-y-2.5">
+              <TabsContent value={mode} className="mt-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-9 h-11"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      {mode === "signin" && (
+                        <button
+                          type="button"
+                          onClick={handleForgot}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPw ? "text" : "password"}
+                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                        placeholder={mode === "signup" ? "At least 6 characters" : "••••••••"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-9 pr-10 h-11"
+                        required
+                        minLength={mode === "signup" ? 6 : undefined}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw((s) => !s)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground"
+                        aria-label={showPw ? "Hide password" : "Show password"}
+                      >
+                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : mode === "signin" ? (
+                      "Sign in"
+                    ) : (
+                      "Create account"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            <ul className="space-y-2.5 pt-1">
               {PERKS.map(({ icon: Icon, text }, i) => (
                 <motion.li
                   key={text}
