@@ -38,6 +38,7 @@ const Auth = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [routing, setRouting] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [showPhone, setShowPhone] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
