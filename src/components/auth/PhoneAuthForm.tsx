@@ -8,6 +8,8 @@ import { firebaseAuth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { checkFirebaseConfig } from "@/lib/firebaseConfigCheck";
+import FirebaseConfigWarning from "@/components/auth/FirebaseConfigWarning";
 
 const HUMANIZED_ERRORS: Record<string, string> = {
   "auth/invalid-phone-number": "Invalid phone number. Use +91XXXXXXXXXX format.",
