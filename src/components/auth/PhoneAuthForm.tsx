@@ -41,6 +41,9 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [otpError, setOtpError] = useState<ErrInfo | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
   const configIssues = useRef(checkFirebaseConfig()).current;
