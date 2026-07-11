@@ -76,6 +76,10 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+    if (!configOk) {
+      toast.error("Firebase is not configured. See warning below.");
+      return;
+    }
     setLoading(true);
     try {
       const verifier = ensureVerifier();
