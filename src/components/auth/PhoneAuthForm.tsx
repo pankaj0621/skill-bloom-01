@@ -34,9 +34,10 @@ const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
 interface PhoneAuthFormProps {
   onSuccess: () => void;
   onBack: () => void;
+  hideBack?: boolean;
 }
 
-const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
+const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("+91");
   const [otp, setOtp] = useState("");
@@ -189,10 +190,12 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2 -ml-2" type="button">
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back
-      </Button>
+      {!hideBack && (
+        <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2 -ml-2" type="button">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+      )}
 
       <FirebaseConfigWarning issues={configIssues} />
 
