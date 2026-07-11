@@ -152,7 +152,19 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
     } catch (err) {
       const code = (err as { code?: string })?.code || "";
       console.error("verify OTP error", err);
-      toast.error(HUMANIZED_ERRORS[code] || "Failed to verify OTP. Try again.");
+      const info: ErrInfo = HUMANIZED_ERRORS[code] || {
+        message: "We couldn't verify that code. Please try again.",
+      };
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      const tooMany = newAttempts >= 5;
+      const finalInfo: ErrInfo = tooMany
+        ? { message: "Too many incorrect attempts. Please request a new code.", expired: true }
+        : info;
+      setOtpError(finalInfo);
+      if (finalInfo.expired) setSessionExpired(true);
+      setOtp("");
+      toast.error(finalInfo.message);
       setLoading(false);
     }
   };
