@@ -8,13 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles, ShieldCheck, Zap, Phone } from "lucide-react";
+import { Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import appIcon from "@/assets/app-icon-512.png";
 import { supabase } from "@/integrations/supabase/client";
 import FullscreenLoader from "@/components/FullscreenLoader";
 import PasswordInput from "@/components/PasswordInput";
 import PasswordStrength from "@/components/PasswordStrength";
-import PhoneAuthForm from "@/components/auth/PhoneAuthForm";
 import { passwordSchema } from "@/lib/validation";
 import { z } from "zod";
 
