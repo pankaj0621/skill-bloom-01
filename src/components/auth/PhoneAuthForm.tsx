@@ -185,7 +185,7 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             <p className="text-xs text-muted-foreground">Include country code (e.g. +91).</p>
           </div>
           <div ref={recaptchaContainerRef} className="hidden" aria-hidden="true" />
-          <Button type="submit" className="w-full h-11" disabled={loading}>
+          <Button type="submit" className="w-full h-11" disabled={loading || !configOk}>
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Send OTP
           </Button>
