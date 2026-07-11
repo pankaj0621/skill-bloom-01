@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Phone } from "lucide-react";
+import { Loader2, ArrowLeft, Phone, ShieldCheck, Pencil } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { firebaseAuth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,41 +196,68 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
           </Button>
         </form>
       ) : (
-        <form onSubmit={handleVerifyOtp} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="otp">Enter OTP</Label>
-            <p className="text-xs text-muted-foreground">Sent to {phone}</p>
-            <Input
-              id="otp"
-              type="text"
-              inputMode="numeric"
+        <form onSubmit={handleVerifyOtp} className="space-y-5">
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold tracking-tight">Verify your number</h3>
+            <p className="text-sm text-muted-foreground">
+              We sent a 6-digit code to <span className="font-medium text-foreground">{phone}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setOtp("");
+                setStep("phone");
+              }}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Pencil className="h-3 w-3" />
+              Change number
+            </button>
+          </div>
+
+          <div className="flex justify-center">
+            <InputOTP
               maxLength={6}
               value={otp}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, "");
-                setOtp(v);
-              }}
-              placeholder="000000"
-              className="text-center text-lg tracking-[0.5em]"
-              autoComplete="one-time-code"
-              required
-            />
+              onChange={(v) => setOtp(v.replace(/\D/g, ""))}
+              autoFocus
+              containerClassName="justify-center"
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
           </div>
+
           <Button type="submit" className="w-full h-11" disabled={loading || otp.length !== 6}>
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Verify & continue
           </Button>
-          <div className="text-center">
+
+          <div className="text-center text-sm text-muted-foreground">
+            Didn't get the code?{" "}
             <button
               type="button"
               onClick={handleResend}
               disabled={countdown > 0 || loading}
-              className="text-sm text-primary hover:underline disabled:opacity-50"
+              className="text-primary font-medium hover:underline disabled:opacity-50 disabled:no-underline"
             >
-              Resend {countdown > 0 ? `(${countdown}s)` : ""}
+              {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
             </button>
           </div>
         </form>
+
       )}
     </div>
   );
