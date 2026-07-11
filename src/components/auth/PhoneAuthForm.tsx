@@ -17,8 +17,14 @@ type ErrInfo = { message: string; expired?: boolean };
 const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
   "auth/invalid-phone-number": { message: "That phone number doesn't look right. Use format like +91XXXXXXXXXX." },
   "auth/missing-phone-number": { message: "Please enter your phone number." },
+  "auth/billing-not-enabled": { message: "Firebase SMS is blocked because billing is not enabled. Enable Firebase Blaze billing, then try again." },
+  "auth/operation-not-allowed": { message: "Phone sign-in is not enabled in Firebase Authentication. Enable the Phone provider, then try again." },
+  "auth/unauthorized-domain": { message: "This website domain is not allowed in Firebase. Add this domain in Firebase Authentication authorized domains." },
+  "auth/app-not-authorized": { message: "This app domain is not authorized for the Firebase project. Check the Firebase web app config and authorized domains." },
   "auth/quota-exceeded": { message: "SMS limit reached for today. Please try again later." },
   "auth/captcha-check-failed": { message: "Security check failed. Refresh and try again." },
+  "auth/invalid-app-credential": { message: "Security verification failed. Refresh the page and send the OTP again." },
+  "auth/missing-app-credential": { message: "Security verification expired. Refresh the page and send the OTP again." },
   "auth/invalid-verification-code": { message: "The code you entered is incorrect. Please double-check and try again." },
   "auth/code-expired": { message: "This code has expired. Tap Resend to get a new one.", expired: true },
   "auth/session-expired": { message: "Your verification session expired. Tap Resend to get a new code.", expired: true },
@@ -30,6 +36,26 @@ const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
   "auth/credential-already-in-use": { message: "This phone number is already linked to another account." },
 };
 
+function getFirebaseErrInfo(err: unknown): ErrInfo {
+  const code = (err as { code?: string })?.code || "";
+  const message = (err as { message?: string })?.message || "";
+  const combined = `${code} ${message}`.toLowerCase();
+
+  if (combined.includes("billing") || combined.includes("billing-not-enabled")) {
+    return HUMANIZED_ERRORS["auth/billing-not-enabled"];
+  }
+  if (combined.includes("operation_not_allowed") || combined.includes("operation-not-allowed")) {
+    return HUMANIZED_ERRORS["auth/operation-not-allowed"];
+  }
+  if (combined.includes("unauthorized") || combined.includes("domain")) {
+    return HUMANIZED_ERRORS["auth/unauthorized-domain"];
+  }
+  if (combined.includes("invalid-app-credential") || combined.includes("app credential")) {
+    return HUMANIZED_ERRORS["auth/invalid-app-credential"];
+  }
+
+  return HUMANIZED_ERRORS[code] || { message: "Failed to send OTP. Please try again." };
+}
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
@@ -43,6 +69,7 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [sendError, setSendError] = useState<ErrInfo | null>(null);
   const [otpError, setOtpError] = useState<ErrInfo | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -77,6 +104,14 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
         size: "invisible",
         callback: () => {},
         "expired-callback": () => {
+          if (window.recaptchaVerifier) {
+            try {
+              window.recaptchaVerifier.clear();
+            } catch {
+              // ignore cleanup errors
+            }
+            window.recaptchaVerifier = undefined;
+          }
           toast.error("reCAPTCHA expired. Please try again.");
         },
       });
@@ -88,27 +123,48 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
     e.preventDefault();
     if (loading) return;
     if (!configOk) {
-      toast.error("Firebase is not configured. See warning below.");
+      const info = { message: "Firebase is not configured. See warning below." };
+      setSendError(info);
+      toast.error(info.message);
       return;
     }
+    const normalizedPhone = phone.replace(/[\s()-]/g, "");
+    if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
+      const info = HUMANIZED_ERRORS["auth/invalid-phone-number"];
+      setSendError(info);
+      toast.error(info.message);
+      return;
+    }
+    setSendError(null);
     setLoading(true);
     try {
       const verifier = ensureVerifier();
       if (!verifier) {
-        toast.error("reCAPTCHA not ready. Try again.");
+        const info = { message: "Security check is not ready. Refresh and try again." };
+        setSendError(info);
+        toast.error(info.message);
         setLoading(false);
         return;
       }
-      const confirmation = await signInWithPhoneNumber(firebaseAuth, phone, verifier);
+      const confirmation = await signInWithPhoneNumber(firebaseAuth, normalizedPhone, verifier);
       confirmationResultRef.current = confirmation;
+      setPhone(normalizedPhone);
       setStep("otp");
       setCountdown(30);
       toast.success("OTP sent!");
     } catch (err) {
-      const code = (err as { code?: string })?.code || "";
       console.error("send OTP error", err);
-      const info = HUMANIZED_ERRORS[code];
-      toast.error(info?.message || "Failed to send OTP. Please try again.");
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch {
+          // ignore cleanup errors
+        }
+        window.recaptchaVerifier = undefined;
+      }
+      const info = getFirebaseErrInfo(err);
+      setSendError(info);
+      toast.error(info.message);
     } finally {
       setLoading(false);
     }
@@ -209,7 +265,10 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
                 id="phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (sendError) setSendError(null);
+                }}
                 placeholder="+91XXXXXXXXXX"
                 className="pl-9"
                 autoComplete="tel"
@@ -218,6 +277,14 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
             </div>
             <p className="text-xs text-muted-foreground">Include country code (e.g. +91).</p>
           </div>
+          {sendError && (
+            <Alert variant="destructive" className="py-2.5">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {sendError.message}
+              </AlertDescription>
+            </Alert>
+          )}
           <div ref={recaptchaContainerRef} className="hidden" aria-hidden="true" />
           <Button type="submit" className="w-full h-11" disabled={loading || !configOk}>
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
