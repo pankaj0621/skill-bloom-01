@@ -248,7 +248,11 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             <InputOTP
               maxLength={6}
               value={otp}
-              onChange={(v) => setOtp(v.replace(/\D/g, ""))}
+              onChange={(v) => {
+                setOtp(v.replace(/\D/g, ""));
+                if (otpError) setOtpError(null);
+              }}
+              disabled={sessionExpired}
               autoFocus
               containerClassName="justify-center"
             >
@@ -266,10 +270,24 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             </InputOTP>
           </div>
 
-          <Button type="submit" className="w-full h-11" disabled={loading || otp.length !== 6}>
+          {otpError && (
+            <Alert variant="destructive" className="py-2.5">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {otpError.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full h-11"
+            disabled={loading || otp.length !== 6 || sessionExpired}
+          >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Verify & continue
+            {sessionExpired ? "Request a new code" : "Verify & continue"}
           </Button>
+
 
           <div className="text-center text-sm text-muted-foreground">
             Didn't get the code?{" "}
