@@ -155,63 +155,91 @@ const Auth = () => {
 
         <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-primary/50 via-white/10 to-transparent shadow-2xl">
           <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 space-y-5">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Sign up</TabsTrigger>
-              </TabsList>
+            {showPhone ? (
+              <PhoneAuthForm
+                onSuccess={() => { /* AuthContext will pick up session and route */ }}
+                onBack={() => setShowPhone(false)}
+              />
+            ) : (
+              <>
+                <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign in</TabsTrigger>
+                    <TabsTrigger value="signup">Sign up</TabsTrigger>
+                  </TabsList>
 
-              <form onSubmit={handleEmailSubmit} className="space-y-3 pt-4">
-                {mode === "signup" && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="displayName">Name</Label>
-                    <Input
-                      id="displayName"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Your name"
-                      autoComplete="name"
-                      maxLength={80}
-                    />
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    {mode === "signin" && (
-                      <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                        Forgot?
-                      </Link>
+                  <form onSubmit={handleEmailSubmit} className="space-y-3 pt-4">
+                    {mode === "signup" && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="displayName">Name</Label>
+                        <Input
+                          id="displayName"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Your name"
+                          autoComplete="name"
+                          maxLength={80}
+                        />
+                      </div>
                     )}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        {mode === "signin" && (
+                          <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                            Forgot?
+                          </Link>
+                        )}
+                      </div>
+                      <PasswordInput
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                        autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                        required
+                      />
+                      {mode === "signup" && <PasswordStrength password={password} />}
+                    </div>
+                    <Button type="submit" className="w-full h-11 font-semibold" disabled={emailLoading}>
+                      {emailLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      {mode === "signup" ? "Create account" : "Sign in"}
+                    </Button>
+                  </form>
+                </Tabs>
+
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/50" />
                   </div>
-                  <PasswordInput
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    required
-                  />
-                  {mode === "signup" && <PasswordStrength password={password} />}
+                  <div className="relative flex justify-center">
+                    <span className="bg-card/80 px-2 text-[11px] uppercase tracking-wider text-muted-foreground">or</span>
+                  </div>
                 </div>
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={emailLoading}>
-                  {emailLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  {mode === "signup" ? "Create account" : "Sign in"}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11"
+                  onClick={() => setShowPhone(true)}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Continue with Phone
                 </Button>
-              </form>
-            </Tabs>
+              </>
+            )}
 
 
             <ul className="space-y-2.5 pt-1 border-t border-border/40">
