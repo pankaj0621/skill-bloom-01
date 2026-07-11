@@ -163,6 +163,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
         Back
       </Button>
 
+      <FirebaseConfigWarning issues={configIssues} />
+
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-3">
           <div className="space-y-1.5">
