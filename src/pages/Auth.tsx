@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
@@ -10,12 +13,18 @@ import appIcon from "@/assets/app-icon-512.png";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import FullscreenLoader from "@/components/FullscreenLoader";
+import PasswordInput from "@/components/PasswordInput";
+import PasswordStrength from "@/components/PasswordStrength";
+import { passwordSchema } from "@/lib/validation";
+import { z } from "zod";
 
 const PERKS = [
   { icon: Zap, text: "Track skills & earn XP daily" },
   { icon: Sparkles, text: "AI mentor + personalized roadmap" },
   { icon: ShieldCheck, text: "Private, secure sign-in" },
 ];
+
+const emailSchema = z.string().trim().email("Enter a valid email").max(255);
 
 const isSafeSameOriginPath = (p: unknown): p is string =>
   typeof p === "string" && p.startsWith("/") && !p.startsWith("//") && !p.startsWith("/auth");
@@ -25,8 +34,13 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [routing, setRouting] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   const intendedFromState = (location.state as { from?: string } | null)?.from;
   const intendedFromQuery = new URLSearchParams(location.search).get("next");
@@ -56,26 +70,68 @@ const Auth = () => {
   if (authLoading || user) return <FullscreenLoader label="Signing you in..." />;
 
   const handleGoogleSignIn = async () => {
-    if (loading) return;
-    setLoading(true);
+    if (googleLoading) return;
+    setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
         extraParams: { prompt: "select_account" },
       });
-
       if (result.error) {
-        toast.error(result.error.message || "Google sign-in failed. Please try again.");
-        setLoading(false);
+        toast.error(result.error.message || "Google sign-in failed.");
+        setGoogleLoading(false);
         return;
       }
-
       if (result.redirected) return;
-
       toast.success("Signed in successfully.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
-      setLoading(false);
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed.");
+      setGoogleLoading(false);
+    }
+  };
+
+  const humanizeAuthError = (msg: string) => {
+    if (/email_provider_disabled|Email signups are disabled|Email logins are disabled/i.test(msg)) {
+      return "Email sign-in is disabled on the backend. Enable Email in Cloud → Users → Auth Settings.";
+    }
+    if (/Invalid login credentials/i.test(msg)) return "Wrong email or password.";
+    if (/User already registered/i.test(msg)) return "That email is already registered. Try signing in.";
+    return msg;
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (emailLoading) return;
+
+    const emailCheck = emailSchema.safeParse(email);
+    if (!emailCheck.success) { toast.error(emailCheck.error.issues[0].message); return; }
+    const pwCheck = passwordSchema.safeParse(password);
+    if (!pwCheck.success) { toast.error(pwCheck.error.issues[0].message); return; }
+
+    setEmailLoading(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: emailCheck.data,
+          password: pwCheck.data,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { display_name: displayName.trim() || emailCheck.data.split("@")[0] },
+          },
+        });
+        if (error) { toast.error(humanizeAuthError(error.message)); setEmailLoading(false); return; }
+        toast.success("Account created! Redirecting...");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: emailCheck.data,
+          password: pwCheck.data,
+        });
+        if (error) { toast.error(humanizeAuthError(error.message)); setEmailLoading(false); return; }
+        toast.success("Welcome back!");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      setEmailLoading(false);
     }
   };
 
@@ -113,7 +169,7 @@ const Auth = () => {
             Welcome to Level Up
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in once and continue your learning streak.
+            Sign in to continue your learning streak.
           </p>
         </div>
 
@@ -124,19 +180,76 @@ const Auth = () => {
               variant="secondary"
               className="w-full h-12 font-semibold gap-3"
               onClick={handleGoogleSignIn}
-              disabled={loading}
+              disabled={googleLoading || emailLoading}
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <GoogleIcon className="h-5 w-5" />
-              )}
+              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-5 w-5" />}
               Continue with Google
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground leading-relaxed">
-              Use the same Google account every time to keep your XP, streaks, badges, and messages synced.
-            </p>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/60" /></div>
+              <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+                <span className="bg-card px-2 text-muted-foreground">or with email</span>
+              </div>
+            </div>
+
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Sign in</TabsTrigger>
+                <TabsTrigger value="signup">Sign up</TabsTrigger>
+              </TabsList>
+
+              <form onSubmit={handleEmailSubmit} className="space-y-3 pt-4">
+                {mode === "signup" && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="displayName">Name</Label>
+                    <Input
+                      id="displayName"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Your name"
+                      autoComplete="name"
+                      maxLength={80}
+                    />
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {mode === "signin" && (
+                      <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                        Forgot?
+                      </Link>
+                    )}
+                  </div>
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    required
+                  />
+                  {mode === "signup" && <PasswordStrength password={password} />}
+                </div>
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={emailLoading || googleLoading}>
+                  {emailLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {mode === "signup" ? "Create account" : "Sign in"}
+                </Button>
+              </form>
+            </Tabs>
 
             <ul className="space-y-2.5 pt-1">
               {PERKS.map(({ icon: Icon, text }, i) => (
