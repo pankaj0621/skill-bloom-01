@@ -39,7 +39,6 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [showPhone, setShowPhone] = useState(false);
 
   const intendedFromState = (location.state as { from?: string } | null)?.from;
   const intendedFromQuery = new URLSearchParams(location.search).get("next");
