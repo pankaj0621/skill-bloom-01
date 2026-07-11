@@ -12,18 +12,23 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { checkFirebaseConfig } from "@/lib/firebaseConfigCheck";
 import FirebaseConfigWarning from "@/components/auth/FirebaseConfigWarning";
 
-const HUMANIZED_ERRORS: Record<string, string> = {
-  "auth/invalid-phone-number": "Invalid phone number. Use +91XXXXXXXXXX format.",
-  "auth/missing-phone-number": "Enter a phone number.",
-  "auth/quota-exceeded": "Too many attempts. Try again later.",
-  "auth/captcha-check-failed": "Verification failed. Try again.",
-  "auth/invalid-verification-code": "Invalid OTP. Please try again.",
-  "auth/code-expired": "OTP expired. Request a new one.",
-  "auth/too-many-requests": "Too many attempts. Try again later.",
-  "auth/invalid-verification-id": "Session expired. Send a new OTP.",
-  "auth/missing-verification-code": "Enter the OTP.",
-  "auth/user-disabled": "This account has been disabled.",
+type ErrInfo = { message: string; expired?: boolean };
+const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
+  "auth/invalid-phone-number": { message: "That phone number doesn't look right. Use format like +91XXXXXXXXXX." },
+  "auth/missing-phone-number": { message: "Please enter your phone number." },
+  "auth/quota-exceeded": { message: "SMS limit reached for today. Please try again later." },
+  "auth/captcha-check-failed": { message: "Security check failed. Refresh and try again." },
+  "auth/invalid-verification-code": { message: "The code you entered is incorrect. Please double-check and try again." },
+  "auth/code-expired": { message: "This code has expired. Tap Resend to get a new one.", expired: true },
+  "auth/session-expired": { message: "Your verification session expired. Tap Resend to get a new code.", expired: true },
+  "auth/too-many-requests": { message: "Too many attempts. Please wait a few minutes before trying again." },
+  "auth/invalid-verification-id": { message: "Verification session expired. Please request a new code.", expired: true },
+  "auth/missing-verification-code": { message: "Please enter the 6-digit code." },
+  "auth/user-disabled": { message: "This account has been disabled. Contact support for help." },
+  "auth/network-request-failed": { message: "Network error. Check your connection and try again." },
+  "auth/credential-already-in-use": { message: "This phone number is already linked to another account." },
 };
+
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
