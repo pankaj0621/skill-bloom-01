@@ -105,7 +105,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
     } catch (err) {
       const code = (err as { code?: string })?.code || "";
       console.error("send OTP error", err);
-      toast.error(HUMANIZED_ERRORS[code] || "Failed to send OTP. Try again.");
+      const info = HUMANIZED_ERRORS[code];
+      toast.error(info?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
