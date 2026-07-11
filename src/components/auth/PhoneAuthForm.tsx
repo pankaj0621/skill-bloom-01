@@ -59,11 +59,10 @@ function getFirebaseErrInfo(err: unknown): ErrInfo {
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
-  onBack: () => void;
-  hideBack?: boolean;
+  onBack?: () => void;
 }
 
-const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
+const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("+91");
   const [otp, setOtp] = useState("");
@@ -246,7 +245,7 @@ const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
 
   return (
     <div className="space-y-4">
-      {!hideBack && (
+      {onBack && (
         <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2 -ml-2" type="button">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back

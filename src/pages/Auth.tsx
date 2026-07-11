@@ -94,8 +94,6 @@ const Auth = () => {
           <div className="rounded-2xl bg-card/80 backdrop-blur-xl border border-white/5 p-6 sm:p-7 space-y-5">
             <PhoneAuthForm
               onSuccess={() => { /* AuthContext picks up session and routes */ }}
-              onBack={() => { /* no-op: phone is the only method */ }}
-              hideBack
             />
 
             <ul className="space-y-2.5 pt-1 border-t border-border/40">
