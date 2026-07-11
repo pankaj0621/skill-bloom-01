@@ -34,9 +34,10 @@ const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
 interface PhoneAuthFormProps {
   onSuccess: () => void;
   onBack: () => void;
+  hideBack?: boolean;
 }
 
-const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
+const PhoneAuthForm = ({ onSuccess, onBack, hideBack }: PhoneAuthFormProps) => {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("+91");
   const [otp, setOtp] = useState("");
