@@ -173,19 +173,22 @@ export type Database = {
         Row: {
           created_at: string | null
           firebase_uid: string
-          phone_number: string | null
+          phone_number: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           firebase_uid: string
-          phone_number?: string | null
+          phone_number: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           firebase_uid?: string
-          phone_number?: string | null
+          phone_number?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
