@@ -172,6 +172,10 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
 
   const handleResend = async () => {
     if (countdown > 0 || loading) return;
+    setOtpError(null);
+    setAttempts(0);
+    setSessionExpired(false);
+    setOtp("");
     if (window.recaptchaVerifier) {
       try {
         window.recaptchaVerifier.clear();
