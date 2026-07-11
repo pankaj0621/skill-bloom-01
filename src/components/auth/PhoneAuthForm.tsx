@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Phone, ShieldCheck, Pencil } from "lucide-react";
+import { Loader2, ArrowLeft, Phone, ShieldCheck, Pencil, AlertCircle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { firebaseAuth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,18 +13,23 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { checkFirebaseConfig } from "@/lib/firebaseConfigCheck";
 import FirebaseConfigWarning from "@/components/auth/FirebaseConfigWarning";
 
-const HUMANIZED_ERRORS: Record<string, string> = {
-  "auth/invalid-phone-number": "Invalid phone number. Use +91XXXXXXXXXX format.",
-  "auth/missing-phone-number": "Enter a phone number.",
-  "auth/quota-exceeded": "Too many attempts. Try again later.",
-  "auth/captcha-check-failed": "Verification failed. Try again.",
-  "auth/invalid-verification-code": "Invalid OTP. Please try again.",
-  "auth/code-expired": "OTP expired. Request a new one.",
-  "auth/too-many-requests": "Too many attempts. Try again later.",
-  "auth/invalid-verification-id": "Session expired. Send a new OTP.",
-  "auth/missing-verification-code": "Enter the OTP.",
-  "auth/user-disabled": "This account has been disabled.",
+type ErrInfo = { message: string; expired?: boolean };
+const HUMANIZED_ERRORS: Record<string, ErrInfo> = {
+  "auth/invalid-phone-number": { message: "That phone number doesn't look right. Use format like +91XXXXXXXXXX." },
+  "auth/missing-phone-number": { message: "Please enter your phone number." },
+  "auth/quota-exceeded": { message: "SMS limit reached for today. Please try again later." },
+  "auth/captcha-check-failed": { message: "Security check failed. Refresh and try again." },
+  "auth/invalid-verification-code": { message: "The code you entered is incorrect. Please double-check and try again." },
+  "auth/code-expired": { message: "This code has expired. Tap Resend to get a new one.", expired: true },
+  "auth/session-expired": { message: "Your verification session expired. Tap Resend to get a new code.", expired: true },
+  "auth/too-many-requests": { message: "Too many attempts. Please wait a few minutes before trying again." },
+  "auth/invalid-verification-id": { message: "Verification session expired. Please request a new code.", expired: true },
+  "auth/missing-verification-code": { message: "Please enter the 6-digit code." },
+  "auth/user-disabled": { message: "This account has been disabled. Contact support for help." },
+  "auth/network-request-failed": { message: "Network error. Check your connection and try again." },
+  "auth/credential-already-in-use": { message: "This phone number is already linked to another account." },
 };
+
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
@@ -36,6 +42,9 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [otpError, setOtpError] = useState<ErrInfo | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
   const configIssues = useRef(checkFirebaseConfig()).current;
@@ -97,7 +106,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
     } catch (err) {
       const code = (err as { code?: string })?.code || "";
       console.error("send OTP error", err);
-      toast.error(HUMANIZED_ERRORS[code] || "Failed to send OTP. Try again.");
+      const info = HUMANIZED_ERRORS[code];
+      toast.error(info?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -143,13 +153,29 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
     } catch (err) {
       const code = (err as { code?: string })?.code || "";
       console.error("verify OTP error", err);
-      toast.error(HUMANIZED_ERRORS[code] || "Failed to verify OTP. Try again.");
+      const info: ErrInfo = HUMANIZED_ERRORS[code] || {
+        message: "We couldn't verify that code. Please try again.",
+      };
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      const tooMany = newAttempts >= 5;
+      const finalInfo: ErrInfo = tooMany
+        ? { message: "Too many incorrect attempts. Please request a new code.", expired: true }
+        : info;
+      setOtpError(finalInfo);
+      if (finalInfo.expired) setSessionExpired(true);
+      setOtp("");
+      toast.error(finalInfo.message);
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
     if (countdown > 0 || loading) return;
+    setOtpError(null);
+    setAttempts(0);
+    setSessionExpired(false);
+    setOtp("");
     if (window.recaptchaVerifier) {
       try {
         window.recaptchaVerifier.clear();
@@ -222,7 +248,11 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             <InputOTP
               maxLength={6}
               value={otp}
-              onChange={(v) => setOtp(v.replace(/\D/g, ""))}
+              onChange={(v) => {
+                setOtp(v.replace(/\D/g, ""));
+                if (otpError) setOtpError(null);
+              }}
+              disabled={sessionExpired}
               autoFocus
               containerClassName="justify-center"
             >
@@ -240,10 +270,24 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             </InputOTP>
           </div>
 
-          <Button type="submit" className="w-full h-11" disabled={loading || otp.length !== 6}>
+          {otpError && (
+            <Alert variant="destructive" className="py-2.5">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {otpError.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full h-11"
+            disabled={loading || otp.length !== 6 || sessionExpired}
+          >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Verify & continue
+            {sessionExpired ? "Request a new code" : "Verify & continue"}
           </Button>
+
 
           <div className="text-center text-sm text-muted-foreground">
             Didn't get the code?{" "}
