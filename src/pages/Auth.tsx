@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import FullscreenLoader from "@/components/FullscreenLoader";
 import PasswordInput from "@/components/PasswordInput";
 import PasswordStrength from "@/components/PasswordStrength";
+import PhoneAuthForm from "@/components/auth/PhoneAuthForm";
+import { Phone } from "lucide-react";
 import { passwordSchema } from "@/lib/validation";
 import { z } from "zod";
 
