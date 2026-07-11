@@ -8,6 +8,8 @@ import { firebaseAuth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { checkFirebaseConfig } from "@/lib/firebaseConfigCheck";
+import FirebaseConfigWarning from "@/components/auth/FirebaseConfigWarning";
 
 const HUMANIZED_ERRORS: Record<string, string> = {
   "auth/invalid-phone-number": "Invalid phone number. Use +91XXXXXXXXXX format.",
@@ -35,6 +37,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const [countdown, setCountdown] = useState(0);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
+  const configIssues = useRef(checkFirebaseConfig()).current;
+  const configOk = configIssues.length === 0;
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -72,6 +76,10 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+    if (!configOk) {
+      toast.error("Firebase is not configured. See warning below.");
+      return;
+    }
     setLoading(true);
     try {
       const verifier = ensureVerifier();
@@ -159,6 +167,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
         Back
       </Button>
 
+      <FirebaseConfigWarning issues={configIssues} />
+
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-3">
           <div className="space-y-1.5">
@@ -179,7 +189,7 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
             <p className="text-xs text-muted-foreground">Include country code (e.g. +91).</p>
           </div>
           <div ref={recaptchaContainerRef} className="hidden" aria-hidden="true" />
-          <Button type="submit" className="w-full h-11" disabled={loading}>
+          <Button type="submit" className="w-full h-11" disabled={loading || !configOk}>
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Send OTP
           </Button>
