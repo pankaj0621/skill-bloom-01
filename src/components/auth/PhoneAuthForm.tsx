@@ -37,6 +37,8 @@ const PhoneAuthForm = ({ onSuccess, onBack }: PhoneAuthFormProps) => {
   const [countdown, setCountdown] = useState(0);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
+  const configIssues = useRef(checkFirebaseConfig()).current;
+  const configOk = configIssues.length === 0;
 
   useEffect(() => {
     if (countdown <= 0) return;
