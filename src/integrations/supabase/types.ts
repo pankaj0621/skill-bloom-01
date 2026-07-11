@@ -169,6 +169,27 @@ export type Database = {
           },
         ]
       }
+      firebase_auth_users: {
+        Row: {
+          created_at: string | null
+          firebase_uid: string
+          phone_number: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          firebase_uid: string
+          phone_number?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          firebase_uid?: string
+          phone_number?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
