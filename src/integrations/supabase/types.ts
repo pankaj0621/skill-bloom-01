@@ -253,6 +253,45 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_verifications: {
+        Row: {
+          attempts: number
+          created_at: string
+          expires_at: string
+          id: string
+          max_attempts: number
+          otp_hash: string
+          phone_number: string
+          request_ip: string | null
+          verified: boolean
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          otp_hash: string
+          phone_number: string
+          request_ip?: string | null
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          otp_hash?: string
+          phone_number?: string
+          request_ip?: string | null
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       peer_chat_settings: {
         Row: {
           disappear_seconds: number | null
@@ -398,6 +437,7 @@ export type Database = {
           last_activity_date: string | null
           last_weekly_reset: string | null
           longest_streak: number
+          phone_number: string | null
           primary_goal: string | null
           role: string | null
           stream: string | null
@@ -425,6 +465,7 @@ export type Database = {
           last_activity_date?: string | null
           last_weekly_reset?: string | null
           longest_streak?: number
+          phone_number?: string | null
           primary_goal?: string | null
           role?: string | null
           stream?: string | null
@@ -452,6 +493,7 @@ export type Database = {
           last_activity_date?: string | null
           last_weekly_reset?: string | null
           longest_streak?: number
+          phone_number?: string | null
           primary_goal?: string | null
           role?: string | null
           stream?: string | null
